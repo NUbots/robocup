@@ -1,0 +1,13 @@
+The purpose of this software is to provide an omni-directional walk for a humanoid robot.
+
+h2. CONTENTS
+
+*LICENCE*
+GNU GPLv3 licence file
+
+*README.textile*
+This file.
+
+h2. INSTALLING
+
+h2. RUNNING
