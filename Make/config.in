@@ -1,0 +1,14 @@
+/* -*- C++ -*- Tell editors this is a C++ file (despite it's .in extension) */
+
+/**
+ * @author NUbots
+ *
+ * Version : $Id$
+ */
+#ifndef CONFIG_H
+#define CONFIG_H
+
+#define TARGET_IS_$ENV{TARGET_ROBOT}
+
+#endif // !CONFIG_H
+

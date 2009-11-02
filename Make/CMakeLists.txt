@@ -1,0 +1,156 @@
+##############################
+#
+# Welcome to the top-level cmake file
+#
+# This is the main cmake configuration file 
+# You can define specific compilation options here
+# 
+# More about cmake : www.cmake.org
+#
+# Using cmake command line : 
+# 1. Create a build directory : mkdir build
+# 2. Configure cmake project : cd build; cmake ..
+#   You can also generate project with your favorite IDE : 
+#   Example : Under Mac osx use "cmake .. -G XCode"
+#   see cmake help for more information
+# 3. Edit project option : ccmake .
+# 4. Build it : make 
+
+############################ PROJECT NAME
+PROJECT( NUBOT )
+MESSAGE( STATUS "...:::: NUBOT ::::..." )
+
+########### Target Robot: NAOWebots, NAO, Cycloid, etc
+SET(TARGET_ROBOT $ENV{TARGET_ROBOT})
+SET(NUBOT_IS_EXECUTABLE OFF)
+SET (CMAKE_BUILD_TYPE Release)
+
+########## Control Debugging of the cmake files themselves
+SET(DEBUG ON)
+IF(DEBUG)
+    MESSAGE(STATUS "Debugging cmake process")
+ENDIF (DEBUG)
+
+########## The location of target specific files 
+# this is used by target specific cmake files to locate appropriate sources
+SET(TARGET_ROBOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../NUbot)
+
+########## Selectively include target specific CMake files
+IF (${TARGET_ROBOT} STREQUAL NAOWEBOTS)
+    MESSAGE(STATUS "CMake for Nao in Webots")
+    INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/wenao.cmake)
+ELSE (${TARGET_ROBOT} STREQUAL NAOWEBOTS)
+    IF (${TARGET_ROBOT} STREQUAL NAO)
+        MESSAGE(STATUS "CMake for NAO")
+        INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/alnao.cmake)
+    ELSE (${TARGET_ROBOT} STREQUAL NAO)
+        IF (${TARGET_ROBOT} STREQUAL CYCLOID)
+            MESSAGE(STATUS "CMake for Cycloid")
+            INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/cycloid.cmake)
+        ELSE (${TARGET_ROBOT} STREQUAL CYCLOID)
+            MESSAGE(STATUS "Target robot unknown: ${TARGET_ROBOT}")
+        ENDIF (${TARGET_ROBOT} STREQUAL CYCLOID)
+    ENDIF (${TARGET_ROBOT} STREQUAL NAO)
+ENDIF (${TARGET_ROBOT} STREQUAL NAOWEBOTS)
+
+IF (DEBUG)
+MESSAGE(STATUS "Target Robot location: ${TARGET_ROBOT_DIR}")
+ENDIF (DEBUG)
+
+IF (WIN32)
+SET(CMAKE_DEBUG_POSTFIX _d)
+ENDIF (WIN32)
+
+########### Version
+# Check cMake version
+CMAKE_MINIMUM_REQUIRED( VERSION 2.2.0 )
+
+########### Colourize makefile
+# Colorized output
+SET( CMAKE_COLOR_MAKEFILE TRUE )
+
+
+############################ FIND PACKAGE
+# Libraries specifics. Define here cmake packages
+# usefull to your project
+
+FIND_PACKAGE( PTHREAD REQUIRED )
+FIND_PACKAGE( BOOST REQUIRED )
+############################ CONFIG.H GENERATION
+CONFIGURE_FILE(
+	"${CMAKE_CURRENT_SOURCE_DIR}/config.in"
+  	"${CMAKE_CURRENT_SOURCE_DIR}/../config.h"
+    ESCAPE_QUOTES
+)
+
+
+############################ DEFINITION
+# Add definitions needed here
+ADD_DEFINITIONS( ${PTHREAD_DEFINITIONS}
+                 ${BOOST_DEFINITIONS}
+)
+
+
+############################ INCLUDE DIRECTORY
+# Define include directories here
+INCLUDE_DIRECTORIES( ${PTHREAD_INCLUDE_DIR}
+                     ${BOOST_INCLUDE_DIR}
+)
+
+IF (DEBUG)
+    MESSAGE(STATUS "Source files:")
+    FOREACH(loop_var ${NUBOT_SRCS})
+        MESSAGE(STATUS "------- ${loop_var}")
+    ENDFOREACH(loop_var ${NUBOT_SRCS})
+ENDIF (DEBUG)  
+
+############################ CHECK LIBRARY / EXECUTABLE OPTION
+IF (NUBOT_IS_EXECUTABLE)
+    ADD_EXECUTABLE( nubot ${NUBOT_SRCS} )
+ELSE (NUBOT_IS_EXECUTABLE)
+    ADD_LIBRARY( nubot SHARED ${NUBOT_SRCS} )
+ENDIF (NUBOT_IS_EXECUTABLE)
+
+
+############################ SET LIBRARIES TO LINK WITH
+TARGET_LINK_LIBRARIES( nubot 
+                       ${NUBOT_LINK_LIBRARIES} 
+                       ${PTHREAD_LIBRARIES}
+                       ${BOOST_LIBRARIES}
+)
+
+############################ BINARY COPY
+# copy binaries in the output folder automatically
+GET_TARGET_PROPERTY( NUBOT_LOCATION nubot LOCATION)
+
+
+IF ( WIN32 )
+    STRING(REGEX REPLACE "nubot.dll" "" NUBOT_LOCATION_SRC ${NUBOT_LOCATION})
+    SET (OUTPUT_ROOT_DIR_LIB ${AL_DIR}/modules/lib/ )
+    FILE(TO_NATIVE_PATH ${NUBOT_LOCATION_SRC} NUBOT_LOCATION_SRC)
+    FILE(TO_NATIVE_PATH ${OUTPUT_ROOT_DIR_LIB} OUTPUT_ROOT_DIR_LIB)
+ENDIF ( WIN32 )
+
+IF (WIN32)
+	  ADD_CUSTOM_COMMAND(
+	    TARGET nubot
+	    POST_BUILD
+	    COMMAND echo ${NUBOT_LOCATION_SRC}*
+    	    COMMAND echo ${OUTPUT_ROOT_DIR_LIB}
+	    COMMAND xcopy  ${NUBOT_LOCATION_SRC}*.dll ${OUTPUT_ROOT_DIR_LIB} /Y /C
+	  )
+ELSE (WIN32)
+
+  ADD_CUSTOM_COMMAND(
+    TARGET nubot
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND}
+    ARGS -E copy
+    ${NUBOT_LOCATION}
+    ${OUTPUT_ROOT_DIR_LIB}
+  )
+ENDIF (WIN32)
+
+
+
+
