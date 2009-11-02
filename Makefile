@@ -69,33 +69,24 @@ NAO:
 	fi
 
 NAOConfig:
-	@tput setf 1;
 	@echo "Configuring NAO Build";
-	@tput setf 7
 	@set -e; \
 		cd $(NAO_BUILD_DIR); \
 		sh $(ALD_CC_SCRIPT) $(ALD_CTC) $(MAKE_DIR); \
 		ccmake .; \
-		tput sgr0; \
 		make $(MAKE_OPTIONS);
 
 NAOClean:
-	@tput setf 1;
 	@echo "Cleaning NAO Build";
-	@tput setf 7;
 	@set -e; \
 		cd $(NAO_BUILD_DIR); \
 		make $(MAKE_OPTIONS) clean;
-	@tput sgr0;
 
 NAOVeryClean:
-	@tput setf 1;
 	@echo "Hosing NAO Build";
-	@tput setf 7;
 	@set -e; \
 		cd $(NAO_BUILD_DIR); \
 		rm -rf ./*;
-	@tput sgr0;
 
 NAOWebots:
 	@echo "Targetting NAOWebots";
@@ -117,22 +108,16 @@ NAOWebotsConfig:
 		make $(MAKE_OPTIONS);
 
 NAOWebotsClean:
-	@tput setf 1;
 	@echo "Cleaning NAOWebots Build";
-	@tput setf 7;
 	@set -e; \
 		cd $(NAOWEBOTS_BUILD_DIR); \
 		make $(MAKE_OPTIONS) clean;
-	@tput sgr0;
 
 NAOWebotsVeryClean:
-	@tput setf 1;
 	@echo "Hosing NAOWebots Build";
-	@tput setf 7;
 	@set -e; \
 		cd $(NAOWEBOTS_BUILD_DIR); \
 		rm -rf ./*;
-	@tput sgr0;
 
 Cycloid:
 	@echo "Targetting Cycloid";
@@ -142,11 +127,8 @@ CycloidClean:
 	@echo "Cleaning Cycloid Build"
 
 CycloidVeryClean:
-	@tput setf 1;
 	@echo "Hosing Cycloid Build";
-	@tput setf 7;
 	@set -e;
-	@tput sgr0;
 
 clean: NAOClean NAOWebotsClean CycloidClean
 
