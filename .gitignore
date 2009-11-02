@@ -1,6 +1,9 @@
 # .gitignore for NUbot
 
 # We don't want to include Xcode project files
+/Build/NAO/*
+/Build/NAOWebots/*
+/Build/Cycloid/*
 *.xcodeproj
 
 # Python Ignores:
