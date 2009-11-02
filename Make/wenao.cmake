@@ -8,10 +8,11 @@
 #   - set NUBOT_IS_EXECUTABLE
 #   - set the OUTPUT_ROOT_DIR_EXE to 
 #         WEBOTS_HOME/projects/contests/nao_robocup/nao_soccer_player_blue
-#	- ADD_DEFINITIONS
-#	- INCLUDE_DIRECTORIES
-#	- Append required libraries to NUBOT_LINK_LIBRARIES
-#	- print debug information if desired
+#   - ADD_DEFINITIONS
+#   - INCLUDE_DIRECTORIES
+#   - Append required libraries to NUBOT_LINK_LIBRARIES
+#   - On Darwin we need to make sure that we target i386 and not x86_64, because at this time reboots does not support x86_64
+#   - print debug information if desired
 
 SET(TARGET_ROBOT_DIR ${TARGET_ROBOT_DIR}/NAOWebots)
 INCLUDE(${TARGET_ROBOT_DIR}/cmake/sources.cmake)
@@ -39,6 +40,11 @@ INCLUDE_DIRECTORIES( ${WEBOTS_INCLUDE_DIR}
 
 ######### Append required libraries to NUBOT_LINK_LIBRARIES
 LIST(APPEND NUBOT_LINK_LIBRARIES ${WEBOTS_LIBRARIES})
+
+IF (${CMAKE_SYSTEM_NAME} STREQUAL Darwin)
+    SET(CMAKE_EXE_LINKER_FLAGS "-arch i386" CACHE STRING "os-x arch" FORCE)
+    SET(CMAKE_CXX_FLAGS "-arch i386" CACHE STRING "os-x arch" FORCE)
+ENDIF (${CMAKE_SYSTEM_NAME} STREQUAL Darwin)
 
 ######### Debug information
 IF (DEBUG)
