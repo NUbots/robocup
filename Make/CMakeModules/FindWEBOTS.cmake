@@ -1,3 +1,15 @@
+# A package finder for WEBOTS
+#    Copyright (c) 2009 Jason Kulk
+#    This file is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This file is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+
 
 # Find the location of Webots
 IF ("x$ENV{WEBOTS_HOME}x" STREQUAL "xx")
@@ -10,6 +22,15 @@ IF ("x$ENV{WEBOTS_HOME}x" STREQUAL "xx")
     ELSE (${CMAKE_SYSTEM_NAME} STREQUAL Windows)
         IF (${CMAKE_SYSTEM_NAME} STREQUAL Darwin)
             MESSAGE(STATUS "Looking for Webots on Darwin")
+            # There are only two logical places to put Webots on Darwin
+            # /Application/webots or ~/webots
+            IF (EXISTS /Applications/webots)
+                SET (ENV{WEBOTS_HOME} /Applications/webots)
+            ENDIF (EXISTS /Applications/webots)
+
+            IF (EXISTS $ENV{HOME}/webots)
+                SET (ENV{WEBOTS_HOME} $ENV{HOME}/webots)
+            ENDIF (EXISTS $ENV{HOME}/webots)
 
         ELSE (${CMAKE_SYSTEM_NAME} STREQUAL Darwin)
             IF (${CMAKE_SYSTEM_NAME} STREQUAL Linux)
