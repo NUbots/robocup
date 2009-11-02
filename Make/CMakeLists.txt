@@ -23,7 +23,7 @@ MESSAGE( STATUS "...:::: NUBOT ::::..." )
 ########### Target Robot: NAOWebots, NAO, Cycloid, etc
 SET(TARGET_ROBOT $ENV{TARGET_ROBOT})
 SET(NUBOT_IS_EXECUTABLE OFF)
-SET (CMAKE_BUILD_TYPE Release)
+SET(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
 
 ########## Control Debugging of the cmake files themselves
 SET(DEBUG ON)
