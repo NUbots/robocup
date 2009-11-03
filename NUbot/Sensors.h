@@ -32,6 +32,8 @@ using namespace std;
  */
 struct sensor_type 
 {
+    string name;                //!< the sensor's name
+    int sensorID;               //!< the sensor's id
     vector<float> data;         //!< the sensor values
     vector<float> sd;           //!< standard deviation for each sensor value sensor
     bool isValid;               //!< true, if data is valid, false if not

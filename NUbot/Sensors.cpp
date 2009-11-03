@@ -30,7 +30,7 @@ Sensors::Sensors()
     cout << "Sensors::Sensors" << endl;
 }
 
-/*! @breif Default destructor
+/*! @brief Default destructor
  */
 Sensors::~Sensors()
 {

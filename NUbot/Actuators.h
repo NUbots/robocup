@@ -25,12 +25,21 @@
 #include <vector>
 using namespace std;
 
+/*! @brief Container for a single actuator
+ 
+ This structure holds the desired actuator targets. The targets for position, speed, and stiffness 
+ are specified for each time in times.
+ 
+ The target positions, speeds, and stiffnesses may be interpolated between each of the specified times.
+ */
 struct actuator_type 
 {
-    vector<float> times;
-    vector<float> targetPositions;
-    vector<float> targetSpeeds;
-    vector<float> targetStiffnesses;
+    string name;                        //!< the actuator's name
+    int actuatorID;                     //!< the actuator's id
+    vector<float> times;                //!< times for each target point
+    vector<float> targetPositions;      //!< positions to reach at each time 
+    vector<float> targetSpeeds;         //!< speed to travel at each time
+    vector<float> targetStiffnesses;    //!< stiffness for each time
 };
 
 class Actuators
