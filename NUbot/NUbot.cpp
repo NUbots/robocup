@@ -21,6 +21,8 @@
 
 #include "NUbot.h"
 
+NUbot* nubot = NULL;
+
 NUbot::NUbot()
 {
     cout << "NUbot::NUbot" << endl;
@@ -41,5 +43,10 @@ void NUbot::getNumber(int& number)
 {
     cout << "NUbot::getNumber" << endl;
     number = 0;
+}
+
+void NUbot::test()
+{
+    cout << "NUbot::test()" << endl;
 }
 

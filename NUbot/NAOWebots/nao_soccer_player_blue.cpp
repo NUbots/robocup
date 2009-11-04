@@ -13,9 +13,10 @@
 #include <iostream>
 #include <cstring>
 #include <cstdlib>
-//#include <boost/shared_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include "NAOWebots.h"
+#include "../../Motion/JMotion.h"
 
 using namespace std;
 
@@ -40,12 +41,16 @@ int main(int argc, const char *argv[]) {
     
     cout << "Test print. Where does this go? It goes to the webots terminal!" << endl;
     nubot = new NAOWebots();
+    //nubot = boost::shared_ptr<NUbot>(new NAOWebots());
+    cout << "main: nubot: " << nubot << endl;
+    motion = new JMotion();
     
     string name;
     nubot->getName(name);
-    cout << "Name: " << name << endl;
+    cout << "main: Name: " << name << endl;
+    
+    nubot->test();
 
-    delete nubot;
     // choose GoalKepper/FieldPlayer role according to last digit of URBI port number
     player = new FieldPlayer(playerID);
 

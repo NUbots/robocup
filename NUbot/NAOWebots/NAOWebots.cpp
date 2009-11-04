@@ -25,8 +25,8 @@
 
 NAOWebots::NAOWebots()
 {
-    cout << "NAOWebots::NUbot" << endl;
-    cout << "NAOWebots::NUbot. this: " << this << endl;
+    cout << "NAOWebots::NAOWebots" << endl;
+    cout << "NAOWebots::NAOWebots. this: " << this << endl;
     sensors = new Sensors();
     actuators = new Actuators();
 }
@@ -45,5 +45,10 @@ void NAOWebots::getNumber(int& number)
 {
     cout << "NAOWebots::getNumber" << endl;
     number = 0;
+}
+
+void NAOWebots::test()
+{
+    cout << "NAOWebots::test() motion: " << motion << endl;
 }
 

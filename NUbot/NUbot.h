@@ -23,13 +23,14 @@
 #define NUBOT_H
 
 #include <string>
-//#include <boost/shared_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 
 using namespace std;
 
 #include "../config.h"
 #include "Sensors.h"
 #include "Actuators.h"
+#include "../Motion/JMotion.h"
 
 class NUbot
 {
@@ -40,6 +41,8 @@ public:
     
     virtual void getName(string& name);
     virtual void getNumber(int& number);
+    
+    virtual void test();
 protected:
 private:
     
@@ -52,6 +55,8 @@ private:
     
 };
 
-static NUbot* nubot = NULL;
+extern NUbot* nubot;
+//static NUbot* nubot = NULL;
+//static boost::shared_ptr<NUbot> nubot;
 
 #endif

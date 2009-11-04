@@ -39,6 +39,8 @@ public:
     void getName(string& name);
     void getNumber(int& number);
     
+    void test();
+    
 protected:
 private:
     
