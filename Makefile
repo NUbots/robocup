@@ -59,6 +59,7 @@ NAO:
 		tput sgr0; \
 		make $(MAKE_OPTIONS); \
 	else \
+		mkdir -p $(NAO_BUILD_DIR); \
 		cd $(NAO_BUILD_DIR); \
 		sh $(ALD_CC_SCRIPT) $(ALD_CTC) $(MAKE_DIR); \
 		ccmake .; \
@@ -94,6 +95,7 @@ NAOWebots:
 		cd $(NAOWEBOTS_BUILD_DIR); \
 		make $(MAKE_OPTIONS); \
 	else \
+		mkdir -p $(NAOWEBOTS_BUILD_DIR); \
 		cd $(NAOWEBOTS_BUILD_DIR); \
 		cmake $(MAKE_DIR); \
 		ccmake .; \
