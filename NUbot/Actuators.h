@@ -23,6 +23,7 @@
 #define ACTUATORS_H
 
 #include <vector>
+#include <string>
 using namespace std;
 
 /*! @brief Container for a single actuator
