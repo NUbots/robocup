@@ -18,6 +18,7 @@
 
 ########## List your source files here! ############################################
 SET (YOUR_SRCS  nao_soccer_player_blue.cpp
+		NAOWebots.cpp NAOWebots.h
                 FieldPlayer.cpp FieldPlayer.hpp
                 GoalKeeper.cpp GoalKeeper.hpp   
                 InfoMessage.hpp 

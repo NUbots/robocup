@@ -13,8 +13,9 @@
 #include <iostream>
 #include <cstring>
 #include <cstdlib>
+//#include <boost/shared_ptr.hpp>
 
-#include "../Sensors.h"
+#include "NAOWebots.h"
 
 using namespace std;
 
@@ -38,9 +39,13 @@ int main(int argc, const char *argv[]) {
     Player *player = NULL;
     
     cout << "Test print. Where does this go? It goes to the webots terminal!" << endl;
-    Sensors *sensors = new Sensors();
+    nubot = new NAOWebots();
+    
+    string name;
+    nubot->getName(name);
+    cout << "Name: " << name << endl;
 
-    delete sensors;
+    delete nubot;
     // choose GoalKepper/FieldPlayer role according to last digit of URBI port number
     player = new FieldPlayer(playerID);
 
