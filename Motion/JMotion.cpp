@@ -1,4 +1,4 @@
-/*! @file Motion.cpp
+/*! @file JMotion.cpp
     @brief Implementation of motion class
 
     @author Jason Kulk
@@ -19,5 +19,28 @@
  along with NUbot.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Motion.h"
+#include <iostream>
+using namespace std;
+
+#include "../NUbot/NUbot.h"
+#include "JMotion.h"
+
+JMotion* motion = NULL;
+
+
+JMotion::JMotion()
+{
+    cout << "JMotion::JMotion" << endl;
+    string name;
+    if (nubot != NULL)      // Note. the pointer nubot will be NULL until the NUbot constructor has RETURNED!
+    {
+        nubot->getName(name);
+        cout << "JMotion::JMotion nubot->getName: " << name << endl;
+    }
+    else 
+    {
+        cout << "JMotion::JMotion nubot" << nubot << endl;
+    }
+
+}
 

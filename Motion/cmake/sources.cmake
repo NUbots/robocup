@@ -17,7 +17,7 @@
 
 
 ########## List your source files here! ############################################
-SET (YOUR_SRCS  Motion.cpp Motion.h
+SET (YOUR_SRCS  JMotion.cpp JMotion.h
 )
 ####################################################################################
 

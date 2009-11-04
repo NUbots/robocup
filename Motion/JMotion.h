@@ -1,4 +1,4 @@
-/*! @file Motion.h
+/*! @file JMotion.h
     @brief Declaration of motion class
 
     @author Jason Kulk
@@ -19,8 +19,22 @@
     along with NUbot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef MOTION_H
-#define MOTION_H
+#ifndef JMOTION_H
+#define JMOTION_H
+
+class JMotion
+{
+public:
+    JMotion();
+    ~JMotion();
+protected:
+private:
+public:
+protected:
+private:
+};
+
+extern JMotion* motion;
 
 
 #endif
