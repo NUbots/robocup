@@ -28,6 +28,40 @@ using namespace std;
 Sensors::Sensors()
 {
     cout << "Sensors::Sensors" << endl;
+    devices.reserve(2);
+    sensor_type* blank = new sensor_type;
+    blank->timestamp = 13;
+    devices.push_back(blank);
+    Sensor1 = devices[0];
+    blank = new sensor_type;
+    blank->timestamp = 22;
+    devices.push_back(blank);           // this uses a copy constructor to append to the end of the vector.
+    Sensor2 = devices[1];               // this also invokes a copy constructor, so Sensor2 and devices[1] are not the same object!!!
+    
+    
+    // Option 1. vector<sensor_type> devices
+    // Pros:    no pointers
+    //          nubot->sensors->devices[0].timestamp
+    // Option 2. vector<sensor_type*> devices
+    // Pros:    nubot->sensors->devices[0]->timestamp AND nubot->sensors->JointPositions->timestamp;
+    
+    cout << "Sensors::Sensors: ";
+    for (int i=0; i<devices.size(); i++)
+    {
+        cout << devices[i]->timestamp << ", ";
+    }
+    cout << endl;
+    
+    devices[0]->timestamp = 666;
+    Sensor2->timestamp = 555;
+    
+    cout << "Sensors::Sensors: ";
+    for (int i=0; i<devices.size(); i++)
+    {
+        cout << devices[i]->timestamp << ", ";
+    }
+    cout << endl;
+    
 }
 
 /*! @brief Default destructor
@@ -36,15 +70,10 @@ Sensors::~Sensors()
 {
 }
 
-/*void Sensors::test()
+/*! @brief Updates the sensor data
+ */
+void Sensors::update()
 {
-    cout << "Sensors::test()" << endl;
-    sensor_type blank;
-    blank.timestamp = 0;
-    vector<sensor_type> testsensors(10000, blank);
-    testsensors[3].timestamp = 12345.456;
-    testsensors[10].timestamp = 15606.12;
     
-    cout << "testsensors[3].timestamp" << testsensors[3].timestamp << "testsensors[10].timestamp" << testsensors[10].timestamp << "whoknows" << testsensors[100].timestamp;
-}*/
+}
 

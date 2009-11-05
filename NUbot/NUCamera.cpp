@@ -1,9 +1,9 @@
-/*! @file JMotion.cpp
-    @brief Implementation of motion class
+/*! @file Actuators.cpp
+    @brief Partial implementation of base actuator class
 
     @author Jason Kulk
  
- Copyright (c) 2009 Jason Kulk
+  Copyright (c) 2009 Jason Kulk
  
  This file is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -19,28 +19,13 @@
  along with NUbot.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <iostream>
-using namespace std;
-
-#include "../NUbot/NUbot.h"
-#include "JMotion.h"
-
-JMotion* motion = NULL;
+#include "NUCamera.h"
 
 
-JMotion::JMotion()
+NUCamera::~NUCamera()
 {
-    cout << "JMotion::JMotion" << endl;
-    string name;
-    if (nubot != NULL)      // Note. the pointer nubot will be NULL until the NUbot constructor has RETURNED!
-    {
-        nubot->getName(name);
-        cout << "JMotion::JMotion nubot->getName: " << name << endl;
-    }
-    else 
-    {
-        cout << "JMotion::JMotion nubot" << nubot << endl;
-    }
-
 }
+
+
+
 

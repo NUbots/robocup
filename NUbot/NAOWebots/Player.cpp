@@ -92,17 +92,17 @@ Player::Player(int playerID) {
   // the real Nao does not have a GPS, this is for testing only
   // therefore the GPS info will be blurred during Robotstadium contest matches
   gps = getGPS("gps");
-  //gps->enable(SIMULATION_STEP);  // uncomment only if needed !
+  gps->enable(SIMULATION_STEP);  // uncomment only if needed !
 
   // initialize ultrasound sensors
   topLeftUltrasound = getDistanceSensor("US/TopLeft");
   topRightUltrasound = getDistanceSensor("US/TopRight");
   bottomLeftUltrasound = getDistanceSensor("US/BottomLeft");
   bottomRightUltrasound = getDistanceSensor("US/BottomRight");
-  //topLeftUltrasound->enable(SIMULATION_STEP);  // uncomment only if needed !
-  //topRightUltrasound->enable(SIMULATION_STEP);  // uncomment only if needed !
-  //bottomLeftUltrasound->enable(SIMULATION_STEP);  // uncomment only if needed !
-  //bottomRightUltrasound->enable(SIMULATION_STEP);  // uncomment only if needed !
+  topLeftUltrasound->enable(SIMULATION_STEP);  // uncomment only if needed !
+  topRightUltrasound->enable(SIMULATION_STEP);  // uncomment only if needed !
+  bottomLeftUltrasound->enable(SIMULATION_STEP);  // uncomment only if needed !
+  bottomRightUltrasound->enable(SIMULATION_STEP);  // uncomment only if needed !
 
   // load motion
   standUpFromFrontMotion = new Motion("../motions/StandUpFromFront.motion");

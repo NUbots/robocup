@@ -47,10 +47,21 @@ class Sensors
 {
 public:
     Sensors();
-    ~Sensors();
+    virtual ~Sensors();
     
+    virtual void update();
+    
+    virtual void getData();     // actually copy the data
+    
+protected:
 private:
     
+public:
+    vector<sensor_type*> devices;
+    sensor_type* Sensor1;
+    sensor_type* Sensor2;
+protected:
+private:
 };
 
 #endif

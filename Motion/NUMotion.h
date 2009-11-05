@@ -1,5 +1,5 @@
-/*! @file NAOWebots.h
-    @brief Declaration of NAO in Webots class.
+/*! @file NUMotion.h
+    @brief Declaration of motion class
 
     @author Jason Kulk
  
@@ -19,35 +19,22 @@
     along with NUbot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef NAOWEBOTS_H
-#define NAOWEBOTS_H
+#ifndef NUMOTION_H
+#define NUMOTION_H
 
-#include <string>
-
-using namespace std;
-
-#include "../NUbot.h"
-
-#include "../../Motion/NUMotion.h"
-
-class NAOWebots : public NUbot
+class NUMotion
 {
-// Functions:
 public:
-    NAOWebots(int number);
-    ~NAOWebots();
-    
-    void test();
-    
+    NUMotion();
+    ~NUMotion();
 protected:
 private:
-    void setNameFromNumber();
-    
-// Members:
 public:
 protected:
 private:
-    
 };
+
+extern NUMotion* motion;
+
 
 #endif

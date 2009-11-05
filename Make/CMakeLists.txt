@@ -77,7 +77,8 @@ SET( CMAKE_COLOR_MAKEFILE TRUE )
 # usefull to your project
 
 FIND_PACKAGE( PTHREAD REQUIRED )
-FIND_PACKAGE( BOOST REQUIRED )
+FIND_PACKAGE( BOOST REQUIRED )
+
 ############################ CONFIG.H GENERATION
 CONFIGURE_FILE(
 	"${CMAKE_CURRENT_SOURCE_DIR}/config.in"
@@ -154,5 +155,38 @@ ELSE (WIN32)
 ENDIF (WIN32)
 
 
-
+############################ OPTIONS
+OPTION(
+        USE_VISION
+        "Set to ON to run vision, set to OFF to run blind"
+        ON
+)
+
+OPTION(
+        USE_LOCALISATION
+        "Set to ON to run localisation, set to OFF be be lost"
+        ON
+)
+
+OPTION(
+        USE_BEHAVIOUR
+        "Set to ON to run behaviour, set to OFF to have a lobotomy"
+        ON
+)
+
+OPTION(
+        USE_MOTION
+        "Set to ON to run motion, set to OFF to be paralysed"
+        ON
+)
+
+OPTION(
+        USE_NETWORK
+        "Set to ON to run network, set to OFF to be deaf"
+        ON
+)
+
+
+
+
 

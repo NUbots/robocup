@@ -1,5 +1,5 @@
-/*! @file JMotion.h
-    @brief Declaration of motion class
+/*! @file NUCamera.h
+    @brief Declaration of a base camera class
 
     @author Jason Kulk
  
@@ -19,22 +19,14 @@
     along with NUbot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef JMOTION_H
-#define JMOTION_H
+#ifndef NUCAMERA_H
+#define NUCAMERA_H
 
-class JMotion
+class NUCamera
 {
 public:
-    JMotion();
-    ~JMotion();
-protected:
-private:
-public:
-protected:
-private:
+    virtual ~NUCamera();
 };
 
-extern JMotion* motion;
-
-
 #endif
+

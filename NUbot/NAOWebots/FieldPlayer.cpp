@@ -3,6 +3,8 @@
 #include <webots/utils/Motion.hpp>
 #include <webots/Servo.hpp>
 #include <cmath>
+#include <iostream>
+#include <vector>
 
 using namespace webots;
 
@@ -94,6 +96,15 @@ void FieldPlayer::run() {
   while (true) {
     runStep();
     getUpIfNecessary();
+    
+    /*const double* values;
+    values = gps->getValues();
+      cout << "GPS: ";
+      for (int i=0; i<3; i++)
+      {
+          cout << values[i] << " ";
+      }
+      cout << endl;*/
 
     while (getBallDirection() == NaoCam::UNKNOWN) {
       //cout << "searching the ball" << endl;

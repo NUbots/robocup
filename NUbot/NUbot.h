@@ -23,14 +23,15 @@
 #define NUBOT_H
 
 #include <string>
-#include <boost/shared_ptr.hpp>
+//#include <boost/shared_ptr.hpp>
 
 using namespace std;
 
 #include "../config.h"
+
+#include "NUCamera.h"
 #include "Sensors.h"
 #include "Actuators.h"
-#include "../Motion/JMotion.h"
 
 class NUbot
 {
@@ -48,9 +49,12 @@ private:
     
 // Members:
 public:
+    NUCamera* camera;
     Sensors* sensors;
     Actuators* actuators;
 protected:
+    string m_name;
+    int m_number;
 private:
     
 };

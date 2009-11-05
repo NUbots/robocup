@@ -13,10 +13,10 @@
 #include <iostream>
 #include <cstring>
 #include <cstdlib>
-#include <boost/shared_ptr.hpp>
+//#include <boost/shared_ptr.hpp>
 
 #include "NAOWebots.h"
-#include "../../Motion/JMotion.h"
+#include "../../Motion/NUMotion.h"
 
 using namespace std;
 
@@ -36,18 +36,34 @@ int main(int argc, const char *argv[]) {
         return 0;
     }
 
-    int playerID = port % 10;
+    int playerID = (port % 10) + 1;
     Player *player = NULL;
     
-    cout << "Test print. Where does this go? It goes to the webots terminal!" << endl;
-    nubot = new NAOWebots();
+    nubot = new NAOWebots(playerID);
     //nubot = boost::shared_ptr<NUbot>(new NAOWebots());
     cout << "main: nubot: " << nubot << endl;
-    motion = new JMotion();
+    
+#ifdef USE_VISION
+    vision = new Vision();
+#endif
+#ifdef USE_LOCALISATION
+    localisation = new Localisation();
+#endif
+#ifdef USE_BEHAVIOUR
+    behaviour = new Behaviour();
+#endif
+#ifdef USE_MOTION
+    motion = new NUMotion();
+#endif
+#ifdef USE_NETWORK
+    network = new Network();
+#endif
     
     string name;
+    int number;
     nubot->getName(name);
-    cout << "main: Name: " << name << endl;
+    nubot->getNumber(number);
+    cout << "main: Name: " << name << " Num: " << number << endl;
     
     nubot->test();
 

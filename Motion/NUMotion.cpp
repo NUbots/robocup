@@ -1,5 +1,5 @@
-/*! @file NUbot.cpp
-    @brief Partial implementation of base NUbot (Robot) class
+/*! @file NUMotion.cpp
+    @brief Implementation of motion class
 
     @author Jason Kulk
  
@@ -19,32 +19,27 @@
  along with NUbot.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "NUbot.h"
+#include <iostream>
+using namespace std;
 
-NUbot* nubot = NULL;
+#include "../NUbot/NUbot.h"
+#include "NUMotion.h"
 
-NUbot::NUbot()
+NUMotion* motion = NULL;
+
+
+NUMotion::NUMotion()
 {
-    cout << "NUbot::NUbot" << endl;
-    cout << "NUbot::NUbot. this: " << this << endl;
-}
-
-NUbot::~NUbot()
-{
-}
-
-void NUbot::getName(string& name)
-{
-    name = m_name;
-}
-
-void NUbot::getNumber(int& number)
-{
-    number = m_number;
-}
-
-void NUbot::test()
-{
-    cout << "NUbot::test()" << endl;
+    cout << "NUMotion::NUMotion" << endl;
+    string name;
+    if (nubot != NULL)      // Note. the pointer nubot will be NULL until the NUbot constructor has RETURNED!
+    {
+        nubot->getName(name);
+        cout << "NUMotion::NUMotion nubot->getName: " << name << endl;
+    }
+    else 
+    {
+        cout << "NUMotion::NUMotion nubot" << nubot << endl;
+    }
 }
 

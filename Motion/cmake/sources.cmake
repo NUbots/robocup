@@ -17,7 +17,7 @@
 
 
 ########## List your source files here! ############################################
-SET (YOUR_SRCS  JMotion.cpp JMotion.h
+SET (YOUR_SRCS  NUMotion.cpp NUMotion.h
 )
 ####################################################################################
 
