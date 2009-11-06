@@ -22,7 +22,7 @@
 #include <iostream>
 using namespace std;
 
-#include "../NUbot/NUbot.h"
+#include "../NUPlatform/NUPlatform.h"
 #include "NUMotion.h"
 
 NUMotion* motion = NULL;
@@ -32,14 +32,14 @@ NUMotion::NUMotion()
 {
     cout << "NUMotion::NUMotion" << endl;
     string name;
-    if (nubot != NULL)      // Note. the pointer nubot will be NULL until the NUbot constructor has RETURNED!
+    if (nuplatform != NULL)      // Note. the pointer nubot will be NULL until the NUbot constructor has RETURNED!
     {
-        nubot->getName(name);
-        cout << "NUMotion::NUMotion nubot->getName: " << name << endl;
+        nuplatform->getName(name);
+        cout << "NUMotion::NUMotion nuplatform->getName: " << name << endl;
     }
     else 
     {
-        cout << "NUMotion::NUMotion nubot" << nubot << endl;
+        cout << "NUMotion::NUMotion nuplatform" << nuplatform << endl;
     }
 }
 

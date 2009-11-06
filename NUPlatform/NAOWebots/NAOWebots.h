@@ -1,5 +1,5 @@
-/*! @file NUbot.h
-    @brief Declaration of a base nubot class.
+/*! @file NAOWebots.h
+    @brief Declaration of NAO in Webots class.
 
     @author Jason Kulk
  
@@ -19,48 +19,35 @@
     along with NUbot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef NUBOT_H
-#define NUBOT_H
+#ifndef NAOWEBOTS_H
+#define NAOWEBOTS_H
 
 #include <string>
-//#include <boost/shared_ptr.hpp>
 
 using namespace std;
 
-#include "../config.h"
+#include "../NUPlatform.h"
 
-#include "NUCamera.h"
-#include "Sensors.h"
-#include "Actuators.h"
+#include "../../Motion/NUMotion.h"
 
-class NUbot
+class NAOWebots : public NUPlatform
 {
 // Functions:
 public:
-    NUbot();
-    virtual ~NUbot();
+    NAOWebots(int argc, const char *argv[]);
+    ~NAOWebots();
     
-    virtual void getName(string& name);
-    virtual void getNumber(int& number);
+    void test();
     
-    virtual void test();
 protected:
 private:
+    void setNameFromNumber();
     
 // Members:
 public:
-    NUCamera* camera;
-    Sensors* sensors;
-    Actuators* actuators;
 protected:
-    string m_name;
-    int m_number;
 private:
     
 };
-
-extern NUbot* nubot;
-//static NUbot* nubot = NULL;
-//static boost::shared_ptr<NUbot> nubot;
 
 #endif

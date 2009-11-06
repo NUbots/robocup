@@ -1,5 +1,5 @@
-/*! @file NUbot.cpp
-    @brief Partial implementation of base NUbot (Robot) class
+/*! @file NUPlatform.cpp
+    @brief Partial implementation of base NUPlatform (Robot) class
 
     @author Jason Kulk
  
@@ -19,32 +19,32 @@
  along with NUbot.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "NUbot.h"
+#include "NUPlatform.h"
 
-NUbot* nubot = NULL;
+NUPlatform* nuplatform = NULL;
 
-NUbot::NUbot()
+NUPlatform::NUPlatform()
 {
-    cout << "NUbot::NUbot" << endl;
-    cout << "NUbot::NUbot. this: " << this << endl;
+    cout << "NUPlatform::NUPlatform" << endl;
+    cout << "NUPlatform::NUPlatform. this: " << this << endl;
 }
 
-NUbot::~NUbot()
+NUPlatform::~NUPlatform()
 {
 }
 
-void NUbot::getName(string& name)
+void NUPlatform::getName(string& name)
 {
     name = m_name;
 }
 
-void NUbot::getNumber(int& number)
+void NUPlatform::getNumber(int& number)
 {
     number = m_number;
 }
 
-void NUbot::test()
+void NUPlatform::test()
 {
-    cout << "NUbot::test()" << endl;
+    cout << "NUPlatform::test()" << endl;
 }
 

@@ -51,7 +51,7 @@ public:
     
     virtual void update();
     
-    virtual void getData();     // actually copy the data
+    //virtual void getData();     // actually copy the data
     
 protected:
 private:

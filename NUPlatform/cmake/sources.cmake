@@ -17,7 +17,7 @@
 
 
 ########## List your source files here! ############################################
-SET (YOUR_SRCS  NUbot.cpp NUbot.h
+SET (YOUR_SRCS  NUPlatform.cpp NUPlatform.h
                 Actuators.cpp Actuators.h
 		NUCamera.cpp NUCamera.h
                 Sensors.cpp Sensors.h

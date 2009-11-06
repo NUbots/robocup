@@ -20,14 +20,40 @@
  */
 
 #include "NAOWebots.h"
-#include "../Sensors.h"
-#include "../Actuators.h"
+#include "NUPlatform/Sensors.h"
+#include "NUPlatform/Actuators.h"
 
-NAOWebots::NAOWebots(int number)
+/*! @brief Constructor for NAO in Webots robotic platform
+ 
+    Webots passes the controller a command line argument specifying the URBI port.
+    This port number is then used to determine which robot the controller is running on.
+ 
+    @param argc the number of command line arguements
+    @param argv[] the command line arguements
+ */
+NAOWebots::NAOWebots(int argc, const char *argv[])
 {
+    // find URBI port number (e.g. -p 54001) in controllerArgs
+    int port = -1;
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-p") == 0 && i + 1 < argc) {
+            port = atoi(argv[i + 1]);
+            break;
+        }
+    }
+    
+    if (port == -1) {
+        cout << "Error: could not find port number in controllerArgs" << endl;
+    }
+    
+    for (int i=1; i<argc; i++)
+    {
+        cout << string(argv[i]) << endl;
+    }
+    
+    int m_number = (port % 10) + 1;
     cout << "NAOWebots::NAOWebots" << endl;
     cout << "NAOWebots::NAOWebots. this: " << this << endl;
-    m_number = number;
     setNameFromNumber();
     sensors = new Sensors();
     actuators = new Actuators();

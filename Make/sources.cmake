@@ -12,7 +12,8 @@
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #    GNU General Public License for more details.
 
-SET(NUBOT_DIRS  NUbot
+# list the project's subdirectories here:
+SET(NUBOT_DIRS  NUPlatform
 		Behaviour
                 Localisation
                 Motion
@@ -20,7 +21,12 @@ SET(NUBOT_DIRS  NUbot
                 Vision
 )
 
+# list the top-level files here
+LIST(APPEND NUBOT_SRCS ../NUbot.cpp ../NUbot.h)
+
 # I will add the cmake/sources.cmake to the specified directories in NUBOT_DIRS
+# NOT: I also put each directory on the search path INCLUDE_DIRECTORIES(../${loop_var})
+INCLUDE_DIRECTORIES(../)
 FOREACH (loop_var ${NUBOT_DIRS})
     INCLUDE(../${loop_var}/cmake/sources.cmake)
 ENDFOREACH (loop_var ${NUBOT_DIRS})
