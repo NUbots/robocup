@@ -1,4 +1,4 @@
-/*! @file Sensors.cpp
+/*! @file NUSensors.cpp
     @brief Partial implementation of base sensor class
 
     @author Jason Kulk
@@ -19,15 +19,15 @@
  along with NUbot.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Sensors.h"
+#include "NUSensors.h"
 #include <iostream>
 using namespace std;
 
 /*! @brief Default constructor
  */
-Sensors::Sensors()
+NUSensors::NUSensors()
 {
-    cout << "Sensors::Sensors" << endl;
+    cout << "NUSensors::NUSensors" << endl;
     devices.reserve(2);
     sensor_type* blank = new sensor_type;
     blank->timestamp = 13;
@@ -45,7 +45,7 @@ Sensors::Sensors()
     // Option 2. vector<sensor_type*> devices
     // Pros:    nubot->sensors->devices[0]->timestamp AND nubot->sensors->JointPositions->timestamp;
     
-    cout << "Sensors::Sensors: ";
+    cout << "NUSensors::NUSensors: ";
     for (int i=0; i<devices.size(); i++)
     {
         cout << devices[i]->timestamp << ", ";
@@ -55,7 +55,7 @@ Sensors::Sensors()
     devices[0]->timestamp = 666;
     Sensor2->timestamp = 555;
     
-    cout << "Sensors::Sensors: ";
+    cout << "NUSensors::NUSensors: ";
     for (int i=0; i<devices.size(); i++)
     {
         cout << devices[i]->timestamp << ", ";
@@ -66,13 +66,13 @@ Sensors::Sensors()
 
 /*! @brief Default destructor
  */
-Sensors::~Sensors()
+NUSensors::~NUSensors()
 {
 }
 
 /*! @brief Updates the sensor data
  */
-void Sensors::update()
+void NUSensors::update()
 {
     
 }

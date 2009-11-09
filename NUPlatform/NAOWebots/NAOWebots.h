@@ -26,9 +26,7 @@
 
 using namespace std;
 
-#include "../NUPlatform.h"
-
-#include "../../Motion/NUMotion.h"
+#include "NUPlatform/NUPlatform.h"
 
 class NAOWebots : public NUPlatform
 {

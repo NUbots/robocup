@@ -43,8 +43,3 @@ void NUPlatform::getNumber(int& number)
     number = m_number;
 }
 
-void NUPlatform::test()
-{
-    cout << "NUPlatform::test()" << endl;
-}
-

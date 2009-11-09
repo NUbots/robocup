@@ -22,19 +22,40 @@
 #ifndef NUMOTION_H
 #define NUMOTION_H
 
+class Action
+{
+public:
+    Action() {};
+    ~Action() {};
+};
+
+class ActuatorCommands
+{
+public:
+    ActuatorCommands() {};
+    ~ActuatorCommands() {};
+};
+
+class BodyData
+{
+public:
+    BodyData() {};
+    ~BodyData() {};
+};
+
 class NUMotion
 {
 public:
     NUMotion();
     ~NUMotion();
+    
+    ActuatorCommands* process(BodyData* data);
+    ActuatorCommands* process(BodyData* data, Action* action);
 protected:
 private:
 public:
 protected:
 private:
 };
-
-extern NUMotion* motion;
-
 
 #endif

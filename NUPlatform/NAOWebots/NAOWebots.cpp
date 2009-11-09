@@ -20,8 +20,6 @@
  */
 
 #include "NAOWebots.h"
-#include "NUPlatform/Sensors.h"
-#include "NUPlatform/Actuators.h"
 
 /*! @brief Constructor for NAO in Webots robotic platform
  
@@ -46,26 +44,16 @@ NAOWebots::NAOWebots(int argc, const char *argv[])
         cout << "Error: could not find port number in controllerArgs" << endl;
     }
     
-    for (int i=1; i<argc; i++)
-    {
-        cout << string(argv[i]) << endl;
-    }
-    
     int m_number = (port % 10) + 1;
     cout << "NAOWebots::NAOWebots" << endl;
     cout << "NAOWebots::NAOWebots. this: " << this << endl;
     setNameFromNumber();
-    sensors = new Sensors();
-    actuators = new Actuators();
+    //sensors = new Sensors();
+    //actuators = new Actuators();
 }
 
 NAOWebots::~NAOWebots()
 {
-}
-
-void NAOWebots::test()
-{
-    cout << "NAOWebots::test() motion: " << motion << endl;
 }
 
 

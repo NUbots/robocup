@@ -1,4 +1,4 @@
-/*! @file Sensors.h
+/*! @file NUSensors.h
     @brief Declaration of a base sensor class to store sensor data in a platform independent way
 
     @author Jason Kulk
@@ -19,8 +19,8 @@
     along with NUbot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef SENSORS_H
-#define SENSORS_H
+#ifndef NUSENSORS_H
+#define NUSENSORS_H
 
 #include <vector>
 #include <pthread.h>
@@ -43,11 +43,11 @@ struct sensor_type
 
 /*! @brief Base sensor storage class
  */
-class Sensors
+class NUSensors
 {
 public:
-    Sensors();
-    virtual ~Sensors();
+    NUSensors();
+    virtual ~NUSensors();
     
     virtual void update();
     

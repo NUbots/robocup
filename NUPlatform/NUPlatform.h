@@ -23,15 +23,14 @@
 #define NUPLATFORM_H
 
 #include <string>
-//#include <boost/shared_ptr.hpp>
 
 using namespace std;
 
 #include "config.h"
 
 #include "NUCamera.h"
-#include "Sensors.h"
-#include "Actuators.h"
+#include "NUSensors.h"
+#include "NUActuators.h"
 
 class NUPlatform
 {
@@ -43,24 +42,19 @@ public:
     virtual void getName(string& name);
     virtual void getNumber(int& number);
     
-    virtual void test();
 protected:
 private:
     
 // Members:
 public:
     NUCamera* camera;
-    Sensors* sensors;
-    Actuators* actuators;
+    NUSensors* sensors;
+    NUActuators* actuators;
 protected:
     string m_name;
     int m_number;
 private:
     
 };
-
-extern NUPlatform* nuplatform;
-//static NUbot* nubot = NULL;
-//static boost::shared_ptr<NUbot> nubot;
 
 #endif

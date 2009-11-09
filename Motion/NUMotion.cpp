@@ -22,24 +22,35 @@
 #include <iostream>
 using namespace std;
 
-#include "../NUPlatform/NUPlatform.h"
+#include "NUPlatform/NUPlatform.h"
 #include "NUMotion.h"
 
-NUMotion* motion = NULL;
-
-
+/*! @brief Constructor for motion module
+ */
 NUMotion::NUMotion()
 {
     cout << "NUMotion::NUMotion" << endl;
-    string name;
-    if (nuplatform != NULL)      // Note. the pointer nubot will be NULL until the NUbot constructor has RETURNED!
-    {
-        nuplatform->getName(name);
-        cout << "NUMotion::NUMotion nuplatform->getName: " << name << endl;
-    }
-    else 
-    {
-        cout << "NUMotion::NUMotion nuplatform" << nuplatform << endl;
-    }
+}
+
+/*! @brief Destructor for motion module
+ */
+NUMotion::~NUMotion()
+{
+}
+
+/*! @brief Process new body sensor data, and action commands
+ */
+ActuatorCommands* NUMotion::process(BodyData* data)
+{
+    ActuatorCommands* temp = new ActuatorCommands();
+    return temp;
+}
+
+/*! @brief Process new body sensor data, and action commands
+ */
+ActuatorCommands* NUMotion::process(BodyData* data, Action* action)
+{
+    ActuatorCommands* temp = new ActuatorCommands();
+    return temp;
 }
 

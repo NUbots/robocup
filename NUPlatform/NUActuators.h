@@ -1,4 +1,4 @@
-/*! @file Actuators.h
+/*! @file NUActuators.h
     @brief Declaration of a base actuator class for robot manipulation
 
     @author Jason Kulk
@@ -19,8 +19,8 @@
     along with NUbot.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef ACTUATORS_H
-#define ACTUATORS_H
+#ifndef NUACTUATORS_H
+#define NUACTUATORS_H
 
 #include <vector>
 #include <string>
@@ -43,11 +43,11 @@ struct actuator_type
     vector<float> targetStiffnesses;    //!< stiffness for each time
 };
 
-class Actuators
+class NUActuators
 {
 public:
-    Actuators();
-    ~Actuators();
+    NUActuators();
+    ~NUActuators();
 };
 
 #endif

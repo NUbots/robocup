@@ -19,13 +19,13 @@
  along with NUbot.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Actuators.h"
+#include "NUActuators.h"
 
-Actuators::Actuators()
+NUActuators::NUActuators()
 {
 }
 
-Actuators::~Actuators()
+NUActuators::~NUActuators()
 {
 }
 
