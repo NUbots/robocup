@@ -8,6 +8,8 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#define debug cout              // TODO: Do something smarter depending on where the debug messages should go
+
 // define the target robotic platform
 #define TARGET_IS_$ENV{TARGET_ROBOT}            // Will be TARGET_IS_NAO, TARGET_IS_NAOWEBOTS, TARGET_IS_CYCLOID, etc
 
