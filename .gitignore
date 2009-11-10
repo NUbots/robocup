@@ -6,6 +6,7 @@
 /Build/Cycloid/*
 # We don't want to include Xcode project files
 /Build/jwalk2.build
+/Build/robocup.build
 *.xcodeproj
 
 # We don't oxygen files in the repp
