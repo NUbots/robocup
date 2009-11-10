@@ -46,6 +46,8 @@
     #include "Network/Network.h"
 #endif
 
+#include <pthread.h>
+
 /*! @brief The top-level file
  */
 class NUbot
@@ -55,24 +57,41 @@ public:
     NUbot(int argc, const char *argv[]);
     ~NUbot();
     void run();
-protected:
-    NUPlatform* platform;           //!< interface to robot platform
+    
+    int signalMotion();
+    int waitForNewMotionData();
+    
+    int signalVision();
+    int waitForNewVisionData();
+private:
+    void createThreads();
+    
+public:
+    
+private:
+    NUPlatform* platform;               //!< interface to robot platform
     #ifdef USE_VISION
-        Vision* vision;             //!< vision module
+        Vision* vision;                 //!< vision module
     #endif
     #ifdef USE_LOCALISATION
-        Localisation* localisation; //!< localisation module
+        Localisation* localisation;     //!< localisation module
     #endif
     #ifdef USE_BEHAVIOUR
-        Behaviour* behaviour;       //!< behaviour module
+        Behaviour* behaviour;           //!< behaviour module
     #endif
     #ifdef USE_MOTION
-        NUMotion* motion;           //!< motion module
+        NUMotion* motion;               //!< motion module
     #endif
     #ifdef USE_NETWORK
-        Network* network;           //!< network module
+        Network* network;               //!< network module
     #endif
-private:
+    
+    pthread_mutex_t mutexMotionData;
+    pthread_cond_t condMotionData;      
+    pthread_t threadMotion;             //!< thread containing the direct sensory links to motion (cerebellum)
+    pthread_mutex_t mutexVisionData;
+    pthread_cond_t condVisionData;    
+    pthread_t threadVision;             //!< thread containing vision and higher-level though processes (cerebrum)
 };
 
 #endif
