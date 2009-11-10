@@ -52,6 +52,9 @@
     #define TARGET_OS_IS_LINUX
 #endif
 
+// compile-time options for nubot
+#define DEBUG_NUBOT_VERBOSITY ${DEBUG_NUBOT_VERBOSITY}
+
 // define variable to selectivly run vision
 #define USE_VISION_${USE_VISION}
 #ifdef USE_VISION_ON
