@@ -8,24 +8,51 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#define TARGET_IS_$ENV{TARGET_ROBOT}
-#define OS_${CMAKE_SYSTEM_NAME}
-#ifdef OS_Windows
-    #define TARGET_IS_WINDOWS
+// define the target robotic platform
+#define TARGET_IS_$ENV{TARGET_ROBOT}            // Will be TARGET_IS_NAO, TARGET_IS_NAOWEBOTS, TARGET_IS_CYCLOID, etc
+
+// define the os the code is being compiled on
+#define MY_OS_${CMAKE_SYSTEM_NAME}              // Will be MY_OS_Windows, MY_OS_Darwin, MY_OS_Linux
+
+// define the right MY_OS_IS_XXXXXXXX
+#ifdef MY_OS_Windows
+    #define MY_OS_IS_WINDOWS
 #else
-    #undef TARGET_IS_WINDOWS
+    #undef MY_OS_IS_WINDOWS
 #endif
-#ifdef OS_Darwin
-    #define TARGET_IS_DARWIN
+#ifdef MY_OS_Darwin
+    #define MY_OS_IS_DARWIN
 #else
-    #undef TARGET_IS_DARWIN
+    #undef MY_OS_IS_DARWIN
 #endif
-#ifdef OS_Linux
-    #define TARGET_IS_LINUX
+#ifdef MY_OS_Linux
+    #define MY_OS_IS_LINUX
 #else
-    #undef TARGET_IS_LINUX
+    #undef MY_OS_IS_LINUX
 #endif
 
+// now define the os of the target robotic platform
+#ifdef TARGET_IS_NAOWEBOTS                      // If we are targeting webots, then the target os is my os
+    #ifdef MY_OS_IS_WINDOWS
+        #define TARGET_OS_IS_WINDOWS
+    #else
+        #undef TARGET_OS_IS_WINDOWS
+    #endif
+    #ifdef MY_OS_IS_DARWIN
+        #define TARGET_OS_IS_DARWIN
+    #else
+        #undef TARGET_OS_IS_DARWIN
+    #endif
+    #ifdef MY_OS_IS_LINUX
+        #define TARGET_OS_IS_LINUX
+    #else
+        #undef TARGET_OS_IS_LINUX
+    #endif
+#else                                           // If we are targeting an actual robot, then the target os is always linux
+    #define TARGET_OS_IS_LINUX
+#endif
+
+// define variable to selectivly run vision
 #define USE_VISION_${USE_VISION}
 #ifdef USE_VISION_ON
     #define USE_VISION
@@ -33,8 +60,19 @@
     #undef USE_VISION
 #endif
 
+// vision compile-time options
 #define THREAD_VISION_PRIORITY ${THREAD_VISION_PRIORITY}
+#define DEBUG_VISION_VERBOSITY ${DEBUG_VISION_VERBOSITY}
+#ifdef TARGET_OS_IS_LINUX                   // at the moment we 'can't monitor times properly outside of linux
+    #define THREAD_VISION_MONITOR_TIME_${THREAD_VISION_MONITOR_TIME}
+    #ifdef THREAD_VISION_MONITOR_TIME_ON
+        #define THREAD_VISION_MONITOR_TIME
+    #else
+        #undef THREAD_VISION_MONITOR_TIME
+    #endif
+#endif
 
+// define variable to selectivly run localisation
 #define USE_LOCALISATION_${USE_LOCALISATION}
 #ifdef USE_LOCALISATION_ON
     #define USE_LOCALISATION
@@ -42,6 +80,10 @@
     #undef USE_LOCALISATION
 #endif
 
+// localisation compile-time options
+#define DEBUG_LOCALISATION_VERBOSITY ${DEBUG_LOCALISATION_VERBOSITY}
+
+// define variable to selectivly run behaviour
 #define USE_BEHAVIOUR_${USE_BEHAVIOUR}
 #ifdef USE_BEHAVIOUR_ON
     #define USE_BEHAVIOUR
@@ -49,6 +91,10 @@
     #undef USE_BEHAVIOUR
 #endif
 
+// behaviour compile-time options
+#define DEBUG_BEHAVIOUR_VERBOSITY ${DEBUG_BEHAVIOUR_VERBOSITY}
+
+// define variable to selectivly run motion
 #define USE_MOTION_${USE_MOTION}
 #ifdef USE_MOTION_ON
     #define USE_MOTION
@@ -56,22 +102,18 @@
     #undef USE_MOTION
 #endif
 
+// motion compile-time options
+#define DEBUG_MOTION_VERBOSITY ${DEBUG_MOTION_VERBOSITY}
 #define THREAD_MOTION_PRIORITY ${THREAD_MOTION_PRIORITY}
 #ifdef TARGET_IS_LINUX
-#define THREAD_MOTION_MONITOR_TIME_${THREAD_MOTION_MONITOR_TIME}
-#ifdef THREAD_MOTION_MONITOR_TIME_ON
-    #define THREAD_MOTION_MONITOR_TIME
-#else
-    #undef THREAD_MOTION_MONITOR_TIME
+    #define THREAD_MOTION_MONITOR_TIME_${THREAD_MOTION_MONITOR_TIME}
+    #ifdef THREAD_MOTION_MONITOR_TIME_ON
+        #define THREAD_MOTION_MONITOR_TIME
+    #else
+        #undef THREAD_MOTION_MONITOR_TIME
+    #endif
 #endif
 
-#define THREAD_VISION_MONITOR_TIME_${THREAD_VISION_MONITOR_TIME}
-#ifdef THREAD_VISION_MONITOR_TIME_ON
-    #define THREAD_VISION_MONITOR_TIME
-#else
-    #undef THREAD_VISION_MONITOR_TIME
-#endif
-#endif
 
 #define USE_NETWORK_${USE_NETWORK}
 #ifdef USE_NETWORK_ON

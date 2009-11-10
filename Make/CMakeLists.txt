@@ -156,11 +156,15 @@ ENDIF (WIN32)
 
 
 ############################ OPTIONS
+SET(DEBUG_NUBOT_VERBOSITY 5 CACHE STRING "Set the verbosity of debug information of the nubot (0 to 5)")
+
 OPTION(
         USE_VISION
         "Set to ON to run vision, set to OFF to run blind"
         ON
 )
+
+SET(DEBUG_VISION_VERBOSITY 5 CACHE STRING "Set the verbosity of debug information of the vision (0 to 5)")
 
 SET(THREAD_VISION_PRIORITY 0 CACHE STRING "Set the priority of the vision thread (0 to 100)")
 
@@ -176,11 +180,15 @@ OPTION(
         ON
 )
 
+SET(DEBUG_LOCALISATION_VERBOSITY 5 CACHE STRING "Set the verbosity of debug information of the localisation (0 to 5)")
+
 OPTION(
         USE_BEHAVIOUR
         "Set to ON to run behaviour, set to OFF to have a lobotomy"
         ON
 )
+
+SET(DEBUG_BEHAVIOUR_VERBOSITY 5 CACHE STRING "Set the verbosity of debug information of the behaviour (0 to 5)")
 
 OPTION(
         USE_MOTION
@@ -189,6 +197,8 @@ OPTION(
 )
 
 SET(THREAD_MOTION_PRIORITY 40 CACHE STRING "Set the priority of the motion thread (0 to 100)")
+
+SET(DEBUG_MOTION_VERBOSITY 5 CACHE STRING "Set the verbosity of debug information of the motion (0 to 5)")
 
 OPTION(
         THREAD_MOTION_MONITOR_TIME
@@ -201,6 +211,7 @@ OPTION(
         "Set to ON to run network, set to OFF to be deaf"
         ON
 )
+SET(DEBUG_NETWORK_VERBOSITY 5 CACHE STRING "Set the verbosity of debug information of the network (0 to 5)")
 
 
 
