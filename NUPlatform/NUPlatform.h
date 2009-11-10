@@ -30,7 +30,7 @@ using namespace std;
 
 #include "NUCamera.h"
 #include "NUSensors.h"
-#include "NUActuators.h"
+#include "NUActionators.h"
 
 class NUPlatform
 {
@@ -49,7 +49,7 @@ private:
 public:
     NUCamera* camera;
     NUSensors* sensors;
-    NUActuators* actuators;
+    NUActionators* actuators;
 protected:
     string m_name;
     int m_number;

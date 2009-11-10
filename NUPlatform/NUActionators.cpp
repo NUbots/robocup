@@ -1,4 +1,4 @@
-/*! @file Actuators.cpp
+/*! @file NUActionators.cpp
     @brief Partial implementation of base actuator class
 
     @author Jason Kulk
@@ -19,13 +19,13 @@
  along with NUbot.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "NUActuators.h"
+#include "NUActionators.h"
 
-NUActuators::NUActuators()
+NUActionators::NUActionators()
 {
 }
 
-NUActuators::~NUActuators()
+NUActionators::~NUActionators()
 {
 }
 

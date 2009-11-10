@@ -22,12 +22,7 @@
 #ifndef NUMOTION_H
 #define NUMOTION_H
 
-class Action
-{
-public:
-    Action() {};
-    ~Action() {};
-};
+#include "Behaviour/Action.h"
 
 class ActuatorCommands
 {

@@ -18,7 +18,7 @@
 
 ########## List your source files here! ############################################
 SET (YOUR_SRCS  NUPlatform.cpp NUPlatform.h
-                NUActuators.cpp NUActuators.h
+                NUActionators.cpp NUActionators.h
 		NUCamera.cpp NUCamera.h
                 NUSensors.cpp NUSensors.h
 )
