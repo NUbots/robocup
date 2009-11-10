@@ -35,11 +35,22 @@ using namespace std;
 #endif
 
 // It is difficult to make threads members of classes, so just keep them close by
-static void* runThreadMotion(void* arg);
-static void* runThreadVision(void* arg);
+static void* runThreadMotion(void* arg);            //!< the control loop for the motion
+static void* runThreadVision(void* arg);            //!< the control loop for the vision
 
+/*! @brief Constructor for the nubot
+    
+    The parameters are for command line arguements. Webots gives the binary arguements which tell us the 
+    robot's number. Consequently, these args are passed down to the webots platform.
+ 
+    @param argc the number of command line arguements
+    @param *argv[] the array of command line arguements
+ */
 NUbot::NUbot(int argc, const char *argv[])
 {
+#if DEBUG_NUBOT_VERBOSITY > 4
+    debug << "NUbot::NUbot(). Constructing NUPlatform." << endl;
+#endif
     // Construct the right Platform
     #ifdef TARGET_IS_NAOWEBOTS
         platform = new NAOWebots(argc, argv);
@@ -50,6 +61,10 @@ NUbot::NUbot(int argc, const char *argv[])
     #ifdef TARGET_IS_CYCLOID
         platform = new Cycloid();
     #endif
+
+#if DEBUG_NUBOT_VERBOSITY > 4
+    debug << "NUbot::NUbot(). Constructing modules." << endl;
+#endif
     
     // Construct each enabled module 
     #ifdef USE_VISION
@@ -69,6 +84,10 @@ NUbot::NUbot(int argc, const char *argv[])
     #endif
     
     createThreads();
+    
+#if DEBUG_NUBOT_VERBOSITY > 4
+    debug << "NUbot::NUbot(). Finished." << endl;
+#endif
 }
 
 /*! @brief Create nubot's threads
@@ -76,27 +95,36 @@ NUbot::NUbot(int argc, const char *argv[])
     There is a single real-time thread in which motion runs. A semaphore is set by the body driver which triggers
     the execution of this thread. The fresh sensors data is processed by motion, and commands are sent to the actionators.
  
+    The scheduling policy is SCHED_FIFO if the priority (THREAD_MOTION_PRIORITY) is non-zero, otherwise the default policy
+    is selected. I recommend that this thread have a non-zero priority.
+ 
     There is a single non-real-time thread in which vision, localisation and behaviour run. A semaphore is set by the camera
     driver which triggers the execution of this thread. The new image is processed, and computed actions are sent to motion
     and lcs.
+ 
+    The scheduling policy is SCHED_FIFO if the priority (THREAD_VISION_PRIORITY) is non-zero, otherwise the default policy
+    is selected. I recommend that this thread have a zero priority.
  */
 
 void NUbot::createThreads()
 {
+#if DEBUG_NUBOT_VERBOSITY > 4
+    debug << "NUbot::createThreads(). Constructing threads." << endl;
+#endif
     // create threadMotion and its trigger condMotionData
     int err;
     err = pthread_mutex_init(&mutexMotionData, NULL);
     if (err != 0)
-        cout << "NUbot::createThreads(). Failed to initialise mutexMotionData errno: " << errno << endl;
+        debug << "NUbot::createThreads(). Failed to initialise mutexMotionData errno: " << errno << endl;
     
     err = pthread_cond_init(&condMotionData, NULL);
     if (err != 0)
-        cout << "NUbot::createThreads(). Failed to initialise condMotionData errno: " << errno << endl;
+        debug << "NUbot::createThreads(). Failed to initialise condMotionData errno: " << errno << endl;
 
 #if THREAD_MOTION_PRIORITY > 0
     err = pthread_create(&threadMotion, NULL, runThreadMotion, (void*) this);         // The last parameter is the arguement to the thread
     if (err != 0)
-        cout << "NUbot::createThreads(). Failed to create threadMotion! The error code was: " << err << endl;
+        debug << "NUbot::createThreads(). Failed to create threadMotion! The error code was: " << err << endl;
     
     sched_param param;
     param.sched_priority = THREAD_MOTION_PRIORITY;
@@ -106,25 +134,27 @@ void NUbot::createThreads()
     int actualpolicy;
     sched_param actualparam;
     pthread_getschedparam(threadMotion, &actualpolicy, &actualparam);
-    cout << "NUbot::createThreads(). threadMotion Policy: " << actualpolicy << " Priority: " << actualparam.sched_priority << endl;
+    #if DEBUG_NUBOT_VERBOSITY > 4
+        debug << "NUbot::createThreads(). threadMotion Policy: " << actualpolicy << " Priority: " << actualparam.sched_priority << endl;
+    #endif
 #else   
-    cout << "NUbot::createThreads(). Warning. Creating threadMotion as non-realtime" << endl;
+    debug << "NUbot::createThreads(). Warning. Creating threadMotion as non-realtime" << endl;
     int err = pthread_create(&threadMotion, NULL, runThreadMotion, (void*) this);
     if (err != 0)
-        cout << "NUbot::createThreads(). Failed to create threadMotion! The error code was: " << err << endl;
+        debug << "NUbot::createThreads(). Failed to create threadMotion! The error code was: " << err << endl;
 #endif
 
     // create threadVision and its trigger condVisionData
     err = pthread_mutex_init(&mutexVisionData, NULL);
     if (err != 0)
-        cout << "NUbot::createThreads(). Failed to initialise mutexVisionData errno: " << errno << endl;
+        debug << "NUbot::createThreads(). Failed to initialise mutexVisionData errno: " << errno << endl;
     
     err = pthread_cond_init(&condVisionData, NULL);
     if (err != 0)
-        cout << "NUbot::createThreads(). Failed to initialise condVisionData errno: " << errno << endl;
+        debug << "NUbot::createThreads(). Failed to initialise condVisionData errno: " << errno << endl;
     
 #if THREAD_VISION_PRIORITY > 0
-    cout << "NUbot::createThreads(). Warning. Creating threadVision as realtime" << endl;
+    debug << "NUbot::createThreads(). Warning. Creating threadVision as realtime" << endl;
     err = pthread_create(&threadVision, NULL, runThreadVision, (void*) this);         // The last parameter is the arguement to the thread
     
     sched_param param;
@@ -135,16 +165,27 @@ void NUbot::createThreads()
     int actualpolicy;
     sched_param actualparam;
     pthread_getschedparam(threadVision, &actualpolicy, &actualparam);
-    cout << "NUbot::createThreads(). threadVision Policy: " << actualpolicy << " Priority: " << actualparam.sched_priority << endl;
+    #if DEBUG_NUBOT_VERBOSITY > 4
+        debug << "NUbot::createThreads(). threadMotion Policy: " << actualpolicy << " Priority: " << actualparam.sched_priority << endl;
+    #endif
 #else   
     err = pthread_create(&threadVision, NULL, runThreadVision, (void*) this);
 #endif
     if (err != 0)
-        cout << "NUbot::createThreads(). Failed to create threadVision! The error code was: " << err << endl;
+        debug << "NUbot::createThreads(). Failed to create threadVision! The error code was: " << err << endl;
+    
+#if DEBUG_NUBOT_VERBOSITY > 4
+    debug << "NUbot::createThreads(). Finished." << endl;
+#endif
 }
 
+/*! @brief Destructor for the nubot
+ */
 NUbot::~NUbot()
 {
+    #if DEBUG_NUBOT_VERBOSITY > 4
+        debug << "NUbot::~NUbot()." << endl;
+    #endif
     delete platform;
     #ifdef USE_VISION
         delete vision;
@@ -161,11 +202,22 @@ NUbot::~NUbot()
     #ifdef USE_NETWORK
         delete network;
     #endif
+    #if DEBUG_NUBOT_VERBOSITY > 4
+        debug << "NUbot::~NUbot(). Finished." << endl;
+    #endif
 }
 
-/*! @brief Brief description
+/*! @brief The nubot's main loop
     
- Detailed description
+    The nubot's main loop. This function will probably never return. TODO.
+ 
+    The idea is to simply have 
+    @verbatim
+        NUbot* nubot = new NUbot(arc, argv);
+        nubot->run();
+        delete nubot;
+    @endverbatim
+
  */
 void NUbot::run()
 {
@@ -173,7 +225,7 @@ void NUbot::run()
     int count = 0;
     while (true)
     {
-        cout << "NUbot::run()" << endl;
+        debug << "NUbot::run()" << endl;
         signalMotion();
         if (count%10 == 0)
             signalVision();
@@ -183,15 +235,26 @@ void NUbot::run()
     return;
 }
 
+/*! @brief Signal the motion thread to run
+ 
+    This should be called by the underlying platform when new motion data is avaliable.
+    It is implemented using a pthread_mutex_t and a pthread_cond_t.
+ 
+ @return returns the error return by the underlying pthread_cond_signal
+ */
 int NUbot::signalMotion()
 {
     int err = 0;
     pthread_mutex_lock(&mutexMotionData);
-    pthread_cond_signal(&condMotionData);
+    err = pthread_cond_signal(&condMotionData);
     pthread_mutex_unlock(&mutexMotionData);
     return err;
 }
 
+/*! @brief Blocks the calling thread until signalMotion() is called
+ 
+    @return returns the error return by the underlying pthread_cond_wait
+ */
 int NUbot::waitForNewMotionData()
 {
     int err = 0;
@@ -201,6 +264,17 @@ int NUbot::waitForNewMotionData()
     return err;
 }
 
+/*! @brief Signal the vision thread to run
+ 
+ This should be called by the underlying platform when new vision data is avaliable.
+ It is implemented using a pthread_mutex_t and a pthread_cond_t.
+ 
+ @todo If this is a member of nubot, for the low-levels to signal the threads they are
+ going to need a pointer to nubot. I would need to pass it a long way down. It might be
+ better to have this function outside the class...
+ 
+ @return returns the error return by the underlying pthread_cond_signal
+ */
 int NUbot::signalVision()
 {
     int err = 0;
@@ -210,6 +284,10 @@ int NUbot::signalVision()
     return err;
 }
 
+/*! @brief Blocks the calling thread until signalVision() is called
+ 
+ @return returns the error return by the underlying pthread_cond_wait
+ */
 int NUbot::waitForNewVisionData()
 {
     int err = 0;
@@ -219,9 +297,17 @@ int NUbot::waitForNewVisionData()
     return err;
 }
 
+/*! @brief The motion control loop
+    @relates NUbot
+ 
+    The thread is set up to run when signalled by signalMotion(). It will quickly grab the
+    new sensor data, compute a response, and then send the commands to the actionators.
+ 
+    @param arg a pointer to the nubot
+ */
 void* runThreadMotion(void* arg)
 {
-    cout << "NUbot::runThreadMotion: Starting." << endl;
+    debug << "NUbot::runThreadMotion: Starting." << endl;
     
     NUbot* nubot = (NUbot*) arg;
     
@@ -239,7 +325,7 @@ void* runThreadMotion(void* arg)
         clock_gettime(CLOCK_REALTIME, &pretime);
 #endif
         err = nubot->waitForNewMotionData();
-        cout << "NUbot::runThreadMotion. Running" << endl;
+        debug << "NUbot::runThreadMotion. Running" << endl;
 
 #ifdef THREAD_MOTION_MONITOR_TIME
         clock_gettime(CLOCK_REALTIME, &starttime);
@@ -247,7 +333,7 @@ void* runThreadMotion(void* arg)
         clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &prostarttime);
         waittime = (starttime.tv_nsec - pretime.tv_nsec)/1e6 + (starttime.tv_sec - pretime.tv_sec)*1e3;
         if (waittime > 25)
-            cout << "JWALKTHREAD: Waittime " << waittime << " ms."<< endl;
+            debug << "JWALKTHREAD: Waittime " << waittime << " ms."<< endl;
 #endif
         // -----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -261,18 +347,26 @@ void* runThreadMotion(void* arg)
         proruntime = (proendtime.tv_nsec - prostarttime.tv_nsec)/1e6 + (proendtime.tv_sec - prostarttime.tv_sec)*1e3;
         if (runtime > 8)
         {
-            cout << "JWALKTHREAD: Jason cycle time error: " << runtime << " ms. Time spent in this thread: " << relruntime << "ms, in this process: " << proruntime << endl;
+            debug << "JWALKTHREAD: Jason cycle time error: " << runtime << " ms. Time spent in this thread: " << relruntime << "ms, in this process: " << proruntime << endl;
         }
 #endif
     } 
     while (err == 0 | errno != EINTR);
-    cout << "NUbot::runThreadMotion. This thread was interrupted by a signal, it will now exit" << endl;
+    debug << "NUbot::runThreadMotion. This thread was interrupted by a signal, it will now exit" << endl;
     pthread_exit(NULL);
 }
 
+/*! @brief The vision control loop
+    @relates NUbot
+ 
+     The thread is set up to run when signalled by signalVision(). It will grab the
+     new image, compute a response, and then send the commands to motion and lcs.
+ 
+    @param arg a pointer to the nubot
+ */
 void* runThreadVision(void* arg)
 {
-    cout << "NUbot::runThreadVision: Starting." << endl;
+    debug << "NUbot::runThreadVision: Starting." << endl;
     
     NUbot* nubot = (NUbot*) arg;
     
@@ -290,7 +384,7 @@ void* runThreadVision(void* arg)
         clock_gettime(CLOCK_REALTIME, &pretime);
 #endif
         err = nubot->waitForNewVisionData();
-        cout << "NUbot::runVisionMotion. Running" << endl;
+        debug << "NUbot::runVisionMotion. Running" << endl;
         
 #ifdef THREAD_VISION_MONITOR_TIME
         clock_gettime(CLOCK_REALTIME, &starttime);
@@ -298,7 +392,7 @@ void* runThreadVision(void* arg)
         clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &prostarttime);
         waittime = (starttime.tv_nsec - pretime.tv_nsec)/1e6 + (starttime.tv_sec - pretime.tv_sec)*1e3;
         if (waittime > 25)
-            cout << "JWALKTHREAD: Waittime " << waittime << " ms."<< endl;
+            debug << "JWALKTHREAD: Waittime " << waittime << " ms."<< endl;
 #endif
         // -----------------------------------------------------------------------------------------------------------------------------------------------------------------
         
@@ -312,12 +406,12 @@ void* runThreadVision(void* arg)
         proruntime = (proendtime.tv_nsec - prostarttime.tv_nsec)/1e6 + (proendtime.tv_sec - prostarttime.tv_sec)*1e3;
         if (runtime > 8)
         {
-            cout << "JWALKTHREAD: Jason cycle time error: " << runtime << " ms. Time spent in this thread: " << relruntime << "ms, in this process: " << proruntime << endl;
+            debug << "JWALKTHREAD: Jason cycle time error: " << runtime << " ms. Time spent in this thread: " << relruntime << "ms, in this process: " << proruntime << endl;
         }
 #endif
     } 
     while (err == 0 | errno != EINTR);
-    cout << "NUbot::runThreadMotion. This thread was interrupted by a signal, it will now exit" << endl;
+    debug << "NUbot::runThreadMotion. This thread was interrupted by a signal, it will now exit" << endl;
     pthread_exit(NULL);
 }
 
