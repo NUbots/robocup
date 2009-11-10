@@ -9,6 +9,22 @@
 #define CONFIG_H
 
 #define TARGET_IS_$ENV{TARGET_ROBOT}
+#define OS_${CMAKE_SYSTEM_NAME}
+#ifdef OS_Windows
+    #define TARGET_IS_WINDOWS
+#else
+    #undef TARGET_IS_WINDOWS
+#endif
+#ifdef OS_Darwin
+    #define TARGET_IS_DARWIN
+#else
+    #undef TARGET_IS_DARWIN
+#endif
+#ifdef OS_Linux
+    #define TARGET_IS_LINUX
+#else
+    #undef TARGET_IS_LINUX
+#endif
 
 #define USE_VISION_${USE_VISION}
 #ifdef USE_VISION_ON
@@ -16,6 +32,8 @@
 #else
     #undef USE_VISION
 #endif
+
+#define THREAD_VISION_PRIORITY ${THREAD_VISION_PRIORITY}
 
 #define USE_LOCALISATION_${USE_LOCALISATION}
 #ifdef USE_LOCALISATION_ON
@@ -36,6 +54,23 @@
     #define USE_MOTION
 #else
     #undef USE_MOTION
+#endif
+
+#define THREAD_MOTION_PRIORITY ${THREAD_MOTION_PRIORITY}
+#ifdef TARGET_IS_LINUX
+#define THREAD_MOTION_MONITOR_TIME_${THREAD_MOTION_MONITOR_TIME}
+#ifdef THREAD_MOTION_MONITOR_TIME_ON
+    #define THREAD_MOTION_MONITOR_TIME
+#else
+    #undef THREAD_MOTION_MONITOR_TIME
+#endif
+
+#define THREAD_VISION_MONITOR_TIME_${THREAD_VISION_MONITOR_TIME}
+#ifdef THREAD_VISION_MONITOR_TIME_ON
+    #define THREAD_VISION_MONITOR_TIME
+#else
+    #undef THREAD_VISION_MONITOR_TIME
+#endif
 #endif
 
 #define USE_NETWORK_${USE_NETWORK}

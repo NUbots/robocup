@@ -162,6 +162,14 @@ OPTION(
         ON
 )
 
+SET(THREAD_VISION_PRIORITY 0 CACHE STRING "Set the priority of the vision thread (0 to 100)")
+
+OPTION(
+        THREAD_VISION_MONITOR_TIME
+        "Set to ON to monitor the computation time of the vision thread"
+        ON
+)
+
 OPTION(
         USE_LOCALISATION
         "Set to ON to run localisation, set to OFF be be lost"
@@ -177,6 +185,14 @@ OPTION(
 OPTION(
         USE_MOTION
         "Set to ON to run motion, set to OFF to be paralysed"
+        ON
+)
+
+SET(THREAD_MOTION_PRIORITY 40 CACHE STRING "Set the priority of the motion thread (0 to 100)")
+
+OPTION(
+        THREAD_MOTION_MONITOR_TIME
+        "Set to ON to monitor the computation time of the motion thread"
         ON
 )
 
