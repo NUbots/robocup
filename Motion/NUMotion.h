@@ -1,5 +1,24 @@
 /*! @file NUMotion.h
     @brief Declaration of motion class
+ 
+    This module should be able to do 3 things
+        - Walk (Speed, Position)
+        - Head (Look at Point, Nod, Pan, etc)
+        - Special (Kicks, Saves, Getups etc)
+ 
+    So, a MotionAction needs to have
+        - A Type (Walk, Head, Special)
+        - Data
+            - WALK: vector<speed>, vector<position>: x, y, theta
+            - HEAD: vector<speed>, vector<position>: angleYaw, anglePitch
+            - SPECIAL: 
+                - Kick: (distance, bearing) to ball, (distance, bearing) to target (if distance, bearing to ball not in range walk to closest point instead)
+                - Save: (distance, bearing) to ball, ?
+                - Getup: None
+ 
+    You either want to position or kick the ball right? Getting up is an autonomous thing. Saves
+ 
+    So Walk always gets a point to go to, and an action to do at that point.
 
     @author Jason Kulk
  
@@ -45,7 +64,7 @@ public:
     ~NUMotion();
     
     ActuatorCommands* process(BodyData* data);
-    ActuatorCommands* process(BodyData* data, Action* action);
+    void process(Action* actions);
 protected:
 private:
 public:
