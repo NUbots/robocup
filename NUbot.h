@@ -62,10 +62,10 @@ public:
     ~NUbot();
     void run();
     
-    int signalMotion();
-    int waitForNewMotionData();
+    static int signalMotion();
+    static int signalVision();
     
-    int signalVision();
+    int waitForNewMotionData();
     int waitForNewVisionData();
 private:
     void createThreads();
@@ -90,11 +90,7 @@ private:
         Network* network;               //!< network module
     #endif
     
-    pthread_mutex_t mutexMotionData;    //!< lock for new motion data signal
-    pthread_cond_t condMotionData;      //!< signal for new motion data
     pthread_t threadMotion;             //!< thread containing the direct sensory links to motion (cerebellum)
-    pthread_mutex_t mutexVisionData;    //!< lock for new vision data signal
-    pthread_cond_t condVisionData;      //!< signal for new vision data
     pthread_t threadVision;             //!< thread containing vision and higher-level though processes (cerebrum)
 };
 

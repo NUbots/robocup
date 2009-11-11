@@ -34,9 +34,13 @@ using namespace std;
     #include "NUPlatform/Cycloid/Cycloid.h"
 #endif
 
-// It is difficult to make threads members of classes, so just keep them close by
-static void* runThreadMotion(void* arg);            //!< the control loop for the motion
-static void* runThreadVision(void* arg);            //!< the control loop for the vision
+static pthread_mutex_t mutexMotionData;    //!< lock for new motion data signal @relates NUbot
+static pthread_cond_t condMotionData;      //!< signal for new motion data      @relates NUbot
+static pthread_mutex_t mutexVisionData;    //!< lock for new vision data signal @relates NUbot
+static pthread_cond_t condVisionData;      //!< signal for new vision data      @relates NUbot
+
+static void* runThreadMotion(void* arg);
+static void* runThreadVision(void* arg);
 
 /*! @brief Constructor for the nubot
     
@@ -186,6 +190,17 @@ NUbot::~NUbot()
     #if DEBUG_NUBOT_VERBOSITY > 4
         debug << "NUbot::~NUbot()." << endl;
     #endif
+    
+    // destroy threading
+    pthread_cancel(threadVision);
+    pthread_cancel(threadMotion);
+    
+    pthread_mutex_destroy(&mutexVisionData);
+    pthread_cond_destroy(&condVisionData);
+    pthread_mutex_destroy(&mutexMotionData);
+    pthread_cond_destroy(&condMotionData);
+    
+    // delete modules
     delete platform;
     #ifdef USE_VISION
         delete vision;
@@ -213,9 +228,9 @@ NUbot::~NUbot()
  
     The idea is to simply have 
     @verbatim
-        NUbot* nubot = new NUbot(arc, argv);
-        nubot->run();
-        delete nubot;
+    NUbot* nubot = new NUbot(arc, argv);
+    nubot->run();
+    delete nubot;
     @endverbatim
 
  */
@@ -240,7 +255,10 @@ void NUbot::run()
     This should be called by the underlying platform when new motion data is avaliable.
     It is implemented using a pthread_mutex_t and a pthread_cond_t.
  
- @return returns the error return by the underlying pthread_cond_signal
+    This function is static so that the underlying platform does not need a pointer to the nubot.
+    However, this means the pthread_mutex_t and pthread_cond_t are external to the NUbot class.
+ 
+    @return returns the error return by the underlying pthread_cond_signal
  */
 int NUbot::signalMotion()
 {
@@ -269,9 +287,8 @@ int NUbot::waitForNewMotionData()
  This should be called by the underlying platform when new vision data is avaliable.
  It is implemented using a pthread_mutex_t and a pthread_cond_t.
  
- @todo If this is a member of nubot, for the low-levels to signal the threads they are
- going to need a pointer to nubot. I would need to pass it a long way down. It might be
- better to have this function outside the class...
+ This function is static so that the underlying platform does not need a pointer to the nubot.
+ However, this means the pthread_mutex_t and pthread_cond_t are external to the NUbot class.
  
  @return returns the error return by the underlying pthread_cond_signal
  */
@@ -333,10 +350,12 @@ void* runThreadMotion(void* arg)
         clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &prostarttime);
         waittime = (starttime.tv_nsec - pretime.tv_nsec)/1e6 + (starttime.tv_sec - pretime.tv_sec)*1e3;
         if (waittime > 25)
-            debug << "JWALKTHREAD: Waittime " << waittime << " ms."<< endl;
+            debug << "NUbot::runThreadMotion. Waittime " << waittime << " ms."<< endl;
 #endif
         // -----------------------------------------------------------------------------------------------------------------------------------------------------------------
-
+        //     data = nubot->platform->sensors->getData()                // I should not deep copy the data here
+        //                cmds = nubot->motion->process(data)                       // it is up to motion to decide whether it should deep copy
+        //        nubot->platform->actionators->process(cmds)
         // -----------------------------------------------------------------------------------------------------------------------------------------------------------------
 #ifdef THREAD_MOTION_MONITOR_TIME
         clock_gettime(CLOCK_REALTIME, &endtime);
@@ -347,12 +366,11 @@ void* runThreadMotion(void* arg)
         proruntime = (proendtime.tv_nsec - prostarttime.tv_nsec)/1e6 + (proendtime.tv_sec - prostarttime.tv_sec)*1e3;
         if (runtime > 8)
         {
-            debug << "JWALKTHREAD: Jason cycle time error: " << runtime << " ms. Time spent in this thread: " << relruntime << "ms, in this process: " << proruntime << endl;
+            debug << "NUbot::runThreadMotion. Motion cycle time error: " << runtime << " ms. Time spent in this thread: " << relruntime << "ms, in this process: " << proruntime << endl;
         }
 #endif
     } 
     while (err == 0 | errno != EINTR);
-    debug << "NUbot::runThreadMotion. This thread was interrupted by a signal, it will now exit" << endl;
     pthread_exit(NULL);
 }
 
@@ -384,7 +402,7 @@ void* runThreadVision(void* arg)
         clock_gettime(CLOCK_REALTIME, &pretime);
 #endif
         err = nubot->waitForNewVisionData();
-        debug << "NUbot::runVisionMotion. Running" << endl;
+        debug << "NUbot::runThreadVision. Running" << endl;
         
 #ifdef THREAD_VISION_MONITOR_TIME
         clock_gettime(CLOCK_REALTIME, &starttime);
@@ -392,7 +410,7 @@ void* runThreadVision(void* arg)
         clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &prostarttime);
         waittime = (starttime.tv_nsec - pretime.tv_nsec)/1e6 + (starttime.tv_sec - pretime.tv_sec)*1e3;
         if (waittime > 25)
-            debug << "JWALKTHREAD: Waittime " << waittime << " ms."<< endl;
+            debug << "NUbot::runThreadVision. Waittime " << waittime << " ms."<< endl;
 #endif
         // -----------------------------------------------------------------------------------------------------------------------------------------------------------------
         
@@ -406,12 +424,11 @@ void* runThreadVision(void* arg)
         proruntime = (proendtime.tv_nsec - prostarttime.tv_nsec)/1e6 + (proendtime.tv_sec - prostarttime.tv_sec)*1e3;
         if (runtime > 8)
         {
-            debug << "JWALKTHREAD: Jason cycle time error: " << runtime << " ms. Time spent in this thread: " << relruntime << "ms, in this process: " << proruntime << endl;
+            debug << "NUbot::runThreadVision. Vision cycle time error: " << runtime << " ms. Time spent in this thread: " << relruntime << "ms, in this process: " << proruntime << endl;
         }
 #endif
     } 
     while (err == 0 | errno != EINTR);
-    debug << "NUbot::runThreadMotion. This thread was interrupted by a signal, it will now exit" << endl;
     pthread_exit(NULL);
 }
 
