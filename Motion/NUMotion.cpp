@@ -48,9 +48,7 @@ ActuatorCommands* NUMotion::process(BodyData* data)
 
 /*! @brief Process new body sensor data, and action commands
  */
-ActuatorCommands* NUMotion::process(BodyData* data, Action* action)
+void NUMotion::process(Action* action)
 {
-    ActuatorCommands* temp = new ActuatorCommands();
-    return temp;
 }
 

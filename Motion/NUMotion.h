@@ -1,10 +1,20 @@
 /*! @file NUMotion.h
     @brief Declaration of motion class
  
+    @class NUMotion
+    @brief A module to provide motion
+ 
     This module should be able to do 3 things
         - Walk (Speed, Position)
         - Head (Look at Point, Nod, Pan, etc)
         - Special (Kicks, Saves, Getups etc)
+ 
+    So my arguement for motion, is that; every motion involves a movement to a point, and then an execution of a 'motion action' at that point.
+    The motion action itself would have a target and a speed.
+    So
+    actionName                                      <= action name
+    vector<float> speed, vector<position>           <= relative position where the action is to be performed
+    vector<actionspeed>, vector<actionposition>     <= action target
  
     So, a MotionAction needs to have
         - A Type (Walk, Head, Special)
@@ -15,11 +25,24 @@
                 - Kick: (distance, bearing) to ball, (distance, bearing) to target (if distance, bearing to ball not in range walk to closest point instead)
                 - Save: (distance, bearing) to ball, ?
                 - Getup: None
- 
-    You either want to position or kick the ball right? Getting up is an autonomous thing. Saves
- 
-    So Walk always gets a point to go to, and an action to do at that point.
 
+    If I use inheritance:
+    Action
+        -- MotionAction
+            -- WalkAction
+            -- HeadAction
+            -- SpecialAction
+        -- LightAction
+        -- CameraAction
+        -- SoundAction
+    Then I either need to make all functions required by each virtual in Action, or use casting. Casting should be avoided.
+    Alternativly just have a single action class that encapsulates everything; Well this is almost.
+ 
+    if (ActionType == Action::Motion)
+        position = action.getMovePosition()         // get the position where the action is to be performed
+        speed = action.getMoveSpeed()               // get the speed
+ 
+ 
     @author Jason Kulk
  
   Copyright (c) 2009 Jason Kulk

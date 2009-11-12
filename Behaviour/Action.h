@@ -22,6 +22,9 @@
 #ifndef ACTION_H
 #define ACTION_H
 
+#include <string>
+using namespace std;
+
 /*! The base action class
  */
 class Action
@@ -36,6 +39,7 @@ public:
     };
 protected:
     ActionType m_action_type;
+    string testString;
 };
 
 class MotionAction : public Action
@@ -46,10 +50,18 @@ public:
         Head,
         Special
     };
-    MotionAction(MotionType type);
+    MotionAction();
     ~MotionAction();
+    void test();
 private:
     MotionType m_motion_type;
+};
+
+class LightAction : public Action
+{
+public:
+    LightAction() {testString = string("LightAction");};
+    ~LightAction() {};
 };
 
 #endif

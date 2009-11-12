@@ -20,13 +20,21 @@
  */
 
 #include "Action.h"
+#include <iostream>
+using namespace std;
 
-MotionAction::MotionAction(MotionType type)
+MotionAction::MotionAction()
 {
     m_action_type = Action::Motion;
-    m_motion_type = type;
+    testString = string("MotionAction");
+    //m_motion_type = type;
 }
 
 MotionAction::~MotionAction()
 {
+}
+
+void MotionAction::test()
+{
+    cout << "MotionAction::test() " << testString << endl;
 }
