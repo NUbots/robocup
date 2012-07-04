@@ -83,6 +83,7 @@ HEADERS += \
     Modules/segmentfilter.h \
     Modules/goaldetection.h \
     Modules/balldetection.h \
+    Modules/robocuphacks.h \
     basicvisiontypes.h \
     valgorithm.h \
     visionblackboard.h \
@@ -111,6 +112,7 @@ SOURCES += \
     Modules/segmentfilter.cpp \
     Modules/goaldetection.cpp \
     Modules/balldetection.cpp \
+    Modules/robocuphacks.cpp \
     visionblackboard.cpp \
     visioncontroller.cpp \
     visionconstants.cpp \

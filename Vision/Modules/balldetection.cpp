@@ -11,7 +11,20 @@ void BallDetection::detectBall()
     const LookUpTable& lut = vbb->getLUT();
     // BEGIN BALL DETECTION -----------------------------------------------------------------
 
-    vector<Transition> transitions = vbb->getVerticalTransitions(VisionFieldObject::BALL);    
+    // EXPERIMENTATION
+    cv::Mat cvimg;
+    lut.classifyImage(img, cvimg);
+
+    cv::namedWindow("RAW IMAGE", CV_WINDOW_KEEPRATIO);
+
+    cv::line(cvimg, cv::Point(160,0), cv::Point(160, 240), cv::Scalar(255,255,255), 1);
+    cv::line(cvimg, cv::Point(0,120), cv::Point(320, 120), cv::Scalar(255,255,255), 1);
+    // EXPERIMENTATION
+
+    vector<Transition> transitions = vbb->getVerticalTransitions(VisionFieldObject::BALL);
+    //vector<Transition> transitions = vbb->getHorizontalTransitions(VisionFieldObject::BALL);
+
+    //cout << transitions.size() << endl;
 
     #if VISION_FIELDOBJECT_VERBOSITY > 1
         debug << "BallDetection::detectBall() - number of ball transitions: " << transitions.size() << endl;
@@ -61,7 +74,7 @@ void BallDetection::detectBall()
         // Statistical throw-out
         it = transitions.begin();
         while (it < transitions.end()) {
-            if (abs(it->getLocation().x - x_mean) > x_dev || abs(it->getLocation().y - y_mean) > y_dev)
+            if (abs(it->getLocation().x - x_mean) > 2*x_dev || abs(it->getLocation().y - y_mean) > 2*y_dev)
                 it = transitions.erase(it);
             else
                 it++;
@@ -84,6 +97,11 @@ void BallDetection::detectBall()
             y_pos = img.getHeight()-1;
         if (x_pos >= img.getWidth())
             x_pos = img.getWidth()-1;
+
+
+        cv::circle(cvimg, cv::Point(x_pos, y_pos), 1, cv::Scalar(0,0,255), 2);
+
+        // CANDIDATE POINT IS FOUND!
 
         // Find ball centre (not occluded)        
         int top = y_pos,
@@ -215,37 +233,101 @@ void BallDetection::detectBall()
 
         if (!(center.x ==1 and center.y==1) && bottom-top > 0 && right-left > 0) {
 
-            // CHECK FOR PIXEL DENSITY
-            int count = 0;
 
-            int min = std::min(right-left, bottom-top);
-            min /= 2;
+//            // CHECK FOR PIXEL DENSITY
+//            int count = 0;
 
-            int box_left = std::max(center.x - min, 0);
-            int box_right = std::min(center.x + min, img.getWidth()-1);
-            int box_top = std::max(center.y - min, 0);
-            int box_bottom = std::min(center.y + min, img.getHeight()-1);
+//            int min = std::min(right-left, bottom-top);
+//            min /= 2;
 
-            //cout << box_left << ", " << box_right << ", " << box_top << ", " << box_bottom << endl;
+//            int box_left = std::max(center.x - min, 0);
+//            int box_right = std::min(center.x + min, img.getWidth()-1);
+//            int box_top = std::max(center.y - min, 0);
+//            int box_bottom = std::min(center.y + min, img.getHeight()-1);
 
-            for (int i = box_left; i < box_right; i++) {
-                for (int j = box_top; j < box_bottom; j++) {
-                    if (ClassIndex::getColourFromIndex(lut.classifyPixel(img(i, j))) == ClassIndex::orange)
-                        count++;
+//            //cout << box_left << ", " << box_right << ", " << box_top << ", " << box_bottom << endl;
+
+//            for (int i = box_left; i < box_right; i++) {
+//                for (int j = box_top; j < box_bottom; j++) {
+//                    if (ClassIndex::getColourFromIndex(lut.classifyPixel(img(i, j))) == ClassIndex::orange)
+//                        count++;
+//                }
+//            }
+//            //cout << "PERCENT ORANGE: " << float(count)/((min*2)*(min*2)) << endl;
+
+//            if (float(count)/((min*2)*(min*2)) >= VisionConstants::BALL_MIN_PERCENT_ORANGE) {
+
+
+                // NEW - SCAN TO FIND NEW RADIUS
+                not_orange_count = 0;
+
+                top = bottom = center.y;
+                left = right = center.x;
+
+                while (top > 0 && not_orange_count <= VisionConstants::BALL_ORANGE_TOLERANCE) {
+                    if (ClassIndex::getColourFromIndex(lut.classifyPixel(img((int)x_pos, top))) != ClassIndex::orange) {
+                        not_orange_count++;
+                    }
+                    else {
+                        not_orange_count = 0;
+                    }
+                    top --;
                 }
-            }
-            //cout << "PERCENT ORANGE: " << float(count)/((min*2)*(min*2)) << endl;
+                top += not_orange_count;
+                not_orange_count = 0;
 
-            if (float(count)/((min*2)*(min*2)) >= VisionConstants::BALL_MIN_PERCENT_ORANGE) {
+                while (bottom < img.getHeight() && not_orange_count <= VisionConstants::BALL_ORANGE_TOLERANCE) {
+                    if (ClassIndex::getColourFromIndex(lut.classifyPixel(img((int)x_pos, bottom))) != ClassIndex::orange) {
+                        not_orange_count++;
+                    }
+                    else {
+                        not_orange_count = 0;
+                    }
+                    bottom ++;
+                }
+                bottom -= not_orange_count;
+                not_orange_count = 0;
+
+                while (left > 0 && not_orange_count <= VisionConstants::BALL_ORANGE_TOLERANCE) {
+                    if (ClassIndex::getColourFromIndex(lut.classifyPixel(img(left, (int)y_pos))) != ClassIndex::orange) {
+                        not_orange_count++;
+                    }
+                    else {
+                        not_orange_count = 0;
+                    }
+                    left --;
+                }
+                left += not_orange_count;
+                not_orange_count = 0;
+
+                while (right < img.getWidth() && not_orange_count <= VisionConstants::BALL_ORANGE_TOLERANCE) {
+                    if (ClassIndex::getColourFromIndex(lut.classifyPixel(img(right, (int)y_pos))) != ClassIndex::orange) {
+                        not_orange_count++;
+                    }
+                    else {
+                        not_orange_count = 0;
+                    }
+                    right ++;
+                }
+                right -= not_orange_count;
+
+                cv::circle(cvimg, cv::Point(center.x,top), 1, cv::Scalar(255,255,255), 2);
+                cv::circle(cvimg, cv::Point(center.x,bottom), 1, cv::Scalar(255,255,255), 2);
+                cv::circle(cvimg, cv::Point(left,center.y), 1, cv::Scalar(255,255,255), 2);
+                cv::circle(cvimg, cv::Point(right,center.y), 1, cv::Scalar(255,255,255), 2);
+
+                cout << std::max(right-left,bottom-top) << endl;
+
+
                 Ball newball(center, max((right-left), (bottom-top))*0.5);                
                 vbb->addBall(newball);                
-            }
-            else {
-                //cout << "BALL THROWN OUT ON RATIO" << endl;
-                #if VISION_FIELDOBJECT_VERBOSITY > 1
-                    debug << "BallDetection::detectBall - ball thrown out on percentage contained orange" << endl;
-                #endif
-            }
+//            }
+//            else {
+//                //cout << "BALL THROWN OUT ON RATIO" << endl;
+//                #if VISION_FIELDOBJECT_VERBOSITY > 1
+//                    debug << "BallDetection::detectBall - ball thrown out on percentage contained orange" << endl;
+//                #endif
+//            }
         }
         else {
             #if VISION_FIELDOBJECT_VERBOSITY > 1
@@ -254,4 +336,8 @@ void BallDetection::detectBall()
         }
 
     }
+
+    // EXPERIMENTATION
+    cv::imshow("RAW IMAGE", cvimg);
+    // EXPERIMENTATION
 }
