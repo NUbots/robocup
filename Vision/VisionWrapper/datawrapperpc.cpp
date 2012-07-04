@@ -70,6 +70,11 @@ void getPointsAndColoursFromSegments(const vector< vector<ColourSegment> >& segm
 
 DataWrapper::DataWrapper()
 {
+    //slider window
+    saving_images_slider_val = 0;
+    cv::namedWindow("Save Images");
+    cv::createTrackbar("Save Images", "Save Images", &saving_images_slider_val, 1);
+
     //frame grab methods
     switch(METHOD) {
     case CAMERA:
@@ -145,6 +150,9 @@ DataWrapper::DataWrapper()
     results_img.create(m_current_image->getHeight(), m_current_image->getWidth(), CV_8UC3);
     
     numFramesDropped = numFramesProcessed = 0;
+
+    numSavedImages = 0;
+    isSavingImages = saving_images_slider_val == 1;
 
 }
 
@@ -559,10 +567,30 @@ bool DataWrapper::debugPublish(DEBUG_ID id, const Mat &img)
 bool DataWrapper::updateFrame()
 {
     numFramesProcessed++;
+    bool newIsSavingImages = saving_images_slider_val;
     
     switch(METHOD) {
     case CAMERA:
         m_current_image = m_camera->grabNewImage();   //force get new frame
+        if(isSavingImages != newIsSavingImages) {
+            //if the job changes the saving images state
+            if(newIsSavingImages) {
+                //we weren't saving and now we've started
+                if (!imagefile.is_open()) {
+                    cout << "Openning " << string(DATA_DIR) + string("image.strm") << endl;
+                    imagefile.open((string(DATA_DIR) + string("image.strm")).c_str());
+                }
+            }
+            else {
+                //we were saving and now we've finished
+                cout << "Flushing " << string(DATA_DIR) + string("image.strm") << endl;
+                imagefile.flush();
+            }
+        }
+        isSavingImages = newIsSavingImages;
+
+        if(isSavingImages)
+            saveAnImage();
         break;
     case STREAM:
         try {
@@ -602,6 +630,32 @@ bool DataWrapper::updateFrame()
 bool DataWrapper::loadLUTFromFile(const string& fileName)
 {
     return LUT.loadLUTFromFile(fileName);
+}
+
+/**
+*   @brief Saves an image and the current sensor data to the associated streams.
+*   @note Taken from original vision system
+*/
+void DataWrapper::saveAnImage()
+{
+    #if VISION_WRAPPER_VERBOSITY > 1
+        debug << "DataWrapper::SaveAnImage(). Starting..." << endl;
+    #endif
+
+    if (!imagefile.is_open())
+        imagefile.open((string(DATA_DIR) + string("image.strm")).c_str());
+
+    if (imagefile.is_open() and numSavedImages < 2500)
+    {
+        NUImage buffer;
+        buffer.cloneExisting(*m_current_image);
+        imagefile << buffer;
+        numSavedImages++;
+
+    }
+    #if VISION_WRAPPER_VERBOSITY > 1
+        debug << "DataWrapper::SaveAnImage(). Finished" << endl;
+    #endif
 }
 
 void DataWrapper::ycrcb2ycbcr(Mat *img_ycrcb)
