@@ -1,13 +1,17 @@
 #include "balldetection.h"
 #include "Vision/visionconstants.h"
+
 #include "debug.h"
 #include "debugverbosityvision.h"
 
+#include "Tools/Math/General.h"
+
 void BallDetection::detectBall()
 {
+    houghMethod();
 
     VisionBlackboard* vbb = VisionBlackboard::getInstance();
-    NUImage img = vbb->getOriginalImage();
+    const NUImage& img = vbb->getOriginalImage();
     const LookUpTable& lut = vbb->getLUT();
     // BEGIN BALL DETECTION -----------------------------------------------------------------
 
@@ -254,4 +258,72 @@ void BallDetection::detectBall()
         }
 
     }
+}
+
+
+int hi = 1, lo = 1;
+
+void BallDetection::houghMethod()
+{
+    //Intensely aweful method that makes a binary image from the original image based on whether each pixel maps to
+    //the ball colour
+
+    VisionBlackboard* vbb = VisionBlackboard::getInstance();
+    const NUImage& img = vbb->getOriginalImage();
+    const LookUpTable& lut = vbb->getLUT();
+    const GreenHorizon& gh = vbb->getGreenHorizon();
+    int x, y,
+        XSKIP = 1,
+        YSKIP = 1;
+    cv::Mat binary_image(img.getHeight(), img.getWidth(), CV_8UC1);
+    cv::Mat grey = Mat::zeros(img.getHeight(), img.getWidth(), CV_8UC1);
+    cv::Mat result = Mat::zeros(img.getHeight(), img.getWidth(), CV_8UC3);
+    cv::createTrackbar("hi", "HoughCircles", &hi, 255);
+    cv::createTrackbar("lo", "HoughCircles", &lo, 255);
+
+    for(x=0; x<img.getWidth(); x+=XSKIP) {
+        for(y=0; y<img.getHeight(); y+=YSKIP) {
+            (lut.classifyPixel(img(x,y)) == ClassIndex::orange && gh.isBelowHorizon(PointType(x, y))) ? (binary_image.at<unsigned char>(y, x) = 255) : (binary_image.at<unsigned char>(y, x) = 0);
+        }
+    }
+
+
+    cv::namedWindow("bin");
+    cv::imshow("bin", binary_image);
+
+    if(false) {
+        cv::Canny(binary_image, grey, 200, 100);
+        namedWindow( "canny", CV_WINDOW_AUTOSIZE );
+        imshow( "canny", grey );
+
+        cv::GaussianBlur( grey, grey, cv::Size(9, 9), 2, 2 );
+
+        cv::namedWindow("blurred grey");
+        cv::imshow("blurred grey", grey);
+    }
+    else {
+        grey = binary_image;
+    }
+
+    //now do the CHT
+    vector<cv::Vec3f> circles;
+    // Apply the Hough Transform to find the circles
+    //cv::HoughCircles( binary_image, circles, CV_HOUGH_GRADIENT, 1, binary_image.rows/8, 200, 100, 0, 0 );
+    cv::HoughCircles( grey, circles, CV_HOUGH_GRADIENT, 1, 1, hi > 0 ? hi : 1, lo > 0 ? lo : 1 );
+
+    cout << "# circles: " << circles.size() << endl;
+    // Draw the circles detected
+    for( size_t i = 0; i < circles.size(); i++ )
+    {
+        cv::Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
+        int radius = mathGeneral::roundNumberToInt(circles[i][2]);
+        // circle center
+        circle( result, center, 3, Scalar(0,255,0), -1, 8, 0 );
+        // circle outline
+        circle( result, center, radius, Scalar(0,0,255), 3, 8, 0 );
+    }
+
+    // Show your results
+    namedWindow( "HoughCircles", CV_WINDOW_AUTOSIZE );
+    imshow( "HoughCircles", result );
 }

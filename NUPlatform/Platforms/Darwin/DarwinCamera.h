@@ -56,7 +56,7 @@ private:
 
     bool applySetting(unsigned int settingID, int value);
     int readSetting(unsigned int id);
-    void initialiseCamera();
+    void initialiseCamera(bool bayer);
     void readCameraSettings();
     void openCameraDevice(std::string device_name);
     void setStreaming(bool streaming_on);

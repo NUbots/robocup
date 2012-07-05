@@ -60,6 +60,10 @@
 #ifndef V4L2_CID_AUDIO_MUTE
 #  define V4L2_CID_AUDIO_MUTE       (V4L2_CID_BASE+9)
 #endif
+
+#ifndef V4L2_CID_DISABLE_COLOR_PROCESSING
+#   define V4L2_CID_DISABLE_COLOR_PROCESSING (V4L2_CID_PRIVATE_BASE + 14)
+#endif
 /*
 #ifndef V4L2_CID_POWER_LINE_FREQUENCY
 #  define V4L2_CID_POWER_LINE_FREQUENCY  (V4L2_CID_BASE+24)
@@ -167,7 +171,7 @@ storedTimeStamp(Platform->getTime())
     openCameraDevice("/dev/video0");
 
     //Initialise
-    initialiseCamera();
+    initialiseCamera(true);
     //readCameraSettings();
     forceApplySettings(fileSettings);
 
@@ -219,11 +223,27 @@ void DarwinCamera::setStreaming(bool streaming_on)
     debug << "DarwinCamera: streaming - " << streaming_on << endl;
 }
 
-void DarwinCamera::initialiseCamera()
+void DarwinCamera::initialiseCamera(bool bayer)
 {
     int returnValue;
+
     // set default parameters
     struct v4l2_control control;
+    memset(&control, 0, sizeof(control));
+    // Enable/disable color pipeline
+    control.id = V4L2_CID_DISABLE_COLOR_PROCESSING;
+    control.value = bayer ? 1 : 0;
+    if(bayer) {
+        debug << "Disabling color pipeline ...\n" << endl;
+    }
+    else {
+        debug << "Enabling color pipeline ...\n" << endl;
+    }
+    returnValue = ioctl(fd, VIDIOC_S_CTRL, &control);
+    if(returnValue < 0) {
+        debug << "ERROR: Unable to set device control: " << returnValue << endl;
+    }
+
     memset(&control, 0, sizeof(control));
     control.id = V4L2_CID_CAM_INIT;
     control.value = 0;
