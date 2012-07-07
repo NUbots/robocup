@@ -8,8 +8,6 @@
 
 void BallDetection::detectBall()
 {
-    houghMethod();
-
     VisionBlackboard* vbb = VisionBlackboard::getInstance();
     const NUImage& img = vbb->getOriginalImage();
     const LookUpTable& lut = vbb->getLUT();
@@ -278,6 +276,8 @@ void BallDetection::houghMethod()
     cv::Mat binary_image(img.getHeight(), img.getWidth(), CV_8UC1);
     cv::Mat grey = Mat::zeros(img.getHeight(), img.getWidth(), CV_8UC1);
     cv::Mat result = Mat::zeros(img.getHeight(), img.getWidth(), CV_8UC3);
+    cv::namedWindow("bin");
+    namedWindow( "HoughCircles", CV_WINDOW_AUTOSIZE );
     cv::createTrackbar("hi", "HoughCircles", &hi, 255);
     cv::createTrackbar("lo", "HoughCircles", &lo, 255);
 
@@ -287,16 +287,14 @@ void BallDetection::houghMethod()
         }
     }
 
-
-    cv::namedWindow("bin");
     cv::imshow("bin", binary_image);
 
-    if(false) {
+    if(true) {
         cv::Canny(binary_image, grey, 200, 100);
         namedWindow( "canny", CV_WINDOW_AUTOSIZE );
         imshow( "canny", grey );
 
-        cv::GaussianBlur( grey, grey, cv::Size(9, 9), 2, 2 );
+        cv::GaussianBlur( grey, grey, cv::Size(9, 9), 1, 1 );
 
         cv::namedWindow("blurred grey");
         cv::imshow("blurred grey", grey);
@@ -311,19 +309,21 @@ void BallDetection::houghMethod()
     //cv::HoughCircles( binary_image, circles, CV_HOUGH_GRADIENT, 1, binary_image.rows/8, 200, 100, 0, 0 );
     cv::HoughCircles( grey, circles, CV_HOUGH_GRADIENT, 1, 1, hi > 0 ? hi : 1, lo > 0 ? lo : 1 );
 
-    cout << "# circles: " << circles.size() << endl;
+    //cout << "# circles: " << circles.size() << endl;
     // Draw the circles detected
     for( size_t i = 0; i < circles.size(); i++ )
     {
         cv::Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
         int radius = mathGeneral::roundNumberToInt(circles[i][2]);
+        cout << "circle " << i << " radius: " << circles[i][2] << " ";
         // circle center
         circle( result, center, 3, Scalar(0,255,0), -1, 8, 0 );
         // circle outline
         circle( result, center, radius, Scalar(0,0,255), 3, 8, 0 );
     }
+    if(!circles.empty())
+        cout << endl;
 
     // Show your results
-    namedWindow( "HoughCircles", CV_WINDOW_AUTOSIZE );
     imshow( "HoughCircles", result );
 }

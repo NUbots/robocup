@@ -12,7 +12,7 @@ class VisionControlWrapper
 public:
     static VisionControlWrapper* getInstance();
     
-    int runFrame();
+    int runFrame(bool look_for_ball);
     
 private:
     VisionControlWrapper();

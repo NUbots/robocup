@@ -49,7 +49,7 @@ int VisionControlWrapper::runFrame()
     }
         
     int result = controller->runFrame(Blackboard->lookForBall, Blackboard->lookForLandmarks); //run vision on the frame
-    
+
     data_wrapper->postProcess();    //post process all the field objects
     
     #if VISION_WRAPPER_VERBOSITY > 1

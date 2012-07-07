@@ -15,7 +15,7 @@ VisionControlWrapper::VisionControlWrapper()
     wrapper = DataWrapper::getInstance();
 }
 
-int VisionControlWrapper::runFrame()
+int VisionControlWrapper::runFrame(bool look_for_ball)
 {
     static int frame = 0;
     #if VISION_WRAPPER_VERBOSITY > 1
@@ -29,5 +29,5 @@ int VisionControlWrapper::runFrame()
         #endif
         return -1;  //failure - do not run vision
     }
-    return controller->runFrame(true, true);
+    return controller->runFrame(look_for_ball, true);
 }
