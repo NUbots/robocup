@@ -1,24 +1,30 @@
 #include "balldetection.h"
 #include "Vision/visionconstants.h"
+
 #include "debug.h"
 #include "debugverbosityvision.h"
 
+#include "Tools/Math/General.h"
+
 void BallDetection::detectBall()
 {
+    bool display = false;
 
     VisionBlackboard* vbb = VisionBlackboard::getInstance();
-    NUImage img = vbb->getOriginalImage();
+    const NUImage& img = vbb->getOriginalImage();
     const LookUpTable& lut = vbb->getLUT();
     // BEGIN BALL DETECTION -----------------------------------------------------------------
 
     // EXPERIMENTATION
     cv::Mat cvimg;
-    lut.classifyImage(img, cvimg);
+    if(display) {
+        lut.classifyImage(img, cvimg);
 
-    cv::namedWindow("RAW IMAGE", CV_WINDOW_KEEPRATIO);
+        cv::namedWindow("RAW IMAGE", CV_WINDOW_KEEPRATIO);
 
-    cv::line(cvimg, cv::Point(160,0), cv::Point(160, 240), cv::Scalar(255,255,255), 1);
-    cv::line(cvimg, cv::Point(0,120), cv::Point(320, 120), cv::Scalar(255,255,255), 1);
+        cv::line(cvimg, cv::Point(160,0), cv::Point(160, 240), cv::Scalar(255,255,255), 1);
+        cv::line(cvimg, cv::Point(0,120), cv::Point(320, 120), cv::Scalar(255,255,255), 1);
+    }
     // EXPERIMENTATION
 
     vector<Transition> transitions = vbb->getVerticalTransitions(VisionFieldObject::BALL);
@@ -98,9 +104,9 @@ void BallDetection::detectBall()
         if (x_pos >= img.getWidth())
             x_pos = img.getWidth()-1;
 
-
-        cv::circle(cvimg, cv::Point(x_pos, y_pos), 1, cv::Scalar(0,0,255), 2);
-
+        if(display) {
+            cv::circle(cvimg, cv::Point(x_pos, y_pos), 1, cv::Scalar(0,0,255), 2);
+        }
         // CANDIDATE POINT IS FOUND!
 
         // Find ball centre (not occluded)        
@@ -311,16 +317,20 @@ void BallDetection::detectBall()
                 }
                 right -= not_orange_count;
 
-                cv::circle(cvimg, cv::Point(center.x,top), 1, cv::Scalar(255,255,255), 2);
-                cv::circle(cvimg, cv::Point(center.x,bottom), 1, cv::Scalar(255,255,255), 2);
-                cv::circle(cvimg, cv::Point(left,center.y), 1, cv::Scalar(255,255,255), 2);
-                cv::circle(cvimg, cv::Point(right,center.y), 1, cv::Scalar(255,255,255), 2);
+                if(display) {
+                    cv::circle(cvimg, cv::Point(center.x,top), 1, cv::Scalar(255,255,255), 2);
+                    cv::circle(cvimg, cv::Point(center.x,bottom), 1, cv::Scalar(255,255,255), 2);
+                    cv::circle(cvimg, cv::Point(left,center.y), 1, cv::Scalar(255,255,255), 2);
+                    cv::circle(cvimg, cv::Point(right,center.y), 1, cv::Scalar(255,255,255), 2);
+                }
 
                 cout << std::max(right-left,bottom-top) << endl;
 
 
                 Ball newball(center, max((right-left), (bottom-top))*0.5);                
-                vbb->addBall(newball);                
+                vbb->addBall(newball);
+                debug << newball.getRadius() << endl;
+                cout << newball.getRadius() << endl;
 //            }
 //            else {
 //                //cout << "BALL THROWN OUT ON RATIO" << endl;
@@ -338,6 +348,125 @@ void BallDetection::detectBall()
     }
 
     // EXPERIMENTATION
-    cv::imshow("RAW IMAGE", cvimg);
+    if(display) {
+        cv::imshow("RAW IMAGE", cvimg);
+    }
     // EXPERIMENTATION
+}
+
+
+int hi = 1, lo = 1, sigma1 = 1, sigma2 = 1;
+
+void BallDetection::houghMethod()
+{
+    //Intensely aweful method that makes a binary image from the original image based on whether each pixel maps to
+    //the ball colour
+    bool showbin = false,
+         showcan = false,
+         showblu = false,
+         showfin = false;
+    bool blur = false,
+         canny = false,
+         resize = false;
+
+    VisionBlackboard* vbb = VisionBlackboard::getInstance();
+    const NUImage& img = vbb->getOriginalImage();
+    const LookUpTable& lut = vbb->getLUT();
+    const GreenHorizon& gh = vbb->getGreenHorizon();
+    int x, y,
+        XSKIP = 1,
+        YSKIP = 1;
+    cv::Mat binary_image(img.getHeight(), img.getWidth(), CV_8UC1);
+    cv::Mat grey; //= Mat::zeros(img.getHeight(), img.getWidth(), CV_8UC1);
+    cv::Mat result; //= Mat::zeros(img.getHeight(), img.getWidth(), CV_8UC3);
+    if(showbin)
+        cv::namedWindow("bin");
+    if(showcan)
+        cv::namedWindow( "canny", CV_WINDOW_AUTOSIZE );
+    if(showblu)
+        cv::namedWindow("blurred grey");
+    if(showfin) {
+        cv::namedWindow( "HoughCircles", CV_WINDOW_AUTOSIZE );
+        cv::createTrackbar("hi", "HoughCircles", &hi, 255);
+        cv::createTrackbar("lo", "HoughCircles", &lo, 255);
+        cv::createTrackbar("sigma1*100", "HoughCircles", &sigma1, 1000);
+        cv::createTrackbar("sigma2*100", "HoughCircles", &sigma2, 1000);
+    }
+
+    for(x=0; x<img.getWidth(); x+=XSKIP) {
+        for(y=0; y<img.getHeight(); y+=YSKIP) {
+            (lut.classifyPixel(img(x,y)) == ClassIndex::orange && gh.isBelowHorizon(PointType(x, y))) ? (binary_image.at<unsigned char>(y, x) = 255) : (binary_image.at<unsigned char>(y, x) = 0);
+        }
+    }
+
+    if(resize) {
+        cv::resize(binary_image, binary_image, cv::Size(), 8, 8, cv::INTER_CUBIC);
+        binary_image = binary_image(cv::Range(binary_image.rows*0.5 - 120, binary_image.rows*0.5 + 120), cv::Range(binary_image.cols*0.5 - 160, binary_image.cols*0.5 + 160));
+    }
+
+    if(showbin)
+        cv::imshow("bin", binary_image);
+
+    if(blur) {
+        if(canny) {
+            cv::Canny(binary_image, grey, 200, 100);
+            if(showcan)
+                imshow( "canny", grey );
+        }
+        else {
+            grey = binary_image.clone();
+        }
+
+        cv::GaussianBlur( grey, grey, cv::Size(9, 9), sigma1 > 0 ? sigma1*0.01 : 1, sigma2 > 0 ? sigma2*0.01 : 1 );
+
+        if(showblu)
+            cv::imshow("blurred grey", grey);
+    }
+    else {
+        grey = binary_image.clone();
+    }
+    if(showfin) {
+        //cv::cvtColor(grey, result, cv::COLOR_GRAY2BGR);
+    }
+
+    //now do the CHT
+    vector<cv::Vec3f> circles;
+    // Apply the Hough Transform to find the circles
+    //cv::HoughCircles( binary_image, circles, CV_HOUGH_GRADIENT, 1, binary_image.rows/8, 200, 100, 0, 0 );
+    cv::HoughCircles( grey, circles, CV_HOUGH_GRADIENT, 1, 1, hi > 0 ? hi : 1, lo > 0 ? lo : 1 );
+
+    //cout << "# circles: " << circles.size() << endl;
+    // Draw the circles detected
+    if(showfin) {
+        for( size_t i = 0; i < cv::min((double)circles.size(), 1.0); i++ )
+        {
+            cv::Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
+            int radius = mathGeneral::roundNumberToInt(circles[i][2]);
+            cout << circles[i][2] /8.0 << " ";
+            // circle center
+            circle( result, center, 3, cv::Scalar(0,255,0), -1, 8, 0 );
+            // circle outline
+            circle( result, center, radius, cv::Scalar(0,0,255), 3, 8, 0 );
+        }
+        if(!circles.empty())
+            cout << endl;
+    }
+    else if(!circles.empty()){
+        //print found circle
+        if(resize) {
+            debug << circles[0][2] /8.0 << endl;
+            cout << circles[0][2] /8.0 << endl;
+        }
+        else {
+            debug << circles[0][2] /8.0 << endl;
+            cout << circles[0][2] << endl;
+        }
+    }
+    else {
+        debug << "No Hough circles found" << endl;
+        cout << "No Hough circles found" << endl;
+    }
+
+    if(showfin)
+        imshow( "HoughCircles", result );
 }

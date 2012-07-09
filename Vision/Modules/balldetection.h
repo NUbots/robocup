@@ -20,6 +20,7 @@ class BallDetection
 {
 public:
     static void detectBall();
+    static void houghMethod();
 };
 
 #endif // BALLDETECTION_H

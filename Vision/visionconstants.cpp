@@ -181,12 +181,12 @@ void VisionConstants::loadFromFile(std::string filename)
             D2P_INCLUDE_BODY_PITCH = bval;
         }
         else if(name.compare("D2P_ANGLE_CORRECTION") == 0) {
-//            int config_player;
-//            in >> config_player;
-//            if(config_player == Blackboard->GameInfo->getPlayerNumber()) {
-//                in >> fval;
-//                D2P_ANGLE_CORRECTION = fval;
-//            }
+            int config_player;
+            in >> config_player;
+            if(config_player == Blackboard->GameInfo->getPlayerNumber()) {
+                in >> fval;
+                D2P_ANGLE_CORRECTION = fval;
+            }
         }
         else if(name.compare("BALL_DISTANCE_POSITION_BOTTOM") == 0) {
             in >> bval;

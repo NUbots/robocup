@@ -14,10 +14,25 @@ int main(void)
     //DataWrapper* visiondata = DataWrapper::getInstance();
     char c=0;
     int error=0;
+    bool look_for_ball = false;
     while(c!=27 && error==0) {
         //visiondata->updateFrame();
-        error = vision->runFrame();
+//        error = vision->runFrame();
+//        c = waitKey(1);
+        error = vision->runFrame(look_for_ball);
         c = waitKey(1);
+        if(c == 32) {
+            c = 0;
+            while(c!=27 && c!=32) {
+                c = waitKey(1);
+                if(c == 'c') {
+                    look_for_ball = !look_for_ball;
+                }
+            }
+        }
+        else if(c == 'c') {
+            look_for_ball = !look_for_ball;
+        }
     }
     if(error != 0)
         cout << "Error: " << error << endl;

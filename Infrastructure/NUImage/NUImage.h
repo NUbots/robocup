@@ -192,20 +192,6 @@ public:
     }
 
     /*!
-    @brief Image raw access operator, access the pixel at the desired image buffer position.
-
-    This access operator allows direct access to the image buffer.
-
-    @param x Buffer x position
-    @param y Buffer y position
-    @return The pixel at the buffer position (x,y)
-    */
-    const Pixel& at(unsigned int x, unsigned int y) const
-    {
-        return m_image[y][x];
-    }
-
-    /*!
     @brief Get the current buffering state of the image.
     @return The current buffering state. True when buffered internally. False when buffered externally.
     */
@@ -299,5 +285,21 @@ protected:
     @return The new buffer.
     */
     Pixel* allocateBuffer(int width, int height);
+
+    /*!
+    @brief Image raw access operator, access the pixel at the desired image buffer position.
+
+    This access operator allows direct access to the image buffer.
+
+    This is private to prevent accidentally flipping the image on certain platforms in our code.
+
+    @param x Buffer x position
+    @param y Buffer y position
+    @return The pixel at the buffer position (x,y)
+    */
+    const Pixel& at(unsigned int x, unsigned int y) const
+    {
+        return m_image[y][x];
+    }
 };
 #endif
