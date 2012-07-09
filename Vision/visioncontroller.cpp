@@ -13,6 +13,9 @@
 #include "Vision/Modules/balldetection.h"
 //robocup hacks
 #include "Vision/Modules/robocuphacks.h"
+#ifdef VISION_PROFILE
+    #include "Tools/Profiling/Profiler.h"
+#endif
 
 
 VisionController* VisionController::instance = 0;
@@ -81,10 +84,18 @@ int VisionController::runFrame(bool lookForBall, bool lookForLandmarks)
     else
         debug << "VisionController::runFrame() - goal detection done - not looking for landmarks" << endl;
 #endif
+    #ifdef VISION_PROFILE
+        Profiler prof = Profiler("BallDetection");
+        prof.start();
+    #endif
     if(lookForBall) {
         //BallDetection::detectBall();
         BallDetection::houghMethod();
     }
+    #ifdef VISION_PROFILE
+        prof.split("After Ball");
+        debug << prof;
+    #endif
 #if VISION_CONTROLLER_VERBOSITY > 2
     if(lookForBall)
         debug << "VisionController::runFrame() - ball detection done - looking for ball" << endl;

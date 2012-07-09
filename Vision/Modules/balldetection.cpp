@@ -267,9 +267,11 @@ void BallDetection::houghMethod()
     //the ball colour
     bool showbin = false,
          showcan = false,
-         showblu = false;
-    bool blur = true,
-         canny = true;
+         showblu = false,
+         showfin = false;
+    bool blur = false,
+         canny = false,
+         resize = false;
 
     VisionBlackboard* vbb = VisionBlackboard::getInstance();
     const NUImage& img = vbb->getOriginalImage();
@@ -281,17 +283,19 @@ void BallDetection::houghMethod()
     cv::Mat binary_image(img.getHeight(), img.getWidth(), CV_8UC1);
     cv::Mat grey; //= Mat::zeros(img.getHeight(), img.getWidth(), CV_8UC1);
     cv::Mat result; //= Mat::zeros(img.getHeight(), img.getWidth(), CV_8UC3);
-    namedWindow( "HoughCircles", CV_WINDOW_AUTOSIZE );
     if(showbin)
         cv::namedWindow("bin");
     if(showcan)
         cv::namedWindow( "canny", CV_WINDOW_AUTOSIZE );
     if(showblu)
         cv::namedWindow("blurred grey");
-    cv::createTrackbar("hi", "HoughCircles", &hi, 255);
-    cv::createTrackbar("lo", "HoughCircles", &lo, 255);
-    cv::createTrackbar("sigma1*100", "HoughCircles", &sigma1, 1000);
-    cv::createTrackbar("sigma2*100", "HoughCircles", &sigma2, 1000);
+    if(showfin) {
+        namedWindow( "HoughCircles", CV_WINDOW_AUTOSIZE );
+        cv::createTrackbar("hi", "HoughCircles", &hi, 255);
+        cv::createTrackbar("lo", "HoughCircles", &lo, 255);
+        cv::createTrackbar("sigma1*100", "HoughCircles", &sigma1, 1000);
+        cv::createTrackbar("sigma2*100", "HoughCircles", &sigma2, 1000);
+    }
 
     for(x=0; x<img.getWidth(); x+=XSKIP) {
         for(y=0; y<img.getHeight(); y+=YSKIP) {
@@ -299,14 +303,10 @@ void BallDetection::houghMethod()
         }
     }
 
-    cv::resize(binary_image, binary_image, cv::Size(), 8, 8, cv::INTER_CUBIC);
-
-    //binary_image.adjustROI(binary_image.rows*0.5 - 120, binary_image.rows*0.5 + 120, binary_image.cols*0.5 - 160, binary_image.cols*0.5 + 160);
-
-    binary_image = binary_image(cv::Range(binary_image.rows*0.5 - 120, binary_image.rows*0.5 + 120), cv::Range(binary_image.cols*0.5 - 160, binary_image.cols*0.5 + 160));
-
-    //cv::Mat tmp = binary_image(cv::Rect(binary_image.cols*0.5 - 160, binary_image.rows*0.5 - 120, 320, 240));
-    //binary_image.copyTo(tmp);
+    if(resize) {
+        cv::resize(binary_image, binary_image, cv::Size(), 8, 8, cv::INTER_CUBIC);
+        binary_image = binary_image(cv::Range(binary_image.rows*0.5 - 120, binary_image.rows*0.5 + 120), cv::Range(binary_image.cols*0.5 - 160, binary_image.cols*0.5 + 160));
+    }
 
     if(showbin)
         cv::imshow("bin", binary_image);
@@ -339,19 +339,36 @@ void BallDetection::houghMethod()
 
     //cout << "# circles: " << circles.size() << endl;
     // Draw the circles detected
-    for( size_t i = 0; i < cv::min((double)circles.size(), 1.0); i++ )
-    {
-        cv::Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
-        int radius = mathGeneral::roundNumberToInt(circles[i][2]);
-        cout << circles[i][2] /8.0 << " ";
-        // circle center
-        circle( result, center, 3, Scalar(0,255,0), -1, 8, 0 );
-        // circle outline
-        circle( result, center, radius, Scalar(0,0,255), 3, 8, 0 );
+    if(showfin) {
+        for( size_t i = 0; i < cv::min((double)circles.size(), 1.0); i++ )
+        {
+            cv::Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
+            int radius = mathGeneral::roundNumberToInt(circles[i][2]);
+            cout << circles[i][2] /8.0 << " ";
+            // circle center
+            circle( result, center, 3, Scalar(0,255,0), -1, 8, 0 );
+            // circle outline
+            circle( result, center, radius, Scalar(0,0,255), 3, 8, 0 );
+        }
+        if(!circles.empty())
+            cout << endl;
     }
-    if(!circles.empty())
-        cout << endl;
+    else if(!circles.empty()){
+        //print found circle
+        if(resize) {
+            debug << circles[0][2] /8.0 << endl;
+            cout << circles[0][2] /8.0 << endl;
+        }
+        else {
+            debug << circles[0][2] /8.0 << endl;
+            cout << circles[0][2] << endl;
+        }
+    }
+    else {
+        debug << "No Hough circles found" << endl;
+        cout << "No Hough circles found" << endl;
+    }
 
-    // Show your results
-    imshow( "HoughCircles", result );
+    if(showfin)
+        imshow( "HoughCircles", result );
 }
