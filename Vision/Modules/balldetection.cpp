@@ -259,12 +259,17 @@ void BallDetection::detectBall()
 }
 
 
-int hi = 1, lo = 1;
+int hi = 1, lo = 1, sigma1 = 1, sigma2 = 1;
 
 void BallDetection::houghMethod()
 {
     //Intensely aweful method that makes a binary image from the original image based on whether each pixel maps to
     //the ball colour
+    bool showbin = false,
+         showcan = false,
+         showblu = false;
+    bool blur = true,
+         canny = true;
 
     VisionBlackboard* vbb = VisionBlackboard::getInstance();
     const NUImage& img = vbb->getOriginalImage();
@@ -274,12 +279,19 @@ void BallDetection::houghMethod()
         XSKIP = 1,
         YSKIP = 1;
     cv::Mat binary_image(img.getHeight(), img.getWidth(), CV_8UC1);
-    cv::Mat grey = Mat::zeros(img.getHeight(), img.getWidth(), CV_8UC1);
-    cv::Mat result = Mat::zeros(img.getHeight(), img.getWidth(), CV_8UC3);
-    cv::namedWindow("bin");
+    cv::Mat grey; //= Mat::zeros(img.getHeight(), img.getWidth(), CV_8UC1);
+    cv::Mat result; //= Mat::zeros(img.getHeight(), img.getWidth(), CV_8UC3);
     namedWindow( "HoughCircles", CV_WINDOW_AUTOSIZE );
+    if(showbin)
+        cv::namedWindow("bin");
+    if(showcan)
+        cv::namedWindow( "canny", CV_WINDOW_AUTOSIZE );
+    if(showblu)
+        cv::namedWindow("blurred grey");
     cv::createTrackbar("hi", "HoughCircles", &hi, 255);
     cv::createTrackbar("lo", "HoughCircles", &lo, 255);
+    cv::createTrackbar("sigma1*100", "HoughCircles", &sigma1, 1000);
+    cv::createTrackbar("sigma2*100", "HoughCircles", &sigma2, 1000);
 
     for(x=0; x<img.getWidth(); x+=XSKIP) {
         for(y=0; y<img.getHeight(); y+=YSKIP) {
@@ -287,21 +299,37 @@ void BallDetection::houghMethod()
         }
     }
 
-    cv::imshow("bin", binary_image);
+    cv::resize(binary_image, binary_image, cv::Size(), 8, 8, cv::INTER_CUBIC);
 
-    if(true) {
-        cv::Canny(binary_image, grey, 200, 100);
-        namedWindow( "canny", CV_WINDOW_AUTOSIZE );
-        imshow( "canny", grey );
+    //binary_image.adjustROI(binary_image.rows*0.5 - 120, binary_image.rows*0.5 + 120, binary_image.cols*0.5 - 160, binary_image.cols*0.5 + 160);
 
-        cv::GaussianBlur( grey, grey, cv::Size(9, 9), 1, 1 );
+    binary_image = binary_image(cv::Range(binary_image.rows*0.5 - 120, binary_image.rows*0.5 + 120), cv::Range(binary_image.cols*0.5 - 160, binary_image.cols*0.5 + 160));
 
-        cv::namedWindow("blurred grey");
-        cv::imshow("blurred grey", grey);
+    //cv::Mat tmp = binary_image(cv::Rect(binary_image.cols*0.5 - 160, binary_image.rows*0.5 - 120, 320, 240));
+    //binary_image.copyTo(tmp);
+
+    if(showbin)
+        cv::imshow("bin", binary_image);
+
+    if(blur) {
+        if(canny) {
+            cv::Canny(binary_image, grey, 200, 100);
+            if(showcan)
+                imshow( "canny", grey );
+        }
+        else {
+            grey = binary_image.clone();
+        }
+
+        cv::GaussianBlur( grey, grey, cv::Size(9, 9), sigma1 > 0 ? sigma1*0.01 : 1, sigma2 > 0 ? sigma2*0.01 : 1 );
+
+        if(showblu)
+            cv::imshow("blurred grey", grey);
     }
     else {
-        grey = binary_image;
+        grey = binary_image.clone();
     }
+    cv::cvtColor(grey, result, cv::COLOR_GRAY2BGR);
 
     //now do the CHT
     vector<cv::Vec3f> circles;
@@ -311,11 +339,11 @@ void BallDetection::houghMethod()
 
     //cout << "# circles: " << circles.size() << endl;
     // Draw the circles detected
-    for( size_t i = 0; i < circles.size(); i++ )
+    for( size_t i = 0; i < cv::min((double)circles.size(), 1.0); i++ )
     {
         cv::Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
         int radius = mathGeneral::roundNumberToInt(circles[i][2]);
-        cout << "circle " << i << " radius: " << circles[i][2] << " ";
+        cout << circles[i][2] /8.0 << " ";
         // circle center
         circle( result, center, 3, Scalar(0,255,0), -1, 8, 0 );
         // circle outline
