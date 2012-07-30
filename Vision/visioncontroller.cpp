@@ -77,23 +77,23 @@ int VisionController::runFrame(bool lookForBall, bool lookForLandmarks)
 #if VISION_CONTROLLER_VERBOSITY > 2
     debug << "VisionController::runFrame() - segment filter done" << endl;
 #endif
+    //Profiler prof = Profiler("GoalDetection");
+    //prof.start();
     if(lookForLandmarks)
         GoalDetection::detectGoals();
+    //prof.split("After Goals");
+    //debug << prof;
 #if VISION_CONTROLLER_VERBOSITY > 2
     if(lookForLandmarks)
         debug << "VisionController::runFrame() - goal detection done - looking for landmarks" << endl;
     else
         debug << "VisionController::runFrame() - goal detection done - not looking for landmarks" << endl;
 #endif
-    Profiler prof = Profiler("BallDetection");
-    prof.start();
 
     if(lookForBall) {
         BallDetection::detectBall();
         //BallDetection::houghMethod();
     }
-    prof.split("After Ball");
-    debug << prof;
 
 #if VISION_CONTROLLER_VERBOSITY > 2
     if(lookForBall)
