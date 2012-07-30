@@ -40,7 +40,8 @@ Goal::Goal(GoalID id, const Quad &corners)
     m_location_pixels = corners.getCentre();
     //CALCULATE DISTANCE AND BEARING VALS
     valid = calculatePositions();
-    valid = valid && check();
+    //valid = valid && check();
+    valid = true;
 }
 
 const Quad& Goal::getQuad() const
@@ -269,6 +270,8 @@ bool Goal::calculatePositions()
         debug << "Goal::calculatePositions: ";
         debug << d2p << " " << width_dist << " " << distance << " " << m_transformed_spherical_pos.x << endl;
     #endif
+
+        cout << sqrt(width_dist*width_dist + 37.5*37.5) << endl;
 
     return transform_valid;
 }

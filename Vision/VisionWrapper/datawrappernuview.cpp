@@ -368,6 +368,9 @@ bool DataWrapper::updateFrame()
     m_timestamp = m_current_image->GetTimestamp();
     cout << "pre: " << m_current_image->GetTimestamp() << endl;
     field_objects->preProcess(m_current_image->GetTimestamp());
+    for(int i=0; i < field_objects->stationaryFieldObjects.size(); i++) {
+        field_objects->stationaryFieldObjects[i].setIsVisible(false);
+    }
     return true;
 }
 
