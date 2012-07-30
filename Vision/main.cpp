@@ -23,13 +23,7 @@ int main(void)
             c = 0;
             while(c!=27 && c!=32) {
                 c = waitKey(1);
-                if(c == 'c') {
-                    look_for_ball = !look_for_ball;
-                }
             }
-        }
-        else if(c == 'c') {
-            look_for_ball = !look_for_ball;
         }
     }
     if(error != 0)
