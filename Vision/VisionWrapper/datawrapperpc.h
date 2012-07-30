@@ -107,6 +107,9 @@ private:
     void ycrcb2ycbcr(Mat* img_ycrcb);
     void generateImageFromMat(Mat& frame);
 
+    //! Vision Save Images Interface
+    void saveAnImage();
+
 private:
     enum INPUT_METHOD {
         CAMERA,
@@ -115,7 +118,7 @@ private:
     };
     
 private:
-    static const INPUT_METHOD METHOD = STREAM;  //CAMERA, STREAM, FILE
+    static const INPUT_METHOD METHOD = CAMERA;  //CAMERA, STREAM, FILE
 
     static DataWrapper* instance;
 
@@ -157,7 +160,10 @@ private:
     int numFramesDropped;
     int numFramesProcessed;
 
-    
+    int saving_images_slider_val;
+    bool isSavingImages;
+    int numSavedImages;
+    ofstream imagefile;
     //NUSensorsData* m_sensor_data;
 
 //! ONLY FOR DEBUGGING - DO NOT RELY ON THE FOLLOWING METHODS OR VARIABLES BEING PRESENT

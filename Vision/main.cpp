@@ -17,6 +17,8 @@ int main(void)
     bool look_for_ball = false;
     while(c!=27 && error==0) {
         //visiondata->updateFrame();
+//        error = vision->runFrame();
+//        c = waitKey(1);
         error = vision->runFrame(look_for_ball);
         c = waitKey(1);
         if(c == 32) {
