@@ -28,6 +28,8 @@ win32 {
 !macx{
     !win32{
         LIBS += -ldns_sd
+        INCLUDEPATH += /usr/include/GL/
+        LIBS += -lGLU
     }
 }
 

@@ -993,16 +993,19 @@ Vector3<float> GoalDetection::FindGoalSphericalPosition( const ObjectCandidate &
     if(tightwidthSum != 0 && DistanceCentre !=0)
     {
         distance = GOAL_WIDTH * vision->EFFECTIVE_CAMERA_DISTANCE_IN_PIXELS()/ (DistanceCentre + pixelError);
+        cout << "DC: " << DistanceCentre << endl;
     }
     else if (tightwidthSum > 0 )
     {
         distance = GOAL_WIDTH * vision->EFFECTIVE_CAMERA_DISTANCE_IN_PIXELS()/ (tightwidthSum+ pixelError); //GOAL_WIDTH * EFFECTIVE_CAMERA_DISTANCE_IN_PIXELS
         //qDebug() << "Tight Average MidPoints Distance:" << distance << "cm using " << tightwidthSum << "pixels.";
+        cout << "TWS: " << tightwidthSum << endl;
     }
     else
     {
         distance = GOAL_WIDTH * vision->EFFECTIVE_CAMERA_DISTANCE_IN_PIXELS()/ (widthSum + pixelError); //GOAL_WIDTH * EFFECTIVE_CAMERA_DISTANCE_IN_PIXELS
         //qDebug() << "Average MidPoints Distance:" << distance << "cm using " << widthSum << "pixels.";
+        cout << "WS: " << widthSum << endl;
     }
 
 
@@ -1120,6 +1123,9 @@ void GoalDetection::UpdateAFieldObject(FieldObjects* AllObjects, Vision* vision,
     {
         Matrix cameraTransform = Matrix4x4fromVector(ctvector);
         transformedSphericalPosition = Kinematics::TransformPosition(cameraTransform,sphericalPosition);
+    }
+    else {
+        transformedSphericalPosition[0] = sphericalPosition[0]*sphericalPosition[0] - 37.5*37.5;
     }
     if(transformedSphericalPosition[2] > 0.00)
     {
