@@ -55,6 +55,117 @@ inline double normaliseAngle(double theta){
     return atan2(sin(theta), cos(theta));
 }
 
+//fast (approximate) inverse square root. Quite accurate.
+inline double fInvSqrt( const double& x )
+{
+    double y = x;
+    double xhalf = ( double )0.5 * y;
+    long long i = *( long long* )( &y );
+    i = 0x5fe6ec85e7de30daLL - ( i >> 1 );//LL suffix for (long long) type for GCC
+    y = *( double* )( &i );
+    y = y * ( ( double )1.5 - xhalf * y * y );
+    
+    return y;
+}
+
+//fast (approximate) inverse square root. Quite accurate.
+inline float fInvSqrt( const float& number )
+{
+       long i;
+       float x2, y;
+       const float threehalfs = 1.5f;
+
+       x2 = number * 0.5f;
+       y = number;
+       i = * ( long * ) &y; // evil floating point bit level hacking
+       i = 0x5f3759df - ( i >> 1 ); // what the fuck?
+       y = * ( float * ) &i;
+       y = y * ( threehalfs - ( x2 * y * y ) ); // 1st iteration
+       // y = y * ( threehalfs - ( x2 * y * y ) ); // 2nd iteration, this can be removed
+
+       return y;
+} 
+
+//fast (approximate) inverse square root. Up to 6% error.
+inline double fSqrt(const double& x) {
+   unsigned long long i = *(unsigned long long*) &x; 
+   // adjust bias
+   i  += (( long long)1023) << ((long long)52);
+   // approximation of square root
+   i >>= 1; 
+   return *(double*) &i;
+ }
+
+
+inline float fSqrt(const float& x) {
+   unsigned int i = *(unsigned int*) &x; 
+   // adjust bias
+   i  += 127 << 23;
+   // approximation of square root
+   i >>= 1; 
+   return *(float*) &i;
+ }
+ 
+inline double iSqrt( const double& y,const double& x )
+{
+    #if defined USE_FAST_SQRT || defined USE_FASTEST_SQRT
+        return y*fInvSqrt(x);
+    #else
+        return y/sqrt(x);
+    #endif
+} 
+
+inline float iSqrt( const float& x )
+{
+    #if defined USE_FAST_SQRT || defined USE_FASTEST_SQRT
+        return fInvSqrt(x);
+    #else
+        return 1./sqrt(x);
+    #endif
+} 
+
+inline double iSqrt( const double& x )
+{
+    #if defined USE_FAST_SQRT || defined USE_FASTEST_SQRT
+        return fInvSqrt(x);
+    #else
+        return 1./sqrt(x);
+    #endif
+} 
+
+inline float iSqrt( const float& y,const float& x )
+{
+    #if defined USE_FAST_SQRT || defined USE_FASTEST_SQRT
+        return y*fInvSqrt(x);
+    #else
+        return y/sqrt(x);
+    #endif
+} 
+
+inline double Sqrt( const double& x )
+{
+    #ifdef USE_FASTEST_SQRT
+        return fSqrt(x);
+    #endif
+    #ifdef USE_FAST_SQRT
+        return fInvSqrt(x);
+    #else
+        return 1./sqrt(x);
+    #endif
+} 
+
+inline float Sqrt( const float& x )
+{
+    #ifdef USE_FASTEST_SQRT
+        return fSqrt(x);
+    #endif
+    #ifdef USE_FAST_SQRT
+        return x*fInvSqrt(x);
+    #else
+        return sqrt(x);
+    #endif
+}
+
 /**
 * Round to the next integer
 * @param d A number
@@ -87,7 +198,7 @@ inline std::vector<float> Cartesian2Spherical(const std::vector<float>& cartesia
     const float z = cartesianCoordinates[2];
     std::vector<float> result(3,0.0f);
 
-    result[0] = sqrt(x*x + y*y + z*z);
+    result[0] = Sqrt(x*x + y*y + z*z);
     result[1] = atan2(y,x);
     result[2] = asin(z/(result[0]));
     return result;
@@ -115,7 +226,7 @@ inline Matrix Cartesian2Spherical(const Matrix& cartesianCoordinates)
     const float z = cartesianCoordinates[2][0];
     Matrix result(3,1);
 
-    result[0][0] = sqrt(x*x + y*y + z*z);
+    result[0][0] = Sqrt(x*x + y*y + z*z);
     result[1][0] = atan2(y,x);
     result[2][0] = asin(z/(result[0][0]));
     return result;
@@ -202,64 +313,12 @@ inline bool PointInsideConvexHull(float x, float y, const std::vector<std::vecto
 inline void ProjectFromAtoB(float* A, float* B, float distancePast, float* C) {
     float xdiff = B[0]-A[0];
     float ydiff = B[1]-A[1];
-    float dist = sqrt(sqr(xdiff)+sqr(ydiff));
+    float dist = Sqrt(sqr(xdiff)+sqr(ydiff));
     dist = (dist+distancePast)/dist;
     C[0] = A[0]+dist*xdiff;
     C[1] = A[1]+dist*ydiff;
 }
 
-
-//fast (approximate) inverse square root. Quite accurate.
-inline double invSqrt( const double& x )
-{
-    double y = x;
-    double xhalf = ( double )0.5 * y;
-    long long i = *( long long* )( &y );
-    i = 0x5fe6ec85e7de30daLL - ( i >> 1 );//LL suffix for (long long) type for GCC
-    y = *( double* )( &i );
-    y = y * ( ( double )1.5 - xhalf * y * y );
-    
-    return y;
-}
-
-//fast (approximate) inverse square root. Quite accurate.
-inline float invSqrt( const float& number )
-{
-       long i;
-       float x2, y;
-       const float threehalfs = 1.5f;
-
-       x2 = number * 0.5f;
-       y = number;
-       i = * ( long * ) &y; // evil floating point bit level hacking
-       i = 0x5f3759df - ( i >> 1 ); // what the fuck?
-       y = * ( float * ) &i;
-       y = y * ( threehalfs - ( x2 * y * y ) ); // 1st iteration
-       // y = y * ( threehalfs - ( x2 * y * y ) ); // 2nd iteration, this can be removed
-
-       return y;
-} 
-
-//fast (approximate) inverse square root. Up to 6% error.
-inline double fSqrt(const double& x) {
-   unsigned long long i = *(unsigned long long*) &x; 
-   // adjust bias
-   i  += (( long long)1023) << ((long long)52);
-   // approximation of square root
-   i >>= 1; 
-   return *(double*) &i;
- }
-
-//fast (approximate) inverse square root. Up to 6% error.
-inline float fSqrt(const float& x) {
-   unsigned int i = *(unsigned int*) &x; 
-   // adjust bias
-   i  += 127 << 23;
-   // approximation of square root
-   i >>= 1; 
-   return *(float*) &i;
- }
-
-} // End namespace
+}// End namespace
 
 #endif //MATH_GENERAL_H

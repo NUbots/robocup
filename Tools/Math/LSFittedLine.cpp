@@ -1,7 +1,8 @@
-#include "LSFittedLine.h"
 #include <cmath>
 #include <iostream>
 #include <cstdlib>
+#include "Tools/Math/General.h"
+#include "Tools/Math/LSFittedLine.h"
 using namespace std;
 
 LSFittedLine::LSFittedLine(){
@@ -163,7 +164,7 @@ Vector2<double> LSFittedLine::combinedR2TLSandMSD(const LSFittedLine &sourceLine
     sxx = TsumX2 - TsumX*TsumX/TnumPoints;
     syy = TsumY2 - TsumY*TsumY/TnumPoints;
     sxy = TsumXY - TsumX*TsumY/TnumPoints;
-    Sigma = (sxx+syy-sqrt((sxx-syy)*(sxx-syy)+4*sxy*sxy))/2;
+    Sigma = (sxx+syy-mathGeneral::Sqrt((sxx-syy)*(sxx-syy)+4*sxy*sxy))/2;
     results.x = 1.0-(4.0*Sigma*Sigma/((sxx+syy)*(sxx+syy)+(sxx-syy)*(sxx-syy)+4.0*sxy*sxy));
     results.y = Sigma/TnumPoints;
     return results;
@@ -185,7 +186,7 @@ void LSFittedLine::calcLine(){
         sxx = sumX2 - sumX*sumX/numPoints;
         syy = sumY2 - sumY*sumY/numPoints;
         sxy = sumXY - sumX*sumY/numPoints;
-        Sigma = (sxx+syy-sqrt((sxx-syy)*(sxx-syy)+4*sxy*sxy))/2;
+        Sigma = (sxx+syy-mathGeneral::Sqrt((sxx-syy)*(sxx-syy)+4*sxy*sxy))/2;
         //cout << "Sigma: "<< Sigma << endl;
         MSD = Sigma/numPoints;
         r2tls = 1.0-(4.0*Sigma*Sigma/((sxx+syy)*(sxx+syy)+(sxx-syy)*(sxx-syy)+4.0*sxy*sxy));

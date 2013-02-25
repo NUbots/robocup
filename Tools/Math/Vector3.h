@@ -12,6 +12,7 @@
 
 
 #include <math.h>
+#include "Tools/Math/General.h"
 
 /** This class represents a 3-vector */
 template <class V = float> class Vector3
@@ -166,7 +167,13 @@ public:
   *\return The length.
   */
   V abs() const 
-  {return (V) sqrt(double((x*x) + (y*y) + (z*z)));}
+  {return (V) mathGeneral::Sqrt(double((x*x) + (y*y) + (z*z)));}
+  
+  /** Calculation of the inverse of the length of this vector.
+  *\return The length.
+  */
+  V iabs() const 
+  {return (V) mathGeneral::iSqrt(double((x*x) + (y*y) + (z*z)));}
 
   /** Calculation of the square length of this vector.
   *\return length*length.
@@ -196,9 +203,9 @@ public:
   */
   Vector3<V> normalize(V len)
   {
-    V lenghtOfVector = abs();
-    if (lenghtOfVector == 0) return *this;
-    return *this = (*this * len) / lenghtOfVector;
+    if (z == 0 and y == 0 and x == 0) return *this;
+    V lenghtOfVector = iabs();
+    return *this = (*this * len) * lenghtOfVector;
    }
 
  /** normalize this vector.
@@ -206,9 +213,9 @@ public:
   */
   Vector3<V> normalize()
   {
-    V lenghtOfVector = abs();
-    if (lenghtOfVector == 0) return *this;
-    return *this /= lenghtOfVector;
+    if (z == 0 and y == 0 and x == 0) return *this;
+    V lenghtOfVector = iabs();
+    return *this *= lenghtOfVector;
   }
     
     /** Negation of this vector.

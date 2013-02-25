@@ -54,9 +54,9 @@ bool Line::setLine(double A, double B, double C)
       m_A = A/B;
       m_B = 1;
       m_C = C/B;
-      m_normaliser = sqrt(m_A*m_A + m_B*m_B);
-      m_phi = acos(m_A/m_normaliser);
-      m_rho = m_C/m_normaliser;
+      m_normaliser = mathGeneral::iSqrt(m_A*m_A + m_B*m_B);
+      m_phi = acos(m_A*m_normaliser);
+      m_rho = m_C*m_normaliser;
   }
   else {
       //B==0 means vertical
@@ -80,7 +80,7 @@ bool Line::setLine(double rho, double phi)
     m_A = cos(phi);
     m_B = sin(phi);
     m_C = rho;
-    m_normaliser = sqrt(m_A*m_A + m_B*m_B);
+    m_normaliser = mathGeneral::iSqrt(m_A*m_A + m_B*m_B);
     normaliseRhoPhi();
     return true; // lines in this form are always valid.
 }
@@ -217,18 +217,18 @@ double Line::getYIntercept() const
 double Line::getLinePointDistance(Point point) const
 {
   if(!isValid()) return 0.0;
-  return fabs(m_A * point.x + m_B * point.y - m_C) / m_normaliser;
+  return fabs(m_A * point.x + m_B * point.y - m_C) * m_normaliser;
 }
 
 double Line::getNormaliser() const
 {
-    return m_normaliser;
+    return 1./m_normaliser;
 }
 double Line::getSignedLinePointDistance(Point point) const
 {
   double distance;
   if(isValid() == false) return 0.0;
-  distance = (m_A * point.x + m_B * point.y - m_C) / m_normaliser;
+  distance = (m_A * point.x + m_B * point.y - m_C) * m_normaliser;
   return distance;
 }
 

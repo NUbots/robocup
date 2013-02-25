@@ -13,6 +13,7 @@
 
 #include <math.h>
 #include <fstream>
+#include "Tools/Math/General.h"
 
 /** This class represents a 2-vector */
 template <class V = float> class Vector2{
@@ -154,7 +155,13 @@ template <class V = float> class Vector2{
   *\return The length.
   */
   V abs() const
-  {return (V) sqrt(((double)x)*x+((double)y)*y);}
+  {return (V) mathGeneral::Sqrt(((double)x)*x+((double)y)*y);}
+  
+  /** Calculation of the inverse of the length of this vector.
+  *\return The length.
+  */
+  V iabs() const
+  {return (V) mathGeneral::iSqrt(((double)x)*x+((double)y)*y);}
 
   /** Calculation of the square length of this vector.
   *\return length*length.
@@ -168,8 +175,8 @@ template <class V = float> class Vector2{
   */
   Vector2<V> normalize(V len)
   {
-    if (abs() == 0) return *this;
-    return *this = (*this * len) / abs();
+    if (squareAbs() == 0) return *this;
+    return *this = (*this * len) * iabs();
    }
 
   /** normalize this vector.
@@ -177,8 +184,8 @@ template <class V = float> class Vector2{
   */
   Vector2<V> normalize()
   {
-    if (abs() == 0) return *this;
-    return *this /= abs();
+    if (squareAbs() == 0) return *this;
+    return *this *= iabs();
   }
 
   /** transpose this vector.
