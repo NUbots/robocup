@@ -24,6 +24,7 @@
 #include "Infrastructure/NUSensorsData/NUSensorsData.h"
 #include "Infrastructure/NUActionatorsData/NUActionatorsData.h"
 #include "Infrastructure/Jobs/MotionJobs/WalkJob.h"
+#include "Infrastructure/Jobs/MotionJobs/WalkKickJob.h"
 #include "Infrastructure/Jobs/MotionJobs/WalkToPointJob.h"
 #include "Infrastructure/Jobs/MotionJobs/WalkParametersJob.h"
 #include "Infrastructure/Jobs/MotionJobs/WalkPerturbationJob.h"
@@ -102,7 +103,7 @@ NUWalk* NUWalk::getWalkEngine(NUSensorsData* data, NUActionatorsData* actions, N
     return new BlankWalk(data, actions);
 }
 
-NUWalk::NUWalk(NUSensorsData* data, NUActionatorsData* actions) : NUMotionProvider("NUWalk", data, actions)
+NUWalk::NUWalk(NUSensorsData* data, NUActionatorsData* actions) : NUMotionProvider("NUWalk", data, actions),m_recalculate_kick_type(true),m_ball_position(0,0),m_ball_target(0,0)
 {
     m_current_time = 0;
     m_previous_time = 0;
@@ -122,6 +123,8 @@ NUWalk::NUWalk(NUSensorsData* data, NUActionatorsData* actions) : NUMotionProvid
     m_perturbation_start_time = -1000;
     m_perturbation_magnitude = 0;
     m_perturbation_direction = 0;
+
+
 }
 
 /*! @brief Destructor for motion module
@@ -314,12 +317,30 @@ void NUWalk::process(WalkParametersJob* job)
 /*! @brief Process a walk perturbation job
     @param job the walk perturbation job to be processed
  */
+
 void NUWalk::process(WalkPerturbationJob* job)
 {
     m_perturbation_start_time = m_current_time;
     m_perturbation_magnitude = job->getMagnitude();
     m_perturbation_direction = job->getDirection();
 }
+
+
+void NUWalk::process(WalkKickJob* job)
+{
+    #if DEBUG_NUMOTION_VERBOSITY > 2
+        debug << "NUWalk::process WalkKickJob from BWalk engine "<<endl;
+       // job->summaryTo(debug);
+    #endif
+    m_ball_position = job->getBallPosition();
+    m_ball_target = job->getTargetPosition();
+    m_recalculate_kick_type = true;
+
+
+}
+
+
+
 
 /*! @brief Sets m_target_speed_x, m_target_speed_y and m_target_speed_yaw.
     @param trans_speed the translation speed factor

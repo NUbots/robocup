@@ -71,7 +71,7 @@ template<typename T> ostream& operator<<(ostream& output, const Vector2<T>& v)
     return output;
 }
 
-WalkingEngine::WalkingEngine(NUSensorsData* data, NUActionatorsData* actions, NUInverseKinematics* ik) : NUWalk(data,actions), emergencyShutOff(false), currentMotionType(stand),  m_ik(ik), instable(true), beginOfStable(0)
+WalkingEngine::WalkingEngine(NUSensorsData* data, NUActionatorsData* actions, NUInverseKinematics* ik) : NUWalk(data,actions), emergencyShutOff(false), currentMotionType(stand),  m_ik(ik), instable(true), beginOfStable(0), m_kick_type(KickPlayer::none),kickPlayer()
 {
   observedPendulumPlayer.walkingEngine = this;
 
@@ -379,15 +379,24 @@ void WalkingEngine::writeParameters()
 
 void WalkingEngine::doWalk()
 {
+    #if DEBUG_NUMOTION_VERBOSITY > 2
+        debug << "WalkingEngine::doWalk()"<<endl;
+    #endif
     static std::vector<float> joints(m_actions->getSize(NUActionatorsData::All), 0.0f);
 
 //    m_cycle_time = 0.001 * (m_data->CurrentTime - m_prev_time);
 //    m_prev_time = m_data->CurrentTime;
-    m_cycle_time = 0.02; // time in seconds.
+    m_cycle_time = 0.02; // time in seconds. Added for dynamic kick (Jake)
     bool validJoints = m_data->getPosition(NUSensorsData::All, joints);
     if(validJoints)
     {
+        #if DEBUG_NUMOTION_VERBOSITY > 2
+            debug << "WalkingEngine::doWalk() setting joint data"<<endl;
+        #endif
         theRobotModel.setJointData(joints, theMassCalibration);
+        #if DEBUG_NUMOTION_VERBOSITY > 2
+            debug << "WalkingEngine::doWalk() joint data set, updating"<<endl;
+        #endif
         update();
     }
     else
@@ -400,6 +409,9 @@ void WalkingEngine::doWalk()
 
 void WalkingEngine::update(/*WalkingEngineOutput& walkingEngineOutput*/)
 {
+    #if DEBUG_NUMOTION_VERBOSITY > 2
+        debug << "WalkingEngine::update() 1"<<endl;
+    #endif
     bool walking = true;
     bool careful = false;
     m_pedantic = careful;
@@ -414,7 +426,9 @@ void WalkingEngine::update(/*WalkingEngineOutput& walkingEngineOutput*/)
         requestedMotionType = stand;
         balanceStepSize = p.balanceStepSize;
     }
-
+    #if DEBUG_NUMOTION_VERBOSITY > 2
+        debug << "WalkingEngine::update() 2"<<endl;
+    #endif
     m_prev_time = m_data->CurrentTime;
     
     if(walking/*theMotionSelection.ratios[MotionRequest::walk] > 0.f || theMotionSelection.ratios[MotionRequest::stand] > 0.f*/)
@@ -434,20 +448,59 @@ void WalkingEngine::update(/*WalkingEngineOutput& walkingEngineOutput*/)
             step.y = -maxStep.y;
         
         balanceStepSize += step;
+        #if DEBUG_NUMOTION_VERBOSITY > 2
+            debug << "WalkingEngine::update() doing updateMotionRequest()"<<endl;
+        #endif
         updateMotionRequest();
+        #if DEBUG_NUMOTION_VERBOSITY > 2
+            debug << "WalkingEngine::update() doing updateObservedPendulumPlayer()"<<endl;
+        #endif
         updateObservedPendulumPlayer();
+        #if DEBUG_NUMOTION_VERBOSITY > 2
+            debug << "WalkingEngine::update() doing computeMeasuredStance()"<<endl;
+        #endif
         computeMeasuredStance();
+        #if DEBUG_NUMOTION_VERBOSITY > 2
+            debug << "WalkingEngine::update() doing computeExpectedStance()"<<endl;
+        #endif
         computeExpectedStance();
+        #if DEBUG_NUMOTION_VERBOSITY > 2
+            debug << "WalkingEngine::update() doing computeError()"<<endl;
+        #endif
         computeError();
+        #if DEBUG_NUMOTION_VERBOSITY > 2
+            debug << "WalkingEngine::update() doing  updatePendulumPlayer()"<<endl;
+        #endif
         updatePendulumPlayer();
-        //    updateKickPlayer();
+        #if DEBUG_NUMOTION_VERBOSITY > 2
+            debug << "WalkingEngine::update() doing updateKickPlayer()"<<endl;
+        #endif
+        updateKickPlayer();
+        #if DEBUG_NUMOTION_VERBOSITY > 2
+            debug << "WalkingEngine::update() doing generateTargetStance()"<<endl;
+        #endif
         generateTargetStance();
+        #if DEBUG_NUMOTION_VERBOSITY > 2
+            debug << "WalkingEngine::update() doing generateJointRequest()"<<endl;
+        #endif
         generateJointRequest();
+        #if DEBUG_NUMOTION_VERBOSITY > 2
+            debug << "WalkingEngine::update() doing computeOdometryOffset()"<<endl;
+        #endif
         computeOdometryOffset();
+        #if DEBUG_NUMOTION_VERBOSITY > 2
+            debug << "WalkingEngine::update() doing generateOutput()"<<endl;
+        #endif
         generateOutput(/*walkingEngineOutput*/);
+        #if DEBUG_NUMOTION_VERBOSITY > 2
+            debug << "WalkingEngine::update() done "<<endl;
+        #endif
     }
     else
     {
+        #if DEBUG_NUMOTION_VERBOSITY > 2
+            debug << "WalkingEngine::update() done"<<endl;
+        #endif
         currentMotionType = stand;
         /*
         if(theMotionSelection.ratios[MotionRequest::specialAction] >= 1.f)
@@ -475,8 +528,12 @@ void WalkingEngine::updateMotionRequest()
     requestedWalkTarget = Pose2D(m_target_speed_yaw, 10*m_target_speed_x, 10*m_target_speed_y);
 //    requestedWalkTarget = Pose2D(1.0, 0, 0);
     requestedMotionType = stand;
-
-    if(fabs(m_target_speed_x) > 0.05 or fabs(m_target_speed_y) > 0.05 or fabs(m_target_speed_yaw) > 0.001)
+    if(getKickType(m_ball_position, m_ball_target)!= KickPlayer::none && kickPlayer.isKickStandKick(getKickType( m_ball_position, m_ball_target)))
+    {
+      bool mirrored = kickPlayer.isKickMirrored(getKickType( m_ball_position, m_ball_target));
+      requestedMotionType = mirrored ? standLeft : standRight;
+    }
+    else if(!kickPlayer.isActive() && (fabs(m_target_speed_x) > 0.05 or fabs(m_target_speed_y) > 0.05 or fabs(m_target_speed_yaw) > 0.001))
     {
         m_walk_requested = true;
         if(!instable)
@@ -500,14 +557,8 @@ void WalkingEngine::updateMotionRequest()
 //  if((theGroundContactState.contactSafe || !theDamageConfiguration.useGroundContactDetectionForSafeStates) && !theWalkingEngineOutput.enforceStand && theMotionSelection.ratios[MotionRequest::walk] > 0.999f && !instable)
 //    if(theMotionRequest.motion == MotionRequest::walk)
 //    {
-//      if(theMotionRequest.walkRequest.kickType != WalkRequest::none && kickPlayer.isKickStandKick(theMotionRequest.walkRequest.kickType))
-//      {
-//        bool mirrored = kickPlayer.isKickMirrored(theMotionRequest.walkRequest.kickType);
-//        requestedMotionType = mirrored ? standLeft : standRight;
-//      }
-//      else
-//        requestedMotionType = stepping;
-//    }
+
+
 }
 
 void WalkingEngine::updateObservedPendulumPlayer()
@@ -522,8 +573,8 @@ void WalkingEngine::updateObservedPendulumPlayer()
   case stand:
   case standLeft:
   case standRight:
-//    if(kickPlayer.isActive())
-//      break;
+      if(kickPlayer.isActive())
+         break;
 
     if(requestedMotionType != currentMotionType)
     {
@@ -754,41 +805,119 @@ void WalkingEngine::updatePendulumPlayer()
       default:
         break;
       }
-      //if(currentMotionType == requestedMotionType && (requestedMotionType == standLeft || requestedMotionType == standRight) && theMotionRequest.walkRequest.kickType != WalkRequest::none)
-      //kickPlayer.init(theMotionRequest.walkRequest.kickType, theMotionRequest.walkRequest.kickBallPosition, theMotionRequest.walkRequest.kickTarget);
+      if(currentMotionType == requestedMotionType && (requestedMotionType == standLeft || requestedMotionType == standRight) && getKickType( m_ball_position, m_ball_target)!= KickPlayer::none)
+        kickPlayer.init(getKickType( m_ball_position, m_ball_target),  m_ball_position, m_ball_target);
     }
   }
 }
 
-//void WalkingEngine::updateKickPlayer()
-//{
-//  if(currentMotionType == stepping)
-//  {
-//    if(!kickPlayer.isActive() && pendulumPlayer.kickType != WalkRequest::none)
-//    {
-//      kickPlayer.init(pendulumPlayer.kickType, theMotionRequest.walkRequest.kickBallPosition, theMotionRequest.walkRequest.kickTarget);
-//    }
-//    if(kickPlayer.isActive())
-//    {
-//      if(kickPlayer.getType() != pendulumPlayer.kickType)
-//        kickPlayer.stop();
-//      else
-//      {
-//        float length = kickPlayer.getLength();
-//        assert(length >= 0.f);
-//        float pos = length * (pendulumPlayer.t - pendulumPlayer.tb) / (pendulumPlayer.te - pendulumPlayer.tb);
-//        kickPlayer.seek(std::max(pos - kickPlayer.getCurrentPosition(), 0.f));
-//      }
-//    }
-//  }
-//  else
-//  {
-//    if(kickPlayer.isActive())
-//      kickPlayer.seek(theFrameInfo.cycleTime);
-//    else if(theMotionRequest.walkRequest.kickType != WalkRequest::none && currentMotionType == requestedMotionType && (requestedMotionType == standLeft || requestedMotionType == standRight))
-//      kickPlayer.init(theMotionRequest.walkRequest.kickType, theMotionRequest.walkRequest.kickBallPosition, theMotionRequest.walkRequest.kickTarget);
-//  }
-//}
+void WalkingEngine::updateKickPlayer()
+{
+    #if DEBUG_NUMOTION_VERBOSITY > 2
+        debug << "WalkingEngine::updateKickPlayer() start"<<endl;
+    #endif
+  if(currentMotionType == stepping)
+    {
+    if(!kickPlayer.isActive() && pendulumPlayer.kickType != KickPlayer::none)
+    {
+        #if DEBUG_NUMOTION_VERBOSITY > 2
+            debug << "WalkingEngine::updateKickPlayer() (!kickPlayer.isActive() && pendulumPlayer.kickType != KickPlayer::none) so init kickPlayer"<<endl;
+        #endif
+        kickPlayer.init(pendulumPlayer.kickType, m_ball_position, m_ball_target);
+    }
+    if(kickPlayer.isActive())
+    {
+      if(kickPlayer.getType() != pendulumPlayer.kickType){
+        #if DEBUG_NUMOTION_VERBOSITY > 2
+            debug << "WalkingEngine::updateKickPlayer() kickPlayer.isActive() and (kickPlayer.getType() != pendulumPlayer.kickType) so stop kickPlayer"<<endl;
+        #endif
+        kickPlayer.stop();
+      }
+      else
+      {
+        #if DEBUG_NUMOTION_VERBOSITY > 2
+            debug << "WalkingEngine::updateKickPlayer() !kickPlayer.isActive() so getLength"<<endl;
+        #endif
+            //error in here, prob uninitialised var
+        float length = kickPlayer.getLength();
+        assert(length >= 0.f);
+    #if DEBUG_NUMOTION_VERBOSITY > 2
+        debug << "WalkingEngine::updateKickPlayer() !kickPlayer.isActive() calculate pos"<<endl;
+    #endif
+        float pos = length * (pendulumPlayer.t - pendulumPlayer.tb) / (pendulumPlayer.te - pendulumPlayer.tb);
+    #if DEBUG_NUMOTION_VERBOSITY > 2
+        debug << "WalkingEngine::updateKickPlayer() !kickPlayer.isActive() seek"<<endl;
+    #endif
+        kickPlayer.seek(std::max(pos - kickPlayer.getCurrentPosition(), 0.f));
+    #if DEBUG_NUMOTION_VERBOSITY > 2
+        debug << "WalkingEngine::updateKickPlayer() !kickPlayer.isActive() end seek"<<endl;
+    #endif
+      }
+    }
+  }
+  else
+  {
+    if(kickPlayer.isActive()){
+        #if DEBUG_NUMOTION_VERBOSITY > 2
+            debug << "WalkingEngine::updateKickPlayer() kickplayer.seek"<<endl;
+        #endif
+        kickPlayer.seek(m_cycle_time);
+    }
+    else if(KickPlayer::KickType(getKickType( m_ball_position, m_ball_target)) != KickPlayer::none && currentMotionType == requestedMotionType && (requestedMotionType == standLeft || requestedMotionType == standRight)){
+        #if DEBUG_NUMOTION_VERBOSITY > 2
+            debug << "WalkingEngine::updateKickPlayer() kickplayer.init"<<endl;
+        #endif
+        kickPlayer.init( getKickType( m_ball_position, m_ball_target),  m_ball_position, m_ball_target);
+    }
+  }
+    #if DEBUG_NUMOTION_VERBOSITY > 2
+        debug << "WalkingEngine::updateKickPlayer() finish"<<endl;
+    #endif
+}
+
+WalkingEngine::KickPlayer::KickType WalkingEngine::getKickType( Vector2<> position, Vector2<> target){
+    if(m_recalculate_kick_type){
+        #if DEBUG_NUMOTION_VERBOSITY > 2
+            debug << "WalkingEngine::getKickType()"<<endl;
+        #endif
+        float ball_x = position.x;//Relative coords
+        float ball_y = position.y;
+
+        float target_x = target.x;
+        float target_y = target.y;
+
+        double theta = atan2(target_y - ball_y, target_x - ball_x);
+
+        float angle_margin = mathGeneral::PI / 4.0f; //triggers sidekick too often with -45 deg to 45 deg front kick zone
+
+
+        if(theta > angle_margin)
+        {
+            m_kick_type = KickPlayer::sidewardsRight;
+        }
+        else if(theta <= angle_margin and theta >= -angle_margin and ball_y>=0)
+        {
+            m_kick_type = KickPlayer::left;
+        }
+        else if(theta < -angle_margin)
+        {
+            m_kick_type = KickPlayer::sidewardsLeft;
+        }
+        else if(theta >= -angle_margin and theta <= angle_margin and ball_y<0)
+        {
+            m_kick_type = KickPlayer::right;
+        }
+        else
+        {
+            std::cout << "No kick available for position: (" << ball_x << ", " << ball_y << ")" << std::endl;
+            m_kick_type = KickPlayer::none;
+        }
+        m_recalculate_kick_type = false;
+        return m_kick_type;
+    }else{
+        return m_kick_type;
+    }
+}
 
 void WalkingEngine::generateTargetStance()
 {
@@ -817,11 +946,11 @@ void WalkingEngine::generateTargetStance()
   targetStance.rightArmJointAngles[3] = -(-p.standArmJointAngles.y - rightArmAngle - halfArmRotation);
 
   // playing a kick motion!?
-//  if(kickPlayer.isActive())
-//  {
-//    kickPlayer.setParameters(theMotionRequest.walkRequest.kickBallPosition, theMotionRequest.walkRequest.kickTarget);
-//    kickPlayer.apply(targetStance);
-//  }
+  if(kickPlayer.isActive())
+  {
+    kickPlayer.setParameters( m_ball_position, m_ball_target);
+    kickPlayer.apply(targetStance);
+  }
 
   legStances.add(targetStance);
 }
@@ -1035,7 +1164,7 @@ void WalkingEngine::generateOutput(/*WalkingEngineOutput& walkingEngineOutput*/)
 //  walkingEngineOutput.enforceStand = false;
 //  walkingEngineOutput.instability = 0.f;
 //  walkingEngineOutput.executedWalk = theMotionRequest.walkRequest;
-//  walkingEngineOutput.executedWalk.kickType = kickPlayer.isActive() ? kickPlayer.getType() : WalkRequest::none;
+//  walkingEngineOutput.executedWalk.kickType = kickPlayer.isActive() ? kickPlayer.getType() : KickPlayer::none;
 //  (JointRequest&)walkingEngineOutput = jointRequest;
 
     float default_arm_stifness = 30.0f;
@@ -1076,7 +1205,7 @@ void WalkingEngine::generateDummyOutput(/*WalkingEngineOutput& walkingEngineOutp
   // leaving joint data untouched
 }
 
-void WalkingEngine::generateNextStepSize(SupportLeg nextSupportLeg, StepType lastStepType, /*WalkRequest::KickType lastKickType,*/ PendulumParameters& next)
+void WalkingEngine::generateNextStepSize(SupportLeg nextSupportLeg, StepType lastStepType, /*KickPlayer::KickType lastKickType,*/ PendulumParameters& next)
 {
   if(nextSupportLeg == lastNextSupportLeg)
     next = nextPendulumParameters;
@@ -1097,7 +1226,7 @@ void WalkingEngine::generateNextStepSize(SupportLeg nextSupportLeg, StepType las
     next.k = p.walkK;
     next.te = p.te;
     next.tb = -p.te;
-//    next.kickType = WalkRequest::none;
+    next.kickType = KickPlayer::none;
     next.sXLimit.max = p.speedMax.translation.x * (1.1f * 0.5f);
     next.sXLimit.min = p.speedMaxBackwards * (-1.1f * 0.5f);
     next.rXLimit.max = next.r.x + p.walkRefXSoftLimit.max;
@@ -1153,35 +1282,19 @@ void WalkingEngine::generateNextStepSize(SupportLeg nextSupportLeg, StepType las
       }
       if(next.type == unknown)
       {
-//        if(!instable && theMotionRequest.walkRequest.kickType != WalkRequest::none && !kickPlayer.isKickStandKick(theMotionRequest.walkRequest.kickType) &&
-//           kickPlayer.isKickMirrored(theMotionRequest.walkRequest.kickType) == (nextSupportLeg == left) &&
-//           theMotionRequest.walkRequest.kickType != lastExecutedWalkingKick)
-//        {
-//          lastExecutedWalkingKick = theMotionRequest.walkRequest.kickType;
-//          next.kickType = theMotionRequest.walkRequest.kickType;
-//          kickPlayer.getKickPreStepSize(next.kickType, next.s.rotation, next.s.translation);
-//          next.r.x = kickPlayer.getKickRefX(next.kickType, next.r.x);
-//          next.rXLimit.max = next.r.x + p.walkRefXSoftLimit.max;
-//          next.rXLimit.min = next.r.x + p.walkRefXSoftLimit.min;
-//          next.rYLimit.max = p.walkRefY + p.walkRefYLimitAtFullSpeedX.max;
-//          next.rYLimit.min = p.walkRefY + p.walkRefYLimitAtFullSpeedX.min;
-//          float duration = kickPlayer.getKickDuration(next.kickType);
-//          if(duration != 0.f)
-//          {
-//            next.te = duration * 0.25f;
-//            next.tb = -next.te;
-//          }
-//        }
-        /*
-        else if(lastKickType != WalkRequest::none)
+        if(!instable &&  getKickType( m_ball_position, m_ball_target) != KickPlayer::none && !kickPlayer.isKickStandKick( getKickType( m_ball_position, m_ball_target)) &&
+           kickPlayer.isKickMirrored( getKickType( m_ball_position, m_ball_target)) == (nextSupportLeg == left) &&
+            getKickType( m_ball_position, m_ball_target) != lastExecutedWalkingKick)
         {
-          kickPlayer.getKickStepSize(lastKickType, next.s.rotation, next.s.translation);
-          next.r.x = kickPlayer.getKickRefX(lastKickType, next.r.x);
+          lastExecutedWalkingKick =  getKickType( m_ball_position, m_ball_target);
+          next.kickType =  getKickType( m_ball_position, m_ball_target);
+          kickPlayer.getKickPreStepSize(next.kickType, next.s.rotation, next.s.translation);
+          next.r.x = kickPlayer.getKickRefX(next.kickType, next.r.x);
           next.rXLimit.max = next.r.x + p.walkRefXSoftLimit.max;
           next.rXLimit.min = next.r.x + p.walkRefXSoftLimit.min;
           next.rYLimit.max = p.walkRefY + p.walkRefYLimitAtFullSpeedX.max;
           next.rYLimit.min = p.walkRefY + p.walkRefYLimitAtFullSpeedX.min;
-          float duration = kickPlayer.getKickDuration(lastKickType);
+          float duration = kickPlayer.getKickDuration(next.kickType);
           if(duration != 0.f)
           {
             next.te = duration * 0.25f;
@@ -1189,14 +1302,30 @@ void WalkingEngine::generateNextStepSize(SupportLeg nextSupportLeg, StepType las
           }
         }
 
-        else*/ if(instable)
+        else if(m_kick_type != KickPlayer::none)
+        {
+          kickPlayer.getKickStepSize(m_kick_type, next.s.rotation, next.s.translation);
+          next.r.x = kickPlayer.getKickRefX(m_kick_type, next.r.x);
+          next.rXLimit.max = next.r.x + p.walkRefXSoftLimit.max;
+          next.rXLimit.min = next.r.x + p.walkRefXSoftLimit.min;
+          next.rYLimit.max = p.walkRefY + p.walkRefYLimitAtFullSpeedX.max;
+          next.rYLimit.min = p.walkRefY + p.walkRefYLimitAtFullSpeedX.min;
+          float duration = kickPlayer.getKickDuration(m_kick_type);
+          if(duration != 0.f)
+          {
+            next.te = duration * 0.25f;
+            next.tb = -next.te;
+          }
+        }
+
+        else if(instable)
         {
           // nothing
         }
         else
         {
-//          if(theMotionRequest.walkRequest.kickType == WalkRequest::none)
-//            lastExecutedWalkingKick = WalkRequest::none;
+          if( getKickType( m_ball_position, m_ball_target) == KickPlayer::none)
+            lastExecutedWalkingKick = KickPlayer::none;
 
           // get requested walk target and speed
           Pose2D walkTarget = requestedWalkTarget;
@@ -1652,7 +1781,7 @@ void WalkingEngine::PendulumPlayer::computeSwapTimes(float t, float xt, float xv
 
   Parameters& p = walkingEngine->p;
 
-  if(errory != 0.f && walkingEngine->balanceStepSize.y != 0.f && !walkingEngine->m_pedantic/*&& kickType == WalkRequest::none /*&& !walkingEngine->theMotionRequest.walkRequest.pedantic*/)
+  if(errory != 0.f && walkingEngine->balanceStepSize.y != 0.f && !walkingEngine->m_pedantic && kickType == KickPlayer::none /*&& !walkingEngine->theMotionRequest.walkRequest.pedantic*/)
   {
     assert(next.xv0.y == 0.f);
     float sy = next.xtb.y * -2.f;
@@ -1736,7 +1865,7 @@ void WalkingEngine::PendulumPlayer::computeRefZmp(float t, float xt, float xvt, 
   }
 
   Parameters& p = walkingEngine->p;
-  if(errorx != 0.f && walkingEngine->balanceStepSize.x != 0.f && !walkingEngine->m_pedantic/*&& kickType == WalkRequest::none  /*&& !walkingEngine->theMotionRequest.walkRequest.pedantic */)
+  if(errorx != 0.f && walkingEngine->balanceStepSize.x != 0.f && !walkingEngine->m_pedantic && kickType == KickPlayer::none  /*&& !walkingEngine->theMotionRequest.walkRequest.pedantic */)
   {
     assert(next.x0.x == 0.f);
     float sx = next.xv0.x * sinh(next.k.x * next.tb) / (-0.5f * next.k.x);
@@ -1807,7 +1936,7 @@ void WalkingEngine::PendulumPlayer::computeRefZmp(float t, float xt, float xvt, 
     float newNextXvtb = newXvte;
     float newNextXv0 = newNextXvtb / cosh(next.k.x * next.tb);
     float newNextXtb = next.r.x + newNextXv0 * sinh(next.k.x * next.tb) / next.k.x;
-    //if(kickType == WalkRequest::none)
+    //if(kickType == KickPlayer::none)
     next.s.translation.x = newXte - newNextXtb;
     if(type == unknown)
     {
@@ -1817,7 +1946,7 @@ void WalkingEngine::PendulumPlayer::computeRefZmp(float t, float xt, float xvt, 
     }
   }
 
-  if(!sXLimit.isInside(next.s.translation.x)/* && kickType == WalkRequest::none*/)
+  if(!sXLimit.isInside(next.s.translation.x) && kickType == KickPlayer::none)
   {
     next.s.translation.x = sXLimit.limit(next.s.translation.x);
 
@@ -1974,177 +2103,240 @@ float WalkingEngine::PendulumPlayer::smoothShape(float r) const
   }
 }
 
-//WalkingEngine::KickPlayer::KickPlayer() : kick(0)
-//{
-//  assert((WalkRequest::numOfKickTypes - 1) % 2 == 0);
-//  for(int i = 0; i < (WalkRequest::numOfKickTypes - 1) / 2; ++i)
-//  {
-//    char filePath[256];
-//    sprintf(filePath, "Kicks/%s.cfg", WalkRequest::getName(WalkRequest::KickType(i * 2 + 1)));
-//    kicks[i].load(filePath);
-//  }
-//}
-//
-//bool WalkingEngine::KickPlayer::isKickStandKick(WalkRequest::KickType type) const
-//{
-//  bool mirrored = (type - 1) % 2 != 0;
-//  const WalkingEngineKick& kick = kicks[mirrored ? (type - 2) / 2 : (type - 1) / 2];
-//  return kick.isStandKick();
-//}
-//
-//void WalkingEngine::KickPlayer::getKickStepSize(WalkRequest::KickType type, float& rotation, Vector3<>& translation) const
-//{
-//  bool mirrored = (type - 1) % 2 != 0;
-//  const WalkingEngineKick& kick = kicks[mirrored ? (type - 2) / 2 : (type - 1) / 2];
-//  kick.getStepSize(rotation, translation);
-//  if(mirrored)
-//  {
-//    translation.y = -translation.y;
-//    rotation = -rotation;
-//  }
-//}
-//
-//void WalkingEngine::KickPlayer::getKickPreStepSize(WalkRequest::KickType type, float& rotation, Vector3<>& translation) const
-//{
-//  bool mirrored = (type - 1) % 2 != 0;
-//  const WalkingEngineKick& kick = kicks[mirrored ? (type - 2) / 2 : (type - 1) / 2];
-//  kick.getPreStepSize(rotation, translation);
-//  if(mirrored)
-//  {
-//    translation.y = -translation.y;
-//    rotation = -rotation;
-//  }
-//}
-//
-//float WalkingEngine::KickPlayer::getKickDuration(WalkRequest::KickType type) const
-//{
-//  bool mirrored = (type - 1) % 2 != 0;
-//  const WalkingEngineKick& kick = kicks[mirrored ? (type - 2) / 2 : (type - 1) / 2];
-//  return kick.getDuration();
-//}
-//
-//float WalkingEngine::KickPlayer::getKickRefX(WalkRequest::KickType type, float defaultValue) const
-//{
-//  bool mirrored = (type - 1) % 2 != 0;
-//  const WalkingEngineKick& kick = kicks[mirrored ? (type - 2) / 2 : (type - 1) / 2];
-//  return kick.getRefX(defaultValue);
-//}
-//
-//void WalkingEngine::KickPlayer::init(WalkRequest::KickType type, const Vector2<>& ballPosition, const Vector2<>& target)
-//{
-//  assert(!kick);
-//  mirrored = (type - 1) % 2 != 0;
-//  this->type = type;
-//  kick = &kicks[mirrored ? (type - 2) / 2 : (type - 1) / 2];
-//  setParameters(ballPosition, target);
-//  kick->init();
-//}
-//
-//void WalkingEngine::KickPlayer::seek(float deltaT)
-//{
-//  if(kick)
-//    if(!kick->seek(deltaT))
-//      kick = 0;
-//}
-//
-//float WalkingEngine::KickPlayer::getLength() const
-//{
-//  if(kick)
-//    return kick->getLength();
-//  assert(false);
-//  return -1.f;
-//}
-//
-//float WalkingEngine::KickPlayer::getCurrentPosition() const
-//{
-//  if(kick)
-//    return kick->getCurrentPosition();
-//  assert(false);
-//  return -1.f;
-//}
-//
-//void WalkingEngine::KickPlayer::apply(Stance& stance)
-//{
-//  if(!kick)
-//    return;
-//  Vector3<> additionalFootRotation;
-//  Vector3<> additionFootTranslation;
-//  float additionHeadAngles[2];
-//  float additionLeftArmAngles[4];
-//  float additionRightArmAngles[4];
-//
-//  for(int i = 0; i < 2; ++i)
-//    additionHeadAngles[i] = kick->getValue(WalkingEngineKick::Track(WalkingEngineKick::headYaw + i), 0.f);
-//  for(int i = 0; i < 4; ++i)
-//  {
-//    additionLeftArmAngles[i] = kick->getValue(WalkingEngineKick::Track(WalkingEngineKick::lShoulderPitch + i), 0.f);
-//    additionRightArmAngles[i] = kick->getValue(WalkingEngineKick::Track(WalkingEngineKick::rShoulderPitch + i), 0.f);
-//  }
-//  for(int i = 0; i < 3; ++i)
-//  {
-//    additionFootTranslation[i] = kick->getValue(WalkingEngineKick::Track(WalkingEngineKick::footTranslationX + i), 0.f);
-//    additionalFootRotation[i] = kick->getValue(WalkingEngineKick::Track(WalkingEngineKick::footRotationX + i), 0.f);
-//  }
-//
-//  if(mirrored)
-//  {
-//    additionalFootRotation.x = -additionalFootRotation.x;
-//    additionalFootRotation.z = -additionalFootRotation.z;
-//    additionFootTranslation.y = -additionFootTranslation.y;
-//
-//    for(unsigned int i = 0; i < sizeof(stance.leftArmJointAngles) / sizeof(*stance.leftArmJointAngles); ++i)
-//    {
-//      float tmp = additionLeftArmAngles[i];
-//      additionLeftArmAngles[i] = additionRightArmAngles[i];
-//      additionRightArmAngles[i] = tmp;
-//    }
-//    additionHeadAngles[0] = -additionHeadAngles[0];
-//  }
-//
-//  (mirrored ? stance.rightOriginToFoot : stance.leftOriginToFoot).conc(Pose3D(RotationMatrix(additionalFootRotation), additionFootTranslation));
-//  for(int i = 0; i < 2; ++i)
-//    if(stance.headJointAngles[i] != JointData::off)
-//      stance.headJointAngles[i] += additionHeadAngles[i];
-//  for(int i = 0; i < 4; ++i)
-//  {
-//    stance.leftArmJointAngles[i] += additionLeftArmAngles[i];
-//    stance.rightArmJointAngles[i] += additionRightArmAngles[i];
-//  }
-//}
-//
-//void WalkingEngine::KickPlayer::setParameters(const Vector2<>& ballPosition, const Vector2<>& target)
-//{
-//  if(!kick)
-//    return;
-//  if(mirrored)
-//    kick->setParameters(Vector2<>(ballPosition.x, -ballPosition.y), Vector2<>(target.x, -target.y));
-//  else
-//    kick->setParameters(ballPosition, target);
-//}
-//
-//bool WalkingEngine::KickPlayer::handleMessage(InMessage& message)
-//{
-//  if(message.getMessageID() == idWalkingEngineKick)
-//  {
-//    unsigned int id, size;
-//    message.bin >> id >> size;
-//    assert(id < WalkRequest::numOfKickTypes);
-//    char* buffer = new char[size + 1];
-//    message.bin.read(buffer, size);
-//    buffer[size] = '\0';
-//    char filePath[256];
-//    sprintf(filePath, "Kicks/%s.cfg", WalkRequest::getName(WalkRequest::KickType(id)));
-//    if(kicks[(id - 1) / 2].load(filePath, buffer))
-//    {
-//      OUTPUT(idText, text, filePath << ": ok");
-//    }
-//    delete[] buffer;
-//    return true;
-//  }
-//  else
-//    return false;
-//}
+WalkingEngine::KickPlayer::KickPlayer() : kick(NULL)
+{
+  config_filepath = string(CONFIG_DIR) + string("/Motion/Kicks/%s.cfg");
+  assert((numOfKickTypes - 1) % 2 == 0);
+  for(int i = 0; i < (numOfKickTypes - 1) / 2; ++i)
+  {
+    char filePath[256];
+    sprintf(filePath, config_filepath.c_str(), getName(KickType(i * 2 + 1)).c_str());
+    string s(filePath);
+    #if DEBUG_NUMOTION_VERBOSITY > 2
+        debug << "WalkingEngine::KickPlayer::KickPlayer() loading walk-kick from file"<<s<<endl;
+    #endif
+    kicks.push_back(WalkingEngineKick());
+    cout << "WalkingEngineKick success: " << kicks.back().load(filePath) << endl;
+    //kicks[i].load(filePath);
+  }
 
+}
+
+string  WalkingEngine::KickPlayer::getName(KickType t)
+{
+    switch(t){
+    case none:
+        return "none";
+    case left:
+        return "left";
+    case right:
+        return "right";
+    case sidewardsLeft:
+        return "sidewardsLeft";
+    case sidewardsRight:
+        return "sidewardsRight";
+    }
+    return "Unknown kick type.";
+}
+
+bool WalkingEngine::KickPlayer::isKickStandKick(KickType type) const
+{
+  bool mirrored = (type - 1) % 2 != 0;
+  const WalkingEngineKick& kick = kicks[mirrored ? (type - 2) / 2 : (type - 1) / 2];
+  return kick.isStandKick();
+}
+
+void WalkingEngine::KickPlayer::getKickStepSize(KickType type, float& rotation, Vector3<>& translation) const
+{
+  bool mirrored = (type - 1) % 2 != 0;
+  const WalkingEngineKick& kick = kicks[mirrored ? (type - 2) / 2 : (type - 1) / 2];
+  kick.getStepSize(rotation, translation);
+  if(mirrored)
+  {
+    translation.y = -translation.y;
+    rotation = -rotation;
+  }
+}
+
+void WalkingEngine::KickPlayer::getKickPreStepSize(KickType type, float& rotation, Vector3<>& translation) const
+{
+  bool mirrored = (type - 1) % 2 != 0;
+  const WalkingEngineKick& kick = kicks[mirrored ? (type - 2) / 2 : (type - 1) / 2];
+  kick.getPreStepSize(rotation, translation);
+  if(mirrored)
+  {
+    translation.y = -translation.y;
+    rotation = -rotation;
+  }
+}
+
+float WalkingEngine::KickPlayer::getKickDuration(KickType type) const
+{
+  bool mirrored = (type - 1) % 2 != 0;
+  const WalkingEngineKick& kick = kicks[mirrored ? (type - 2) / 2 : (type - 1) / 2];
+  return kick.getDuration();
+}
+
+float WalkingEngine::KickPlayer::getKickRefX(KickType type, float defaultValue) const
+{
+  bool mirrored = (type - 1) % 2 != 0;
+  const WalkingEngineKick& kick = kicks[mirrored ? (type - 2) / 2 : (type - 1) / 2];
+  return kick.getRefX(defaultValue);
+}
+
+void WalkingEngine::KickPlayer::init(KickType type, const Vector2<>& ballPosition, const Vector2<>& target)
+{
+    #if DEBUG_NUMOTION_VERBOSITY > 2
+        debug << " WalkingEngine::KickPlayer::init "<<endl;
+    #endif
+  assert(!kick);
+    #if DEBUG_NUMOTION_VERBOSITY > 2
+        debug << "WalkingEngine::KickPlayer::init"<<endl;
+    #endif
+  mirrored = (type - 1) % 2 != 0;//If even
+    #if DEBUG_NUMOTION_VERBOSITY > 2
+        debug << "WalkingEngine::KickPlayer::init"<<endl;
+    #endif
+  this->type = type;
+    #if DEBUG_NUMOTION_VERBOSITY > 2
+        debug << "WalkingEngine::KickPlayer::init"<<endl;
+    #endif
+  kick = &kicks[mirrored ? (type - 2) / 2 : (type - 1) / 2];
+    #if DEBUG_NUMOTION_VERBOSITY > 2
+        debug << "WalkingEngine::KickPlayer::init"<<endl;
+    #endif
+  setParameters(ballPosition, target);
+    #if DEBUG_NUMOTION_VERBOSITY > 2
+        debug << "WalkingEngine::KickPlayer::init"<<endl;
+    #endif
+  kick->init();
+}
+
+void WalkingEngine::KickPlayer::seek(float deltaT)
+{
+    cout<<"Kick -> "<< kick << endl;
+    for(int i = 0; i<(numOfKickTypes - 1) / 2; i++){
+        cout<<"Kicks["<<i<<"] -> "<< &kicks[i] <<endl;
+    }
+    //cout<<"Numof kicks ="<<kicks.size()<<endl;
+  if(kick)
+    if(!kick->seek(deltaT))
+      kick = 0;
+}
+
+float WalkingEngine::KickPlayer::getLength() const
+{
+  if(kick)
+    return kick->getLength();
+  cout<<"WalkingEngine::KickPlayer::getLength() asserted false"<<endl;
+  assert(false);
+  return -1.f;
+}
+
+float WalkingEngine::KickPlayer::getCurrentPosition() const
+{
+    #if DEBUG_NUMOTION_VERBOSITY > 2
+        debug << "WalkingEngine::KickPlayer::getCurrentPosition() - start "<<endl;
+    #endif
+
+  if(kick){
+    #if DEBUG_NUMOTION_VERBOSITY > 2
+        debug << "WalkingEngine::KickPlayer::getCurrentPosition() - start "<<kick<<endl;
+    #endif
+    float f = kick->getCurrentPosition();
+    #if DEBUG_NUMOTION_VERBOSITY > 2
+        debug << "WalkingEngine::KickPlayer::getCurrentPosition() - start "<<f<<endl;
+    #endif
+    return f;
+  }
+  cout<<"WalkingEngine::KickPlayer::getCurrentPosition() asserted false"<<endl;
+  //assert(false);
+  return -1.f;
+}
+
+void WalkingEngine::KickPlayer::apply(Stance& stance)
+{
+  if(!kick)
+    return;
+  Vector3<> additionalFootRotation;
+  Vector3<> additionFootTranslation;
+  float additionHeadAngles[2];
+  float additionLeftArmAngles[4];
+  float additionRightArmAngles[4];
+
+  for(int i = 0; i < 2; ++i)
+    additionHeadAngles[i] = kick->getValue(WalkingEngineKick::Track(WalkingEngineKick::headYaw + i), 0.f);
+  for(int i = 0; i < 4; ++i)
+  {
+    additionLeftArmAngles[i] = kick->getValue(WalkingEngineKick::Track(WalkingEngineKick::lShoulderPitch + i), 0.f);
+    additionRightArmAngles[i] = kick->getValue(WalkingEngineKick::Track(WalkingEngineKick::rShoulderPitch + i), 0.f);
+  }
+  for(int i = 0; i < 3; ++i)
+  {
+    additionFootTranslation[i] = kick->getValue(WalkingEngineKick::Track(WalkingEngineKick::footTranslationX + i), 0.f);
+    additionalFootRotation[i] = kick->getValue(WalkingEngineKick::Track(WalkingEngineKick::footRotationX + i), 0.f);
+  }
+
+  if(mirrored)
+  {
+    additionalFootRotation.x = -additionalFootRotation.x;
+    additionalFootRotation.z = -additionalFootRotation.z;
+    additionFootTranslation.y = -additionFootTranslation.y;
+
+    for(unsigned int i = 0; i < sizeof(stance.leftArmJointAngles) / sizeof(*stance.leftArmJointAngles); ++i)
+    {
+      float tmp = additionLeftArmAngles[i];
+      additionLeftArmAngles[i] = additionRightArmAngles[i];
+      additionRightArmAngles[i] = tmp;
+    }
+    additionHeadAngles[0] = -additionHeadAngles[0];
+  }
+
+  (mirrored ? stance.rightOriginToFoot : stance.leftOriginToFoot).conc(Pose3D(RotationMatrix(additionalFootRotation), additionFootTranslation));
+  for(int i = 0; i < 2; ++i)
+    if(stance.headJointAngles[i] != 1000/*=JointData::off*/)
+      stance.headJointAngles[i] += additionHeadAngles[i];
+  for(int i = 0; i < 4; ++i)
+  {
+    stance.leftArmJointAngles[i] += additionLeftArmAngles[i];
+    stance.rightArmJointAngles[i] += additionRightArmAngles[i];
+  }
+}
+
+void WalkingEngine::KickPlayer::setParameters(const Vector2<>& ballPosition, const Vector2<>& target)
+{
+  if(!kick)
+    return;
+  if(mirrored)
+    kick->setParameters(Vector2<>(ballPosition.x, -ballPosition.y), Vector2<>(target.x, -target.y));
+  else
+    kick->setParameters(ballPosition, target);
+}
+/*InMessage class dead
+bool WalkingEngine::KickPlayer::handleMessage(InMessage& message)
+{
+  if(message.getMessageID() == idWalkingEngine
+)
+  {
+    unsigned int id, size;
+    message.bin >> id >> size;
+    assert(id < numOfKickTypes);
+    char* buffer = new char[size + 1];
+    message.bin.read(buffer, size);
+    buffer[size] = '\0';
+    char filePath[256];
+    sprintf(filePath, config_path.c_str(), getName(KickType(id)).c_str());
+    if(kicks[(id - 1) / 2].load(filePath, buffer))
+    {
+      OUTPUT(idText, text, filePath << ": ok");
+    }
+    delete[] buffer;
+    return true;
+  }
+  else
+    return false;
+}
+*/
 Matrix WalkingEngine::Pose2Matrix(const Pose3D& pose)
 {
     Matrix result(4,4,true);

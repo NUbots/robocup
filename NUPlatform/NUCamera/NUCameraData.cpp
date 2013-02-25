@@ -70,7 +70,7 @@ bool NUCameraData::LoadFromConfigFile(const char* fileName)
     }
     else
     {
-        errorlog << "NUCameraData::LoadFromConfigFile(). Unable to load camera specifications." << std::endl;
+        errorlog << "NUCameraData::LoadFromConfigFile(). Unable to load camera specifications. File: " <<fileName<<  std::endl;
     }
     file.close();
     return loaded;

@@ -104,6 +104,7 @@ void SenseMoveThread::run()
                 waitprof.start();
             #endif
             wait();
+
             #ifdef THREAD_SENSEMOVE_PROFILE
                 waitprof.split("wait");
                 debug << waitprof;
@@ -113,21 +114,29 @@ void SenseMoveThread::run()
             #ifdef THREAD_SENSEMOVE_PROFILE
                 prof.start();
             #endif
+
+                //
             m_nubot->m_platform->updateSensors();
+
+
             #ifdef THREAD_SENSEMOVE_PROFILE
                 prof.split("sensors");
             #endif
+
             #ifdef USE_MOTION
+                //
                 m_nubot->m_motion->process(Blackboard->Sensors, Blackboard->Actions);
                 #ifdef THREAD_SENSEMOVE_PROFILE
                     prof.split("motion");
                 #endif
             #endif
+
             #if defined(USE_BEHAVIOUR) and not defined(USE_VISION) and not defined(USE_LOCALISATION)        // This is a special clause. When there is no vision or localisation we reduce down to a single thread; ie the behaviour is no called from this thread.
                 m_nubot->m_behaviour->process(Blackboard->Jobs, Blackboard->Sensors, Blackboard->Actions, Blackboard->Objects, Blackboard->GameInfo, Blackboard->TeamInfo);
                 #ifdef THREAD_SENSEMOVE_PROFILE
                     prof.split("behaviour");
                 #endif
+
                 #if defined(USE_MOTION)
                     m_nubot->m_motion->process(Blackboard->Jobs);
                     #ifdef THREAD_SENSEMOVE_PROFILE
@@ -135,14 +144,16 @@ void SenseMoveThread::run()
                     #endif
                 #endif
             #endif
+            //
             m_nubot->m_platform->processActions();
+
             #ifdef THREAD_SENSEMOVE_PROFILE
                 prof.split("actionators");
                 debug << prof;
             #endif
             // -----------------------------------------------------------------------------------------------------------------------------------------------------------------
         }
-        catch (std::exception& e) 
+        catch (std::exception& e)
         {
             m_nubot->unhandledExceptionHandler(e);
         }

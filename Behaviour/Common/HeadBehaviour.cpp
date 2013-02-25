@@ -64,7 +64,8 @@ HeadBehaviour::HeadBehaviour():Mrlagent(){
     actions_taken_this_state = 0;
 
     rewards_log_pathname = "nubot/Config/Darwin/HeadRewards.csv";//Rewards are not recorded unless uncommented in calculateReward() method
-    agent_filename = "Order30_HeadBehaviourRL";
+    agent_filename = "Order30_CombinedAgent";
+    give_rew_to_mot = true;
 
     srand(Blackboard->Sensors->GetTimestamp());
 
@@ -85,7 +86,7 @@ HeadBehaviour::HeadBehaviour():Mrlagent(){
                                      ,30
                                      //max_percept_values
                                      ,MAX_PERCEPT_RANGESIZE);
-            Mrlagent.setParameters(0.5,1,0.1,0.5,5,15, true);
+            Mrlagent.setParameters(0.5,0,0.1,0.5,5,15, false);
 
         }catch(string s){
            cout<<s<<endl;
@@ -297,13 +298,17 @@ void HeadBehaviour::makeVisionChoice(VisionPolicyID fieldVisionPolicy) {
             }else{
                 //Wait for button press
                 Mrlagent.saveMRLAgent(agent_filename);
-                cout<<"HeadBehaviour::makeVisionChoice - RLAgentTrainingPolicy - Waiting for left button press before continuing... Move robot to new location."<<endl;
+                cout<<"HeadBehaviour::makeVisionChoice - RLAgentTrainingPolicy - Waiting for middle button press before continuing... Move robot to new location."<<endl;
                 actions_taken_this_state = 0;
                 float button_state;
                 Blackboard->Sensors->getButton(NUSensorsData::MainButton,button_state);
                 while(button_state<=0){
                      Blackboard->Sensors->getButton(NUSensorsData::MainButton,button_state);
                 }
+                //Reset localisation
+//                Blackboard->Objects->self.updateLocationOfSelf(0,0,0,600,600, 6.283,true);
+//                Blackboard->Objects->mobileFieldObjects[FieldObjects::FO_BALL].updateObjectLocation(0,0,600,600);
+
             }
             break;
 
@@ -315,13 +320,17 @@ void HeadBehaviour::makeVisionChoice(VisionPolicyID fieldVisionPolicy) {
             }else{
                 actions_taken_this_state = 0;
                 Mrlagent.saveMRLAgent(agent_filename);
-                cout<<"HeadBehaviour::makeVisionChoice - MRLAgentTrainingPolicy - Waiting for left button press before continuing... Move robot to new location."<<endl;
+                cout<<"HeadBehaviour::makeVisionChoice - MRLAgentTrainingPolicy - Waiting for middle button press before continuing... Move robot to new location."<<endl;
                 //Wait for button press
                 float button_state;
                 Blackboard->Sensors->getButton(NUSensorsData::MainButton,button_state);
                 while(button_state<=0){
                      Blackboard->Sensors->getButton(NUSensorsData::MainButton,button_state);
                 }
+                //Reset localisation
+//                Blackboard->Objects->self.updateLocationOfSelf(0,0,0,600,600, 6.283,true);
+//                Blackboard->Objects->mobileFieldObjects[FieldObjects::FO_BALL].updateObjectLocation(0,0,600,600);
+               // Nubot::m_seethink_thread->m_nubot->m_localisation->ClearAllModels();
             }
             break;
 
@@ -338,36 +347,36 @@ void HeadBehaviour::makeVisionChoice(VisionPolicyID fieldVisionPolicy) {
 void HeadBehaviour::doMRLAgentPolicy(){
 
     vector<float> inputs = getPercept();
-    int action = Mrlagent.getActionAndLearn(inputs,head_logic->getValidObjectsToLookAt());
-    float temp = calculateReward();//Calculate reward to measure and record performance.
+    int action = Mrlagent.getActionAndLearn(inputs,head_logic->getValidObjectsToLookAt(),(give_rew_to_mot ? calculateReward()-0.5:0));
+    float temp = (!give_rew_to_mot ? calculateReward():0);//Calculate reward to measure and record performance if not done already.
 
     if (action < head_logic->relevantObjects[0].size()){    //i.e. Stationary Object
         dispatchHeadJob((StationaryObject*)(head_logic->getObject(action)));
 
         //Debug text for use when training:
-        // cout<<" HeadBehaviour::doMRLAgentPolicy() Performing priority policy - Stationary Object: "<< action << "- Percept = [";
-        /*for(int i = 0; i<inputs.size(); i++){
-            cout<<" "<<inputs[i]<<",";
-        }*/
-       // cout<<"]"<<endl;
+//        cout<<" HeadBehaviour::doMRLAgentPolicy() Performing priority policy - Stationary Object: "<< action << "- Percept = [";
+//        for(int i = 0; i<inputs.size(); i++){
+//            cout<<" "<<inputs[i]<<",";
+//        }
+//        cout<<"]"<<endl;
     } else if (action < head_logic->relevantObjects[1].size()+head_logic->relevantObjects[0].size()){ //i.e. Mobile Object
         dispatchHeadJob((MobileObject*)(head_logic->getObject(action)));
 
         //Debug text for use when training:
-        //cout<<" HeadBehaviour::doMRLAgentPolicy() Performing priority policy - Mobile Object: "<< action << "- Percept = [";
-        /*for(int i = 0; i<inputs.size(); i++){
-            cout<<" "<<inputs[i]<<",";
-        }*/
-        //cout<<"]"<<endl;
+//        cout<<" HeadBehaviour::doMRLAgentPolicy() Performing priority policy - Mobile Object: "<< action << "- Percept = [";
+//        for(int i = 0; i<inputs.size(); i++){
+//            cout<<" "<<inputs[i]<<",";
+//        }
+//        cout<<"]"<<endl;
     } else {
         dispatchHeadJob((AmbiguousObject*)(head_logic->getObject(action)));
 
         //Debug text for use when training:
-        /*cout<<" HeadBehaviour::doMRLAgentPolicy() Performing priority policy - Ambiguous Object: "<< action << "- Percept = [";
-        /*for(int i = 0; i<inputs.size(); i++){
-            cout<<" "<<inputs[i]<<",";
-        }
-        cout<<"]"<<endl;*/
+//        cout<<" HeadBehaviour::doMRLAgentPolicy() Performing priority policy - Ambiguous Object: "<< action << "- Percept = [";
+//        for(int i = 0; i<inputs.size(); i++){
+//            cout<<" "<<inputs[i]<<",";
+//        }
+//        cout<<"]"<<endl;
     }
 
 }
@@ -441,9 +450,9 @@ float HeadBehaviour::calculateReward(){
     float self_reward = -(1-exp(-(errx*errx+erry*erry+errh*errh)/800));
 
     //Weight in terms of distance to ball: ball close to robot means ball more important.
-    float weight = 0.25+0.5*(1-exp(-fabs(head_logic->calculateMobilePolarObjectLocation(&(Blackboard->Objects->mobileFieldObjects[FieldObjects::FO_BALL]))[0])/250));
-    float reward = 1+((1-weight)*ball_reward+weight*self_reward);
-
+    /*float weight = 0.25+0.5*(1-exp(-fabs(head_logic->calculateMobilePolarObjectLocation(&(Blackboard->Objects->mobileFieldObjects[FieldObjects::FO_BALL]))[0])/250));
+    float reward = 1+((1-weight)*ball_reward+weight*self_reward);*/
+    float reward = 1+(ball_reward+self_reward)/2.;
     //When reward recording desired, uncomment: Rewards are stored in rewards_log_pathname
     //recordReward(reward);
     last_reward = reward;

@@ -17,6 +17,7 @@
 #include "Requirements/Pose3D.h"
 #include "Requirements/RotationMatrix.h"
 #include "Requirements/RobotModel.h"
+#include "Requirements/WalkingEngineKick.h"
 #include "Motion/NUWalk.h"
 #include "Tools/Math/Matrix.h"
 //#include "WalkingEngineKick.h"
@@ -44,12 +45,14 @@ public:
   bool m_pedantic;
 
 
+
 private:
 
   vector<float> nu_nextLeftArmJoints;   // Left Arm
   vector<float> nu_nextRightArmJoints;  // Right Arm
   vector<float> nu_nextLeftLegJoints;   // Left Leg
   vector<float> nu_nextRightLegJoints;  // Right Leg
+
 
   class PIDCorrector
   {
@@ -316,7 +319,48 @@ private:
       return Pose2D(rotation, translation.x, translation.y);
     }
   };
+  class KickPlayer
+  {
+  public:
+    enum KickType{
+        none =0, /**< do not kick */
+        left =1, /**< kick using the left foot */
+        right = 2, /**< kick using the right foot */
+        sidewardsLeft = 3,
+        sidewardsRight = 4
+    };
+    const static int numOfKickTypes = 5;
+    string config_filepath;
 
+    KickPlayer();
+
+    void init(KickType type, const Vector2<>& ballPosition, const Vector2<>& target);
+
+    void seek(float deltaT);
+    float getLength() const;
+    float getCurrentPosition() const;
+    void apply(Stance& stance);
+    void stop() {kick = 0;}
+    inline bool isActive() const {return kick ? true : false;}
+    inline KickType getType() const {return type;}
+    void setParameters(const Vector2<>& ballPosition, const Vector2<>& target);
+   // bool handleMessage(InMessage& message);
+
+    inline bool isKickMirrored(KickType type) const {return (type - 1) % 2 != 0;}
+    bool isKickStandKick(KickType type) const;
+    void getKickStepSize(KickType type, float& rotation, Vector3<>& translation) const;
+    void getKickPreStepSize(KickType type, float& rotation, Vector3<>& translation) const;
+    float getKickDuration(KickType type) const;
+    float getKickRefX(KickType type, float defaultValue) const;
+    string getName(KickType t);
+  private:
+    WalkingEngineKick* kick;
+    bool mirrored;
+    KickType type;
+
+    //WalkingEngineKick kicks[(numOfKickTypes - 1) / 2];
+    vector<WalkingEngineKick> kicks;
+  };
   class PendulumParameters
   {
   public:
@@ -337,9 +381,9 @@ private:
     Range<> sXLimit;
     Range<> rXLimit;
     Range<> rYLimit;
-//    WalkRequest::KickType kickType;
+    KickPlayer::KickType kickType;
     float originalRX;
-    PendulumParameters() : type(unknown) {}
+    PendulumParameters() : type(unknown),kickType(KickPlayer::none) {}
   };
 
   enum SupportLeg
@@ -351,6 +395,7 @@ private:
   class PendulumPlayer : public PendulumParameters
   {
   public:
+
     WalkingEngine* walkingEngine;
     SupportLeg supportLeg;
     bool active;
@@ -383,36 +428,7 @@ private:
     b_human::Matrix4x4f cov;
   };
 
-//  class KickPlayer
-//  {
-//  public:
-//    KickPlayer();
-//
-//    void init(WalkRequest::KickType type, const Vector2<>& ballPosition, const Vector2<>& target);
-//    void seek(float deltaT);
-//    float getLength() const;
-//    float getCurrentPosition() const;
-//    void apply(Stance& stance);
-//    void stop() {kick = 0;};
-//    inline bool isActive() const {return kick ? true : false;}
-//    inline WalkRequest::KickType getType() const {return type;}
-//    void setParameters(const Vector2<>& ballPosition, const Vector2<>& target);
-//    bool handleMessage(InMessage& message);
-//
-//    inline bool isKickMirrored(WalkRequest::KickType type) const {return (type - 1) % 2 != 0;}
-//    bool isKickStandKick(WalkRequest::KickType type) const;
-//    void getKickStepSize(WalkRequest::KickType type, float& rotation, Vector3<>& translation) const;
-//    void getKickPreStepSize(WalkRequest::KickType type, float& rotation, Vector3<>& translation) const;
-//    float getKickDuration(WalkRequest::KickType type) const;
-//    float getKickRefX(WalkRequest::KickType type, float defaultValue) const;
-//
-//  private:
-//    WalkingEngineKick* kick;
-//    bool mirrored;
-//    WalkRequest::KickType type;
-//
-//    WalkingEngineKick kicks[(WalkRequest::numOfKickTypes - 1) / 2];
-//  };
+
 
 //  PROCESS_WIDE_STORAGE_STATIC(WalkingEngine) theInstance; /**< Points to the only instance of this class in this process or is 0 if there is none */
   Parameters p; /**< The walking engine parameters */
@@ -430,7 +446,7 @@ private:
   Stance targetStance;
   ObservedPendulumPlayer observedPendulumPlayer;
   PendulumPlayer pendulumPlayer;
-  //KickPlayer kickPlayer;
+  KickPlayer kickPlayer;
 
 //  /**
 //  * The update method to generate the standing stance
@@ -491,7 +507,7 @@ private:
   SupportLeg lastNextSupportLeg;
   PendulumParameters nextPendulumParameters;
   Pose2D lastSelectedSpeed;
-  //WalkRequest::KickType lastExecutedWalkingKick;
+  KickPlayer::KickType lastExecutedWalkingKick;
 
   void computeOdometryOffset();
   Pose2D odometryOffset;
@@ -502,4 +518,7 @@ private:
   bool upcomingOdometryOffsetValid;
 
   Matrix Pose2Matrix(const Pose3D& pose);
+
+  KickPlayer::KickType getKickType( Vector2<> position, Vector2<> target);
+  KickPlayer::KickType m_kick_type;
 };

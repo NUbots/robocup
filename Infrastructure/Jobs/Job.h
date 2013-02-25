@@ -62,6 +62,7 @@ public:
         MOTION_WALK_PARAMETERS,
         MOTION_WALK_PERTURBATION,
         MOTION_KICK,
+        MOTION_WALK_KICK,
         MOTION_BLOCK,
         MOTION_SAVE,
         MOTION_SCRIPT,

@@ -188,7 +188,6 @@ class SelfLocalisation: public TimestampedData
 
         double m_timestamp;
         int m_currentFrameNumber;
-        double m_prev_ball_update_time;
 
         // Game state memory
         bool m_previously_incapacitated;
@@ -198,7 +197,7 @@ class SelfLocalisation: public TimestampedData
         std::vector<float> m_gps;
         float m_compass;
         bool m_hasGps;
-        
+
         // Settings
         LocalisationSettings m_settings;
 
@@ -214,6 +213,7 @@ class SelfLocalisation: public TimestampedData
         static const float c_obj_range_relative_variance;
         static const float c_centre_circle_heading_variance;
         static const float c_twoObjectAngleVariance;
+        double m_prev_ball_update_time;
 };
 
 #endif

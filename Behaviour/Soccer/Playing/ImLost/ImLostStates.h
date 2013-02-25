@@ -76,14 +76,14 @@ protected:
         #endif
         m_jobs->addMotionJob(new WalkJob(0, 0, 0));
         m_jobs->addMotionJob(new HeadPanJob(HeadPanJob::Localisation));
-        
+
         // keep track of the time in this state
         if (m_parent_machine->stateChanged())
             reset();
         else
             m_time_in_state += m_data->CurrentTime - m_previous_time;
         m_previous_time = m_data->CurrentTime;
-        
+
         // grab the pan end time
         if (not m_pan_started and m_time_in_state > 200)
         {

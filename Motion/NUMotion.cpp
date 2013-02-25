@@ -466,11 +466,15 @@ void NUMotion::process(JobList* jobs)
             case Job::MOTION_WALK_PERTURBATION:
                 m_walk->process(reinterpret_cast<WalkPerturbationJob*> (*it));
                 break;
+
         #endif
         #ifdef USE_KICK
             case Job::MOTION_KICK:
                 next_provider = m_kick;
                 m_kick->process(reinterpret_cast<KickJob*> (*it));
+                break;
+            case Job::MOTION_WALK_KICK:
+                m_walk->process(reinterpret_cast<WalkKickJob*> (*it));
                 break;
         #endif
         #ifdef USE_HEAD

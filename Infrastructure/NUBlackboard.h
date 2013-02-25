@@ -1,6 +1,6 @@
 /*! @file NUBlackboard.h
     @brief The blackboard class.
- 
+
     @class NUBlackboard
     @brief A blackboard for storing data that is required by multiple modules.
            The blackboard contains the following containers
@@ -10,13 +10,13 @@
                 - Jobs; which contains all of the pending jobs for the robot
                 - GameInfo; which contains all of the information about the state of the 'game'
                 - TeamInfo; which contains all of the information about the team mates' state
- 
+
     @note Adding a new type of object to the Blackboard is considered a major change, and should be avoided.
- 
+
     @author Jason Kulk
- 
+
   Copyright (c) 2010 Jason Kulk
- 
+
     This file is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
@@ -48,7 +48,7 @@ class NUBlackboard
 public:
     NUBlackboard();
     ~NUBlackboard();
-    
+
     void add(NUSensorsData* sensorsdata);
     void add(NUActionatorsData* actionsdata);
     void add(NUImage* image);
@@ -56,7 +56,7 @@ public:
     void add(JobList* joblist);
     void add(GameInformation* gameinfo);
     void add(TeamInformation* teaminfo);
-    
+
 public:
     NUSensorsData* Sensors;
     NUActionatorsData* Actions;

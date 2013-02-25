@@ -198,15 +198,15 @@ void GoalDetection::detectGoals()
 
     // DENSITY CHECK
 
-    // yellow
-    DensityCheck(true, false, &yellow_posts, &img, &lut, VisionConstants::GOAL_MIN_PERCENT_YELLOW);
-    DensityCheck(true, true, &yellow_beacons, &img, &lut, VisionConstants::BEACON_MIN_PERCENT_YELLOW);
-    DensityCheck(true, true, &unknown_beacons, &img, &lut, VisionConstants::BEACON_MIN_PERCENT_YELLOW);
+//    // yellow
+//    DensityCheck(true, false, &yellow_posts, &img, &lut, VisionConstants::GOAL_MIN_PERCENT_YELLOW);
+//    DensityCheck(true, true, &yellow_beacons, &img, &lut, VisionConstants::BEACON_MIN_PERCENT_YELLOW);
+//    DensityCheck(true, true, &unknown_beacons, &img, &lut, VisionConstants::BEACON_MIN_PERCENT_YELLOW);
 
-    // blue
-    DensityCheck(false, false, &blue_posts, &img, &lut, VisionConstants::GOAL_MIN_PERCENT_BLUE);
-    DensityCheck(false, true, &blue_beacons, &img, &lut, VisionConstants::BEACON_MIN_PERCENT_BLUE);
-    DensityCheck(false, true, &unknown_beacons, &img, &lut, VisionConstants::BEACON_MIN_PERCENT_BLUE);
+//    // blue
+//    DensityCheck(false, false, &blue_posts, &img, &lut, VisionConstants::GOAL_MIN_PERCENT_BLUE);
+//    DensityCheck(false, true, &blue_beacons, &img, &lut, VisionConstants::BEACON_MIN_PERCENT_BLUE);
+//    DensityCheck(false, true, &unknown_beacons, &img, &lut, VisionConstants::BEACON_MIN_PERCENT_BLUE);
 
     
     //ADD TO BLACKBOARD

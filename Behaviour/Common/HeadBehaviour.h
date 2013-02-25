@@ -95,7 +95,7 @@ private:
     string agent_filename;
 
     float last_reward;
-    
+    bool give_rew_to_mot;
 
     /*! @brief
     */

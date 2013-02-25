@@ -8,25 +8,28 @@
 
 #include "Tools/Math/Vector2.h"
 #include "Tools/Math/Vector3.h"
-#include "Representations/Infrastructure/JointData.h"
+#include "Infrastructure/NUData.h"
+#include <stdlib.h>
+#include <iostream>
 
 class WalkingEngineKick
 {
 public:
   enum Track
   {
-    headYaw = JointData::HeadYaw,
-    headPitch = JointData::HeadPitch,
-    lShoulderPitch = JointData::LShoulderPitch,
-    lShoulderRoll = JointData::LShoulderRoll,
-    lElbowYaw = JointData::LElbowYaw,
-    lElbowRoll = JointData::LElbowRoll,
-    rShoulderPitch = JointData::RShoulderPitch,
-    rShoulderRoll = JointData::RShoulderRoll,
-    rElbowYaw = JointData::RElbowYaw,
-    rElbowRoll = JointData::RElbowRoll,
+    headYaw /*= NUData::HeadYaw.Id*/,
+    headPitch /*= NUData::HeadPitch.Id*/,
+    lShoulderPitch /*= NUData::LShoulderPitch.Id*/,
+    lShoulderRoll /*=NUData::LShoulderRoll.Id*/,
+    lElbowYaw  /*NUData::LElbowYaw.Id*/,
+    lElbowRoll  /*NUData::LElbowRoll.Id*/,
+    rShoulderPitch  /*NUData::RShoulderPitch.Id*/,
+    rShoulderRoll  /*NUData::RShoulderRoll.Id*/,
+    rElbowYaw /*= NUData::RElbowYaw.Id*/,
+    rElbowRoll /*= NUData::RElbowRoll.Id*/,
     numOfJointTracks,
-    footTranslationX = numOfJointTracks,
+    footTranslationX /*= numOfJointTracks*/,
+#warning class WalkingEngineKick:: enum Track footTranslationX = numOfJointTracks ?
     footTranslationY,
     footTranslationZ,
     footRotationX,
@@ -49,7 +52,7 @@ public:
   bool seek(float s);
   float getValue(Track track, float externValue);
   float getLength() const {return length * 0.001f;}
-  float getCurrentPosition() const {return currentPosition * 0.001f;}
+  float getCurrentPosition() const {return currentPosition /* 0.001f*/;}
   bool isStandKick() const {return standKick;}
 
 private:
@@ -59,7 +62,7 @@ private:
     template<int N>String(const char(&ptr)[N]) : ptr(ptr), len(N - 1) {}
     String(const char* ptr, unsigned int len) : ptr(ptr), len(len) {}
     bool operator==(const String& other) const;
-  private:
+  public:
     const char* ptr;
     unsigned int len;
   };

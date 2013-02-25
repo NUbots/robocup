@@ -367,7 +367,10 @@ bool DataWrapper::updateFrame()
     m_timestamp = current_frame->GetTimestamp();
     //succesful
     field_objects->preProcess(m_timestamp);
-    cout << "Frames dropped: " << numFramesDropped << endl;
+    #if VISION_WRAPPER_VERBOSITY > 1
+        debug << "DataWrapper::updateFrame(): null reference from BB" << endl;
+        debug << "Frames dropped: " << numFramesDropped << endl;
+    #endif
     return true;
 }
 

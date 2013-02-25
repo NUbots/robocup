@@ -29,12 +29,14 @@
 class NUSensorsData;
 class NUActionatorsData;
 #include "Motion/NUMotionProvider.h"
+#include "Tools/Math/Vector2.h"
 
 class WalkJob;
 class WalkToPointJob;
 class WalkParametersJob;
 class WalkPerturbationJob;
 class NUInverseKinematics;
+class WalkKickJob;
 
 class NUWalk : public NUMotionProvider
 {
@@ -62,6 +64,7 @@ public:
     void process(WalkToPointJob* job, bool currentprovider = false);
     void process(WalkParametersJob* job);
     void process(WalkPerturbationJob* job);
+    void process(WalkKickJob* job);
     
     virtual void setWalkParameters(const WalkParameters& walkparameters);
     WalkParameters& getWalkParameters();
@@ -106,6 +109,12 @@ protected:
     double m_perturbation_start_time;               //!< the time at which the current perturbation started in ms
     float m_perturbation_magnitude;                 //!< the magnitude of the current perturbation as a percentage
     float m_perturbation_direction;                 //!< the direction of the current perturbation in radians
+
+    //Walk Kick variables
+    Vector2<> m_ball_position;                      //!< The ball's current position
+    Vector2<> m_ball_target;                         //!< The desired ball position after kick
+    bool m_recalculate_kick_type;
+
     
     vector<float> m_initial_larm;
     vector<float> m_initial_rarm;
