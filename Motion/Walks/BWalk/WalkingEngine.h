@@ -20,7 +20,7 @@
 #include "Requirements/WalkingEngineKick.h"
 #include "Motion/NUWalk.h"
 #include "Tools/Math/Matrix.h"
-//#include "WalkingEngineKick.h"
+
 
 class NUInverseKinematics;
 

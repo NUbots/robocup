@@ -563,6 +563,7 @@ void WalkingEngine::updateMotionRequest()
 
 void WalkingEngine::updateObservedPendulumPlayer()
 {
+     cout<<"WalkingEngine::updateObservedPendulumPlayer() - begin"<<endl;
   // motion update
   if(observedPendulumPlayer.isActive())
     observedPendulumPlayer.seek(m_cycle_time);
@@ -575,7 +576,7 @@ void WalkingEngine::updateObservedPendulumPlayer()
   case standRight:
       if(kickPlayer.isActive())
          break;
-
+    cout<<"WalkingEngine::updateObservedPendulumPlayer() - 1st swritch current motion standRight case"<<endl;
     if(requestedMotionType != currentMotionType)
     {
       SupportLeg supportLeg = SupportLeg(0);
@@ -586,7 +587,8 @@ void WalkingEngine::updateObservedPendulumPlayer()
       switch(currentMotionType)
       {
       case standRight:
-        assert(false);
+        //assert(false);
+           cout<<"WalkingEngine::updateObservedPendulumPlayer() - standRight case"<<endl;
         supportLeg = right;
         r = Vector2<>(0.f, -(p.standComPosition.y - p.kickComPosition.y + p.kickX0Y));
         x0 = Vector2<>(currentRefX, p.kickX0Y);
@@ -594,7 +596,8 @@ void WalkingEngine::updateObservedPendulumPlayer()
         stepType = fromStandLeft;
         break;
       case standLeft:
-        assert(false);
+           cout<<"WalkingEngine::updateObservedPendulumPlayer() - standLeft case"<<endl;
+        //assert(false);
         supportLeg = left;
         r = Vector2<>(0.f, p.standComPosition.y - p.kickComPosition.y + p.kickX0Y);
         x0 = Vector2<>(currentRefX, -p.kickX0Y);
@@ -602,6 +605,7 @@ void WalkingEngine::updateObservedPendulumPlayer()
         stepType = fromStandRight;
         break;
       case stand:
+           cout<<"WalkingEngine::updateObservedPendulumPlayer() - stand case"<<endl;
         if(requestedMotionType == standRight || (requestedMotionType == stepping && requestedWalkTarget.translation.y > 0.f))
         {
           supportLeg = left;
@@ -616,19 +620,27 @@ void WalkingEngine::updateObservedPendulumPlayer()
         }
         break;
       default:
+        cout<<"WalkingEngine::updateObservedPendulumPlayer() - default case: asserting false"<<endl;
         assert(false);
         break;
       }
+       cout<<"WalkingEngine::updateObservedPendulumPlayer() - 1"<<endl;
       lastNextSupportLeg = supportLeg;
+      cout<<"WalkingEngine::updateObservedPendulumPlayer() - 2"<<endl;
       lastSelectedSpeed = Pose2D();
+      cout<<"WalkingEngine::updateObservedPendulumPlayer() - 3"<<endl;
       nextPendulumParameters.s = StepSize();
+      cout<<"WalkingEngine::updateObservedPendulumPlayer() - 4"<<endl;
       observedPendulumPlayer.init(stepType, p.observerMeasurementDelay * -0.001f, supportLeg, r, x0, k, m_cycle_time);
+      cout<<"WalkingEngine::updateObservedPendulumPlayer() - 5"<<endl;
       currentMotionType = stepping;
+      cout<<"WalkingEngine::updateObservedPendulumPlayer() - 6"<<endl;
     }
     break;
   default:
     break;
   }
+   cout<<"WalkingEngine::updateObservedPendulumPlayer() - end"<<endl;
 }
 
 void WalkingEngine::computeMeasuredStance()
@@ -1589,6 +1601,8 @@ void WalkingEngine::computeOdometryOffset()
 
 void WalkingEngine::ObservedPendulumPlayer::init(StepType stepType, float t, SupportLeg supportLeg, const Vector2<>& r, const Vector2<>& x0, const Vector2<>& k, float deltaTime)
 {
+
+
   Parameters& p = walkingEngine->p;
 
   active = true;
@@ -1609,6 +1623,8 @@ void WalkingEngine::ObservedPendulumPlayer::init(StepType stepType, float t, Sup
   this->r = r;
   this->originalRX  = r.x;
   this->c = Vector2<>();
+
+
   this->sXLimit.max = p.speedMax.translation.x * (1.1f * 0.5f);
   this->sXLimit.min = p.speedMaxBackwards * (-1.1f * 0.5f);
   this->rXLimit.max = this->r.x + p.walkRefXSoftLimit.max;
@@ -1627,6 +1643,7 @@ void WalkingEngine::ObservedPendulumPlayer::init(StepType stepType, float t, Sup
   computeSwapTimes(this->tb, 0.f, 0.f, 0.f);
 
   computeRefZmp(this->tb, r.x, 0.f, 0.f);
+
 }
 
 void WalkingEngine::PendulumPlayer::seek(float deltaT)

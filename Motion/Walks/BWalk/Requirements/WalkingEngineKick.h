@@ -66,20 +66,18 @@ private:
     const char* ptr;
     unsigned int len;
   };
-
+  /*NOTE: evaluate() implementations in subclasses of Value were private. Changed to public.
+*/
   class Value
   {
   public:
     Value(WalkingEngineKick& kick) : next(kick.firstValue) {kick.firstValue = this;}
 
-    virtual float evaluate() const = 0;
+    float evaluate() const {return value;}
 
-  protected:
     float value;
-
-  private:
     Value* next;
-
+  private:
     friend class WalkingEngineKick;
   };
 
@@ -87,9 +85,7 @@ private:
   {
   public:
     ConstantValue(float value, WalkingEngineKick& kick) : Value(kick) {this->value = value;}
-
-  private:
-    virtual float evaluate() const {return value;}
+    /*virtual*/ float evaluate() const {return value;}
   };
 
   class BinaryExpression : public Value
@@ -107,8 +103,8 @@ private:
   public:
     PlusExpression(Value& operand1, Value& operand2, WalkingEngineKick& kick) : BinaryExpression(operand1, operand2, kick) {}
 
-  private:
-    virtual float evaluate() const {return operand1.evaluate() + operand2.evaluate();}
+
+    /*virtual*/ float evaluate() const {return operand1.evaluate() + operand2.evaluate();}
   };
 
   class MinusExpression : public BinaryExpression
@@ -116,8 +112,8 @@ private:
   public:
     MinusExpression(Value& operand1, Value& operand2, WalkingEngineKick& kick) : BinaryExpression(operand1, operand2, kick) {}
 
-  private:
-    virtual float evaluate() const {return operand1.evaluate() - operand2.evaluate();}
+
+    /*virtual*/ float evaluate() const {return operand1.evaluate() - operand2.evaluate();}
   };
 
   class TimesExpression : public BinaryExpression
@@ -125,8 +121,8 @@ private:
   public:
     TimesExpression(Value& operand1, Value& operand2, WalkingEngineKick& kick) : BinaryExpression(operand1, operand2, kick) {}
 
-  private:
-    virtual float evaluate() const {return operand1.evaluate() * operand2.evaluate();}
+
+    /*virtual*/ float evaluate() const {return operand1.evaluate() * operand2.evaluate();}
   };
 
   class DivExpression : public BinaryExpression
@@ -134,8 +130,8 @@ private:
   public:
     DivExpression(Value& operand1, Value& operand2, WalkingEngineKick& kick) : BinaryExpression(operand1, operand2, kick) {}
 
-  private:
-    virtual float evaluate() const {return operand1.evaluate() / operand2.evaluate();}
+
+    /*virtual*/ float evaluate() const {return operand1.evaluate() / operand2.evaluate();}
   };
 
   class ParameterValue : public Value
@@ -143,11 +139,11 @@ private:
   public:
     ParameterValue(unsigned int index, WalkingEngineKick& kick) : Value(kick), index(index), kick(kick) {}
 
-  private:
+
     unsigned int index;
     WalkingEngineKick& kick;
 
-    virtual float evaluate() const {return kick.getParameterValue(index);}
+    /*virtual*/ float evaluate() const {return kick.getParameterValue(index);}
   };
 
   class ParseException

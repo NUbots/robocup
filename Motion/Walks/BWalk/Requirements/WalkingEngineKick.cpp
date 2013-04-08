@@ -9,6 +9,7 @@
 #include "WalkingEngineKick.h"
 #include "File.h"
 #include "debug.h"
+#include <ctime>
 
 bool WalkingEngineKick::String::operator==(const WalkingEngineKick::String& other) const
 {
@@ -389,6 +390,7 @@ void WalkingEngineKick::init()
 
 void WalkingEngineKick::getPreStepSize(float& rotation, Vector3<>& translation) const
 {
+
   rotation = preStepSizeRValue ? preStepSizeRValue->evaluate() : 0.f;
   translation.x = preStepSizeXValue ? preStepSizeXValue->evaluate() : 0.f;
   translation.y = preStepSizeYValue ? preStepSizeYValue->evaluate() : 0.f;
@@ -397,10 +399,10 @@ void WalkingEngineKick::getPreStepSize(float& rotation, Vector3<>& translation) 
 
 void WalkingEngineKick::getStepSize(float& rotation, Vector3<>& translation) const
 {
-  rotation = stepSizeRValue ? stepSizeRValue->evaluate() : 0.f;
-  translation.x = stepSizeXValue ? stepSizeXValue->evaluate() : 0.f;
-  translation.y = stepSizeYValue ? stepSizeYValue->evaluate() : 0.f;
-  translation.z = stepSizeZValue ? stepSizeZValue->evaluate() : 0.f;
+  rotation = stepSizeRValue ? ((ConstantValue*)stepSizeRValue)->evaluate() : 0.f;
+  translation.x = stepSizeXValue ? ((ConstantValue*)stepSizeXValue)->evaluate() : 0.f;
+  translation.y = stepSizeYValue ? ((ConstantValue*)stepSizeYValue)->evaluate() : 0.f;
+  translation.z = stepSizeZValue ? ((ConstantValue*)stepSizeZValue)->evaluate() : 0.f;
 }
 
 float WalkingEngineKick::getDuration() const
