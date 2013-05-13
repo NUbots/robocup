@@ -55,7 +55,7 @@ NUView-build*/*
 /NUView/NUView.pro.user
 
 /Vision-build-desktop*/*
-*.pro.user
+*.pro.user*
 /BWalkMaker-build*/*
 /BWalkMaker/BWalkMaker.pro.user
 
@@ -64,3 +64,10 @@ NUView-build*/*
 *.nif
 *.nul
 *.strm
+
+# Other ignored formats
+*.komodoproject
+*.kpf
+
+# NetBeans
+nbproject

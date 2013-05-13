@@ -28,6 +28,7 @@
 #include "Infrastructure/Jobs/Jobs.h"
 #include "Infrastructure/GameInformation/GameInformation.h"
 #include "Infrastructure/TeamInformation/TeamInformation.h"
+#include "ConfigSystem/ConfigManager.h"
 
 NUBlackboard* Blackboard = 0;
 
@@ -39,10 +40,16 @@ NUBlackboard::NUBlackboard()
     Sensors = 0;
     Actions = 0;
     Image = 0;
+    CameraSpecs = 0;
     Objects = 0;
     Jobs = 0;
     GameInfo = 0;
     TeamInfo = 0;
+    Config = 0;
+    lookForBall = true;
+    lookForGoals = true;
+    lookForFieldPoints = false; // disabled until working
+    lookForObstacles = true;
 }
 
 NUBlackboard::~NUBlackboard()
@@ -53,6 +60,8 @@ NUBlackboard::~NUBlackboard()
     Actions = 0;
     delete Image;
     Image = 0;
+    delete CameraSpecs;
+    CameraSpecs = 0;
     delete Objects;
     Objects = 0;
     delete Jobs;
@@ -61,6 +70,8 @@ NUBlackboard::~NUBlackboard()
     GameInfo = 0;
     delete TeamInfo;
     TeamInfo = 0;
+    delete Config;
+    Config = 0;
 }
 
 /*! @brief Adds a NUSensorsData object to the blackboard. Note that ownership of the object is now with the Blackboard. 
@@ -91,6 +102,13 @@ void NUBlackboard::add(NUImage* image)
     NUImage* oldimage = Image;
     Image = image;
     delete oldimage;
+}
+
+void NUBlackboard::add(NUCameraData *camdata)
+{
+    NUCameraData* olddata = CameraSpecs;
+    CameraSpecs = camdata;
+    delete olddata;
 }
 
 /*! @brief Adds a FieldObjects object to the blackboard. Note that ownership of the object is now with the Blackboard. 
@@ -131,6 +149,16 @@ void NUBlackboard::add(TeamInformation* teaminfo)
     TeamInformation* oldteam = TeamInfo;
     TeamInfo = teaminfo;
     delete oldteam;
+}
+
+/*! @brief Adds a ConfigManager object to the blackboard. Note that ownership of the object is now with the Blackboard. 
+    @param config a pointer to the new config manager object
+ */
+void NUBlackboard::add(ConfigManager* config)
+{
+    ConfigManager* oldconfig = Config;
+    Config = config;
+    delete oldconfig;
 }
 
 

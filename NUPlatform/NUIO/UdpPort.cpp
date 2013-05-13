@@ -26,9 +26,11 @@
 #include "debugverbositynetwork.h"
 
 #ifndef WIN32
+    #include <unistd.h>
     #include <sys/ioctl.h>
     #include <netdb.h>
     #include <net/if.h>
+    #include <unistd.h> /* Mitchell Metcalfe, 31-01-13, for GCC4.7, Ubuntu 12.10 compatibility */
 #endif
 #include <errno.h>
 #include <cstring>

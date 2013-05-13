@@ -1,14 +1,21 @@
 #include "quad.h"
+#include <cmath>
+#include "Tools/Math/Line.h"
 
-Quad::Quad()
+using namespace std;
+
+Quad::Quad() : bl(0,0), br(0,0), tl(0,0), tr(0,0)
 {
-    set(0,0,0,0);
 }
 
 Quad::Quad(const Quad& other)
 {
-    set(other.m_left, other.m_top, other.m_right, other.m_bottom);
+    set(other.bl, other.tl, other.tr, other.br);
+}
 
+Quad::Quad(Vector2<double> bottom_left, Vector2<double> top_left, Vector2<double> top_right, Vector2<double> bottom_right)
+{
+    set(bottom_left, top_left, top_right, bottom_right);
 }
 
 Quad::Quad(int left, int top, int right, int bottom)
@@ -18,52 +25,72 @@ Quad::Quad(int left, int top, int right, int bottom)
 
 void Quad::set(int left, int top, int right, int bottom)
 {
-    m_left = left;
-    m_right = right;
-    m_bottom = bottom;
-    m_top = top;
-    recalculate();
+    bl = Vector2<double>(left, bottom);
+    tl = Vector2<double>(left, top);
+    tr = Vector2<double>(right, top);
+    br = Vector2<double>(right, bottom);
 }
 
-Vector2<int> Quad::getBottomCentre() const
+void Quad::set(Vector2<double> bottom_left, Vector2<double> top_left, Vector2<double> top_right, Vector2<double> bottom_right)
 {
-    return m_bottom_centre;
+    bl = bottom_left;
+    tl = top_left;
+    tr = top_right;
+    br = bottom_right;
 }
 
-Vector2<int> Quad::getCentre() const
+Vector2<double> Quad::getCentre() const
 {
-    return m_centre;
+    return (bl + tl + tr + br)*0.25;
 }
 
-Vector2<int> Quad::getBottomLeft() const
+double Quad::getAverageWidth() const
 {
-    return m_bottom_left;
+    return 0.5*((br - bl).abs() + (tr - tl).abs()) + 1;
 }
 
-Vector2<int> Quad::getTopRight() const
+double Quad::getAverageHeight() const
 {
-    return m_top_right;
+    return 0.5*((br - tr).abs() + (bl - tl).abs()) + 1;
 }
 
-int Quad::getWidth() const
+double Quad::area() const
 {
-    return abs(m_right - m_left);
+    Line diag(bl, tr);
+    return (bl - tr).abs()* (diag.getLinePointDistance(br) + diag.getLinePointDistance(tl) );
 }
 
-int Quad::getHeight() const
+double Quad::aspectRatio() const
 {
-    return abs(m_bottom - m_top);
+    return ( (br - tr).abs() + (bl - tl).abs() + 2 ) / ( (br - bl).abs() + (tr - tl).abs() + 2 );
 }
 
-cv::Scalar Quad::getAsScalar() const
+bool Quad::overlapsHorizontally(const Quad &other) const
 {
-    return cv::Scalar(m_left, m_bottom, m_right, m_top);
+    //rough for now
+    double far_right = max(tr.x, br.x),
+           far_left = min(tl.x, bl.x),
+           o_far_right = max(other.tr.x, other.br.x),
+           o_far_left = min(other.tl.x, other.bl.x);
+
+    return ! (far_right < o_far_left || o_far_right < far_left);
 }
 
-void Quad::recalculate()
+/// @brief Stream insertion operator for a single Quad.
+/// @relates Quad
+ostream& operator<< (ostream& output, const Quad& q)
 {
-    m_centre = Vector2<int>((m_left + m_right)*0.5, (m_bottom + m_top)*0.5);
-    m_bottom_centre = Vector2<int>((m_left + m_right)*0.5, std::max(m_bottom, m_top));
-    m_bottom_left = Vector2<int>(std::min(m_left, m_right), std::max(m_bottom, m_top));
-    m_top_right = Vector2<int>(std::max(m_left, m_right), std::min(m_bottom, m_top));
+    output << q.bl << " " << q.tl << " " << q.tr << " " << q.br;
+    return output;
+}
+
+/// @brief Stream insertion operator for a vector of Quads.
+///  @relates Quad
+ostream& operator<< (ostream& output, const vector<Quad>& q)
+{
+    output << "[";
+    for (size_t i=0; i<q.size(); i++)
+        output << q[i] << ", ";
+    output << "]";
+    return output;
 }

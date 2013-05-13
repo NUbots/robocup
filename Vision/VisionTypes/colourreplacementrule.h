@@ -23,35 +23,15 @@ public:
       @param method The method name desired.
       @return String name of the method.
       */
-    static string getMethodName(ReplacementMethod method)
-    {
-        switch(method)
-        {
-            case BEFORE:    return "before";
-            case AFTER:     return "after";
-            case SPLIT:     return "green";
-            default:        return "unknown method";
-        };
-    }
+    static string getMethodName(ReplacementMethod method);
 
     /*!
       Gets the method matching the given string.
       @param name String name of the method.
       @return The method desired.
       */
-    static ReplacementMethod getMethodFromName(const string& name)
-    {
-        if(name.compare("before") == 0)
-            return BEFORE;
-        else if(name.compare("after") == 0)
-            return AFTER;
-        else if(name.compare("split") == 0)
-            return SPLIT;
-        else
-            return INVALID;
-    }
-    
-//ACTUAL CLASS DEFINITION
+    static ReplacementMethod getMethodFromName(const string& name);
+
 public:
     static ColourSegment nomatch;   //! @variable a static segment used to represent one that cannot be matched to any rule.
     
@@ -96,9 +76,9 @@ private:
                  m_after_min,    //! @variable the minimum length of the last segment for a match.
                  m_after_max;    //! @variable the maximum length of the last segment for a match.
     
-    vector<ClassIndex::Colour>  m_before,   //! @variable The colour that the first segment must be.
-                                m_middle,   //! @variable The colour that the middle segment must be.
-                                m_after;    //! @variable The colour that the last segment must be.
+    vector<Colour>  m_before,   //! @variable The colour that the first segment must be.
+                    m_middle,   //! @variable The colour that the middle segment must be.
+                    m_after;    //! @variable The colour that the last segment must be.
     
     ReplacementMethod m_method;  //! @variable The replacement method for this rule.
 };

@@ -16,54 +16,45 @@
 #include "Vision/VisionWrapper/datawrappercurrent.h"
 #include "Vision/Modules/segmentfilter.h"
 #include "Vision/Modules/linedetector.h"
+#include "Vision/Modules/fieldpointdetector.h"
+#include "Vision/Modules/cornerdetector.h"
+#include "Vision/Modules/goaldetector.h"
+#include "Vision/Modules/balldetector.h"
+#include "debugverbosityvision.h"
 
 class VisionController
 {
 public:
-    /**
-    *   @brief return unique instance of blackboard - lazy initialisation.
-    */
-    static VisionController* getInstance();
-
+    VisionController();
+    ~VisionController();
     /**
     *   @brief Runs the vision system for a single frame.
     *   @return A status indication of the execution of the frame.
     */
-    int runFrame(bool lookForBall, bool lookForLandmarks);
-
-//    /**
-//    *   @brief Runs the vision system until a keypress is given.
-//    *   @return A status indication of the execution.
-//    */
-//    int run();
-    
-    /**
-    *   @brief Gets the current camera settings from the blackboard and returns them
-    *   @return The current camera settings
-    */
-    CameraSettings getCurrentCameraSettings() const;
-    
-private:
-    //! @brief Private constructor for controller.
-    VisionController();
-
-    /** @brief Private destructor.
-    *
-    *   To be called implicitly at program close or by the controller as the controller is live for the
-    *   whole program in absence of errors.
-    */
-    ~VisionController();
+    int runFrame(bool lookForBall, bool lookForGoals, bool lookForFieldPoints, bool lookForObstacles);
 
 private:
-//! SELF
-    static VisionController* instance;           //! @variable Singleton instance
-
 //! VARIABLES
     DataWrapper* m_data_wrapper;               //! @variable Reference to singleton Wrapper for vision system
     VisionBlackboard* m_blackboard;     //! @variable Reference to singleton Blackboard for vision system
     SegmentFilter m_segment_filter;       //! @variable Segment filter object for pre-classification filtering
+
+    BallDetector m_ball_detector;
+
+    FieldPointDetector* m_field_point_detector;
+
+    GoalDetector* m_goal_detector_hist;
+    GoalDetector* m_goal_detector_ransac_edges;
+
     LineDetector* m_line_detector_sam;
     LineDetector* m_line_detector_ransac;
+    CornerDetector m_corner_detector;
+    CircleDetector m_circle_detector;
+
+
+#ifdef VISION_PROFILER_ON
+    ofstream m_profiling_stream;
+#endif
 };
 
 #endif // VISIONCONTROLLER_H

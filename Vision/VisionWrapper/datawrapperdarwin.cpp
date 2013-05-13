@@ -11,58 +11,18 @@
 
 #include "Vision/VisionTypes/coloursegment.h"
 #include "Vision/basicvisiontypes.h"
+#include "Vision/visionconstants.h"
 
 #include <boost/foreach.hpp>
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics/stats.hpp>
+#include <boost/accumulators/statistics/mean.hpp>
+#include <boost/accumulators/statistics/variance.hpp>
+#include <boost/accumulators/statistics/count.hpp>
+
+using namespace boost::accumulators;
 
 DataWrapper* DataWrapper::instance = 0;
-
-string DataWrapper::getIDName(DATA_ID id) {
-    switch(id) {
-    case DID_IMAGE:
-        return "DID_IMAGE";
-    case DID_CLASSED_IMAGE:
-        return "DID_CLASSED_IMAGE";
-    default:
-        return "NOT VALID";
-    }
-}
-
-string DataWrapper::getIDName(DEBUG_ID id) {
-    switch(id) {
-    case DBID_IMAGE:
-        return "DBID_IMAGE";
-    case DBID_H_SCANS:
-        return "DBID_H_SCANS";
-    case DBID_V_SCANS:
-        return "DBID_V_SCANS";
-    case DBID_SEGMENTS:
-        return "DBID_SEGMENTS";
-    case DBID_MATCHED_SEGMENTS:
-        return "DBID_MATCHED_SEGMENTS";
-    case DBID_HORIZON:
-        return "DBID_HORIZON";
-    case DBID_GREENHORIZON_SCANS:
-        return "DBID_GREENHORIZON_SCANS";
-    case DBID_GREENHORIZON_FINAL:
-        return "DBID_GREENHORIZON_FINAL";
-    case DBID_OBJECT_POINTS:
-        return "DBID_OBJECT_POINTS";
-    case DBID_FILTERED_SEGMENTS:
-        return "DBID_FILTERED_SEGMENTS";
-    case DBID_GOALS:
-        return "DBID_GOALS";
-    case DBID_BEACONS:
-        return "DBID_BEACONS";
-    case DBID_BALLS:
-        return "DBID_BALLS";
-    case DBID_OBSTACLES:
-        return "DBID_OBSTACLES";
-    case DBID_LINES:
-        return "DBID_LINES";
-    default:
-        return "NOT VALID";
-    }
-}
 
 DataWrapper::DataWrapper()
 {
@@ -71,9 +31,10 @@ DataWrapper::DataWrapper()
     numSavedImages = 0;
     loadLUTFromFile(string(DATA_DIR) + string("default.lut"));
     Blackboard->lookForBall = true; //initialise
-    Blackboard->lookForLandmarks = true; //initialise
+    Blackboard->lookForGoals = true; //initialise
     isSavingImages = false;
     isSavingImagesWithVaryingSettings = false;
+    VisionConstants::loadFromFile(string(CONFIG_DIR) + string("VisionOptions.cfg"));
 }
 
 DataWrapper::~DataWrapper()
@@ -165,6 +126,15 @@ bool DataWrapper::getCameraPitch(float& pitch)
     return sensor_data->getPosition(NUSensorsData::HeadPitch, pitch);
 }
 
+/*! @brief Retrieves the camera yaw returns it.
+*   @param yaw A reference to a float to change.
+*   @return valid Whether the retrieved value is valid or not.
+*/
+bool DataWrapper::getCameraYaw(float& yaw)
+{
+    return sensor_data->getPosition(NUSensorsData::HeadYaw, yaw);
+}
+
 /*! @brief Retrieves the body pitch returns it.
 *   @param pitch A reference to a float to change.
 *   @return valid Whether the retrieved value is valid or not.
@@ -197,7 +167,7 @@ const LookUpTable& DataWrapper::getLUT() const
 void DataWrapper::publish(const vector<const VisionFieldObject*> &visual_objects)
 {
     //! @todo Implement + Comment
-    
+
     for(int i=0; i<visual_objects.size(); i++) {
         visual_objects.at(i)->addToExternalFieldObjects(field_objects, m_timestamp);
     }
@@ -209,112 +179,138 @@ void DataWrapper::publish(const VisionFieldObject* visual_object)
     visual_object->addToExternalFieldObjects(field_objects, m_timestamp);
 }
 
-void DataWrapper::debugRefresh()
-{
-    //! @todo Implement + Comment
-}
-
-bool DataWrapper::debugPublish(vector<Ball> data) {
+void DataWrapper::debugPublish(vector<Ball> data) {
     #if VISION_WRAPPER_VERBOSITY > 1
-        if(data.empty()) {
-            debug << "DataWrapper::debugPublish - empty vector DEBUG_ID = " << getIDName(DBID_BALLS) << endl;
-            return false;
-        }
+        debug << "DataWrapper::debugPublish - DEBUG_ID = " << getIDName(DBID_BALLS) << endl;
         BOOST_FOREACH(Ball ball, data) {
             debug << "DataWrapper::debugPublish - Ball = " << ball << endl;
         }
     #endif
-    return true; 
 }
 
-bool DataWrapper::debugPublish(vector<Beacon> data) {  
-    #if VISION_WRAPPER_VERBOSITY > 1
-        if(data.empty()) {
-            debug << "DataWrapper::debugPublish - empty vector DEBUG_ID = " << getIDName(DBID_BEACONS) << endl;
-            return false;
-        }
-        BOOST_FOREACH(Beacon beacon, data) {
-            debug << "DataWrapper::debugPublish - Beacon = " << beacon << endl;
-        }
-    #endif
-    return true;    
-}
+//void DataWrapper::debugPublish(vector<Beacon> data) {
+//    #if VISION_WRAPPER_VERBOSITY > 1
+//        debug << "DataWrapper::debugPublish - DEBUG_ID = " << getIDName(DBID_BEACONS) << endl;
+//        BOOST_FOREACH(Beacon beacon, data) {
+//            debug << "DataWrapper::debugPublish - Beacon = " << beacon << endl;
+//        }
+//    #endif
+//}
 
-bool DataWrapper::debugPublish(vector<Goal> data) {
+void DataWrapper::debugPublish(vector<Goal> data) {
+//    static accumulator_set<double, stats<tag::mean, tag::variance> > acc_d2p;
+//    static accumulator_set<double, stats<tag::mean, tag::variance> > acc_w;
+//    static int i=0;
+//    if(data.size() > 2) {
+//        cout << "3 or more posts found" << endl;
+//    }
+//    else if(data.size() == 2) {
+//        if(data[0].getID() == GOAL_R) {
+//            acc_d2p( data[0].getLocation().relativeRadial.x );
+//            acc_w( data[0].width_dist);
+//            i++;
+//        }
+//        else if(data[1].getID() == GOAL_R) {
+//            acc_d2p( data[1].getLocation().relativeRadial.x );
+//            acc_w( data[1].width_dist);
+//            i++;
+//        }
+//        else {
+//            cout << "two goals but no right one" << endl;
+//        }
+//    }
+//    else if(data.size() == 1) {
+//        acc_d2p( data.front().getLocation().relativeRadial.x );
+//        acc_w( data.front().width_dist);
+//        i++;
+//    }
+//    else {
+//        cout << "No goals" << endl;
+//    }
+
+//    if(i >= 30) {
+//        cout << "d2p: (" << mean(acc_d2p) << ", " << sqrt(variance(acc_d2p)) << ") width: " << "(" << mean(acc_w) << ", " << sqrt(variance(acc_w)) << ")" << endl;
+//        acc_d2p = accumulator_set<double, stats<tag::mean, tag::variance> >();
+//        acc_w = accumulator_set<double, stats<tag::mean, tag::variance> >();
+//        i=0;
+//    }
     #if VISION_WRAPPER_VERBOSITY > 1
-        if(data.empty()) {
-            debug << "DataWrapper::debugPublish - empty vector DEBUG_ID = " << getIDName(DBID_GOALS) << endl;
-            return false;
-        }
+        debug << "DataWrapper::debugPublish - DEBUG_ID = " << getIDName(DBID_GOALS) << endl;
         BOOST_FOREACH(Goal post, data) {
             debug << "DataWrapper::debugPublish - Goal = " << post << endl;
         }
     #endif
-    return true;    
 }
 
-bool DataWrapper::debugPublish(vector<Obstacle> data) {
+void DataWrapper::debugPublish(vector<Obstacle> data) {
     #if VISION_WRAPPER_VERBOSITY > 1
-        if(data.empty()) {
-            debug << "DataWrapper::debugPublish - empty vector DEBUG_ID = " << getIDName(DBID_OBSTACLES) << endl;
-            return false;
-        }
+        debug << "DataWrapper::debugPublish - DEBUG_ID = " << getIDName(DBID_OBSTACLES) << endl;
         BOOST_FOREACH(Obstacle obst, data) {
             debug << "DataWrapper::debugPublish - Obstacle = " << obst << endl;
         }
     #endif
-    return true;  
 }
 
-bool DataWrapper::debugPublish(const vector<FieldLine> &data)
+void DataWrapper::debugPublish(const vector<FieldLine> &data)
 {
-    #if VISION_WRAPPER_VERBOSITY > 1
-        if(data.empty()) {
-            debug << "DataWrapper::debugPublish - empty vector DEBUG_ID = " << getIDName(DBID_LINES) << endl;
-            return false;
-        }
-        BOOST_FOREACH(FieldLine l, data) {
+    #if VISION_WRAPPER_VERBOSITY > 2
+        debug << "DataWrapper::debugPublish - DEBUG_ID = " << getIDName(id) << endl;
+        BOOST_FOREACH(const FieldLine& l, data) {
             debug << "DataWrapper::debugPublish - Line = ";
             l.printLabel(debug);
             debug << endl;
         }
     #endif
-    return true;
 }
 
-bool DataWrapper::debugPublish(DEBUG_ID id, const vector<PointType>& data_points)
+void DataWrapper::debugPublish(const vector<CentreCircle> &data)
 {
-    //! @todo better debug printing + Comment
-    vector<PointType>::const_iterator it;
-
-    #if VISION_WRAPPER_VERBOSITY > 1
-        debug << "DataWrapper::debugPublish - " << endl;
-        if(data_points.empty()) {
-            debug << "\tempty vector DEBUG_ID = " << getIDName(id) << endl;
-            return false;
+    #if VISION_WRAPPER_VERBOSITY > 2
+        debug << "DataWrapper::debugPublish - DEBUG_ID = " << getIDName(id) << endl;
+        BOOST_FOREACH(const CentreCircle& c, data) {
+            debug << "DataWrapper::debugPublish - CentreCircle = ";
+            debug << c << endl;
         }
     #endif
+}
 
+void DataWrapper::debugPublish(const vector<CornerPoint> &data)
+{
     #if VISION_WRAPPER_VERBOSITY > 2
+        debug << "DataWrapper::debugPublish - DEBUG_ID = " << getIDName(id) << endl;
+        BOOST_FOREACH(const CornerPoint& c, data) {
+            debug << "DataWrapper::debugPublish - CornerPoint = ";
+            debug << c << endl;
+        }
+    #endif
+}
+
+void DataWrapper::debugPublish(DEBUG_ID id, const vector<Point> &data_points)
+{
+    //! @todo better debug printing + Comment
+    #if VISION_WRAPPER_VERBOSITY > 2
+        debug << "DataWrapper::debugPublish - DEBUG_ID = " << getIDName(id) << endl;
         debug << "\t" << id << endl;
         debug << "\t" << data_points << endl;
     #endif
-
-    return true;
 }
 
-bool DataWrapper::debugPublish(DEBUG_ID id, const SegmentedRegion& region)
+void DataWrapper::debugPublish(DEBUG_ID id, const SegmentedRegion& region)
 {
     //! @todo better debug printing + Comment
-    
-    #if VISION_WRAPPER_VERBOSITY > 1
-        if(region.getSegments().empty()) {
-            errorlog << "DataWrapper::debugPublish - empty vector DEBUG_ID = " << getIDName(id) << endl;
-            return false;
-        }
-    #endif
-        
+    switch(id) {
+    case HORIZONTAL:
+        Blackboard->horizontalScans = region;
+        break;
+    case VERTICAL:
+        Blackboard->verticalScans = region;
+        break;
+    }
+
+
+
     #if VISION_WRAPPER_VERBOSITY > 2
+        debug << "DataWrapper::debugPublish - DEBUG_ID = " << getIDName(id) << endl;
         BOOST_FOREACH(const vector<ColourSegment>& line, region.getSegments()) {
             if(region.getDirection() == VisionID::HORIZONTAL)
                 debug << "y: " << line.front().getStart().y << endl;
@@ -325,8 +321,24 @@ bool DataWrapper::debugPublish(DEBUG_ID id, const SegmentedRegion& region)
             }
         }
     #endif
+}
 
-    return true;
+void DataWrapper::debugPublish(DEBUG_ID id, const vector<LSFittedLine> &data)
+{
+    //! @todo better debug printing + Comment
+    #if VISION_WRAPPER_VERBOSITY > 2
+        debug << "DataWrapper::debugPublish - DEBUG_ID = " << getIDName(id) << endl;
+        BOOST_FOREACH(const LSFittedLine& line, data) {
+            debug << "\t" << line << endl;
+        }
+    #endif
+}
+
+void DataWrapper::plotCurve(string name, vector<Vector2<double> > pts)
+{
+#if VISION_WRAPPER_VERBOSITY > 2
+    debug << "DataWrapper::plotCurve " << name << " " << pts << endl;
+#endif
 }
 
 /*! @brief Updates the held information ready for a new frame.
@@ -342,8 +354,7 @@ bool DataWrapper::updateFrame()
     //! @todo Finish implementing & Comment
     actions = Blackboard->Actions;
     sensor_data = Blackboard->Sensors;
-//    if(isSavingImages)
-//        sensor_data_copy = *sensor_data;
+    camera_data = Blackboard->CameraSpecs;
     field_objects = Blackboard->Objects;
     
     if (current_frame != NULL and Blackboard->Image->GetTimestamp() - m_timestamp > 40)
@@ -367,11 +378,20 @@ bool DataWrapper::updateFrame()
     m_timestamp = current_frame->GetTimestamp();
     //succesful
     field_objects->preProcess(m_timestamp);
+<<<<<<< HEAD
     #if VISION_WRAPPER_VERBOSITY > 1
         debug << "DataWrapper::updateFrame(): null reference from BB" << endl;
         debug << "Frames dropped: " << numFramesDropped << endl;
     #endif
     return true;
+=======
+#if VISION_WRAPPER_VERBOSITY > 1
+    debug << "Frames dropped: " << numFramesDropped << endl;
+#endif
+
+
+    return current_frame->getWidth() > 0 && current_frame->getHeight() > 0;
+>>>>>>> 5acc54f492a2165e51196a2636dcb4a311d070f7
 }
 
 /**
@@ -381,7 +401,7 @@ void DataWrapper::postProcess()
 {
     if (current_frame != NULL && field_objects != NULL)
     {
-        field_objects->postProcess(current_frame->GetTimestamp());
+        field_objects->postProcess(m_timestamp);
     }
 }
 

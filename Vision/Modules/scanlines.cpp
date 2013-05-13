@@ -8,6 +8,7 @@
 #include "scanlines.h"
 #include "debug.h"
 #include "Vision/visionconstants.h"
+#include <boost/foreach.hpp>
 
 void ScanLines::generateScanLines()
 {
@@ -15,11 +16,11 @@ void ScanLines::generateScanLines()
         debug << "ScanLines::generateScanLines() - Begin" << endl;
     #endif
     VisionBlackboard *vbb = VisionBlackboard::getInstance();
-    vector<unsigned int> horizontal_scan_lines;
-    const vector<PointType>& horizon_points = vbb->getGreenHorizon().getInterpolatedPoints();   //need this to get the left and right
+    vector<int> horizontal_scan_lines;
+    const vector<Vector2<double> >& horizon_points = vbb->getGreenHorizon().getInterpolatedPoints();   //need this to get the left and right
 
-    PointType left = horizon_points.front();
-    PointType right = horizon_points.back();
+    Vector2<double> left = horizon_points.front();
+    Vector2<double> right = horizon_points.back();
 
     if(left.y >= vbb->getImageHeight())
         errorlog << "left: " << left.y << endl;
@@ -28,15 +29,15 @@ void ScanLines::generateScanLines()
         errorlog << "right: " << right.y << endl;
     
     //unsigned int bottom_horizontal_scan = (left.y + right.y) / 2;
-    unsigned int bottom_horizontal_scan = vbb->getImageHeight() - 1;    //we need h-scans under the GH for field lines
+    int bottom_horizontal_scan = vbb->getImageHeight() - 1;    //we need h-scans under the GH for field lines
 
-    if(static_cast<int>(bottom_horizontal_scan) >= vbb->getImageHeight())
-        errorlog << "cast avg: " << static_cast<int>(bottom_horizontal_scan) << " avg: " << bottom_horizontal_scan << endl;
+    if(bottom_horizontal_scan >= vbb->getImageHeight())
+        errorlog << "avg: " << bottom_horizontal_scan << endl;
 
-    for (int y = static_cast<int>(bottom_horizontal_scan); y >= 0; y -= VisionConstants::HORIZONTAL_SCANLINE_SPACING) {
-        if(static_cast<unsigned int>(y) >= vbb->getImageHeight())
-            errorlog << "sy: " << static_cast<unsigned int>(y) << " y: " << y << endl;
-        horizontal_scan_lines.push_back(static_cast<unsigned int>(y));
+    for (int y = bottom_horizontal_scan; y >= 0; y -= VisionConstants::HORIZONTAL_SCANLINE_SPACING) {
+        if(y >= vbb->getImageHeight())
+            errorlog << " y: " << y << endl;
+        horizontal_scan_lines.push_back(y);
     }
     
     vbb->setHorizontalScanlines(horizontal_scan_lines);
@@ -44,16 +45,13 @@ void ScanLines::generateScanLines()
 
 void ScanLines::classifyHorizontalScanLines()
 {
-    #if VISION_SCAN_VERBOSITY > 1
-        debug << "ScanLines::classifyHorizontalScanLines() - Begin" << endl;
-    #endif
     VisionBlackboard* vbb = VisionBlackboard::getInstance();
     const NUImage& img = vbb->getOriginalImage();
-    const vector<unsigned int>& horizontal_scan_lines = vbb->getHorizontalScanlines();
+    const vector<int>& horizontal_scan_lines = vbb->getHorizontalScanlines();
     vector< vector<ColourSegment> > classifications;
 
-    for(unsigned int i=0; i<horizontal_scan_lines.size(); i++) {
-        classifications.push_back(classifyHorizontalScan(*vbb, img, horizontal_scan_lines.at(i)));
+    BOOST_FOREACH(int y, horizontal_scan_lines) {
+        classifications.push_back(classifyHorizontalScan(vbb->getLUT(), img, y));
     }
     
     vbb->setHorizontalSegments(classifications);
@@ -61,50 +59,50 @@ void ScanLines::classifyHorizontalScanLines()
 
 void ScanLines::classifyVerticalScanLines()
 {
-    #if VISION_SCAN_VERBOSITY > 1
-        debug << "ScanLines::classifyVerticalScanLines() - Begin" << endl;
-    #endif
     VisionBlackboard* vbb = VisionBlackboard::getInstance();
     const NUImage& img = vbb->getOriginalImage();
-    const vector<PointType>& vertical_start_points = vbb->getGreenHorizon().getInterpolatedSubset(VisionConstants::VERTICAL_SCANLINE_SPACING);
+    const vector<Vector2<double> >& vertical_start_points = vbb->getGreenHorizon().getInterpolatedSubset(VisionConstants::VERTICAL_SCANLINE_SPACING);
     vector< vector<ColourSegment> > classifications;
 
     for(unsigned int i=0; i<vertical_start_points.size(); i++) {
-        classifications.push_back(classifyVerticalScan(*vbb, img, vertical_start_points.at(i)));
+        classifications.push_back(classifyVerticalScan(vbb->getLUT(), img, vertical_start_points.at(i)));
     }
     
     vbb->setVerticalSegments(classifications);
 }
 
-vector<ColourSegment> ScanLines::classifyHorizontalScan(const VisionBlackboard& vbb, const NUImage& img, unsigned int y)
+vector<ColourSegment> ScanLines::classifyHorizontalScan(const LookUpTable& lut, const NUImage& img, unsigned int y)
 {
+    vector<ColourSegment> result;
+	if(y < 0 || y >= img.getHeight()) {
+		errorlog << "ScanLines::classifyHorizontalScan invalid y: " << y << endl;
+		return result;
+	}
     //simple and nasty first
-    //ClassIndex::Colour previous, current, next
+    //Colour previous, current, next
     int     start_pos = 0,
             x;
-    const LookUpTable& lut = vbb.getLUT();
-    ClassIndex::Colour start_colour = ClassIndex::getColourFromIndex(lut.classifyPixel(img(0,y))),
-                        current_colour;
+    Colour start_colour = getColourFromIndex(lut.classifyPixel(img(0,y)));
+    Colour current_colour;
     ColourSegment segment;
-    vector<ColourSegment> result;
 
     for(x = 0; x < img.getWidth(); x++) {
-        current_colour = ClassIndex::getColourFromIndex(lut.classifyPixel(img(x,y)));
+        current_colour = getColourFromIndex(lut.classifyPixel(img(x,y)));
         if(current_colour != start_colour) {
             //start of new segment
             //make new segment and push onto vector
-            segment.set(PointType(start_pos, y), PointType(x, y), start_colour);
+            segment.set(Point(start_pos, y), Point(x, y), start_colour);
             result.push_back(segment);
             //start new segment
             start_colour = current_colour;
             start_pos = x;
         }
     }
-    segment.set(PointType(start_pos, y), PointType(x-1, y), start_colour);
+    segment.set(Point(start_pos, y), Point(x-1, y), start_colour);
     result.push_back(segment);
     
-    #if VISION_SCAN_VERBOSITY > 1
-        PointType end;
+    #if VISION_SCANLINE_VERBOSITY > 1
+        Point end;
         for(int i=0; i<result.size(); i++) {
             debug << result.at(i).getStart() << " " << result.at(i).getEnd() << " " << (end==result.at(i).getStart()) << endl;
             end = result.at(i).getEnd();
@@ -113,34 +111,35 @@ vector<ColourSegment> ScanLines::classifyHorizontalScan(const VisionBlackboard& 
     return result;
 }
 
-vector<ColourSegment> ScanLines::classifyVerticalScan(const VisionBlackboard& vbb, const NUImage& img, const PointType &start)
+vector<ColourSegment> ScanLines::classifyVerticalScan(const LookUpTable& lut, const NUImage& img, const Vector2<double> &start)
 {
-    if(start.y >= img.getHeight() || start.x > img.getWidth())
-        errorlog << start << endl;
+    vector<ColourSegment> result;
+    if(start.y >= img.getHeight() || start.y < 0 || start.x >= img.getWidth() || start.x < 0) {
+		errorlog << "ScanLines::classifyVerticalScan invalid start position: " << start << endl; 
+		return result;
+    }
     //simple and nasty first
-    //ClassIndex::Colour previous, current, next
-    const LookUpTable& lut = vbb.getLUT();
-    ClassIndex::Colour start_colour = ClassIndex::getColourFromIndex(lut.classifyPixel(img(start.x,start.y))),
+    //Colour previous, current, next
+    Colour start_colour = getColourFromIndex(lut.classifyPixel(img(start.x,start.y))),
                         current_colour;
     ColourSegment segment;
-    vector<ColourSegment> result;
     int     start_pos = start.y,
             x = start.x,
             y;
             
     for(y = start.y; y < img.getHeight(); y++) {
-        current_colour = ClassIndex::getColourFromIndex(lut.classifyPixel(img(x,y)));
+        current_colour = getColourFromIndex(lut.classifyPixel(img(x,y)));
         if(current_colour != start_colour) {
             //start of new segment
             //make new segment and push onto vector
-            segment.set(PointType(x, start_pos), PointType(x, y), start_colour);
+            segment.set(Point(x, start_pos), Point(x, y), start_colour);
             result.push_back(segment);
             //start new segment
             start_colour = current_colour;
             start_pos = y;
         }
     }
-    segment.set(PointType(x, start_pos), PointType(x, y), start_colour);
+    segment.set(Point(x, start_pos), Point(x, y), start_colour);
     result.push_back(segment);
     
     return result;

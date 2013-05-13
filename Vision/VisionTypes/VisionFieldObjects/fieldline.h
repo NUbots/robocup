@@ -1,50 +1,44 @@
 #ifndef FIELDLINE_H
 #define FIELDLINE_H
 
-#include "visionfieldobject.h"
-#include "Tools/Math/Line.h"
+#include "Tools/Math/LSFittedLine.h"
 #include "Tools/Math/General.h"
+
+#include "Vision/basicvisiontypes.h"
+#include "Vision/VisionTypes/VisionFieldObjects/visionfieldobject.h"
 
 class FieldLine : public VisionFieldObject
 {
 public:
-    FieldLine(const Line& line = Line());
-    FieldLine(double rho, double phi);
+    FieldLine(const LSFittedLine& screen_line, const LSFittedLine& ground_line);
+    FieldLine(const Vector2<GroundPoint>& end_points);
 
-    void set(double rho, double phi);
-        
-    //! @brief returns the field position relative to the robot.
-    Vector3<float> getRelativeFieldCoords() const {return Vector3<float>(0,0,0);}
-    /*!
-      @brief pushes the object to the external field objects.
-      @param fieldobjects a pointer to the global list of field objects.
-      @param timestamp the image timestamp.
-      @return the success of the operation.
-      */
-    bool addToExternalFieldObjects(FieldObjects* fieldobjects, float timestamp) const {return false;}
-    //! @brief applies a series of checks to decide if the object is valid.
-    bool check() const {return true;}
+    void set(const LSFittedLine& screen_line, const LSFittedLine& ground_line);
+    void set(const Vector2<GroundPoint>& end_points);
 
+    Line getScreenLineEquation() const {return m_screen_line;}
+    Line getGroundLineEquation() const {return m_ground_line;}
+    Vector2<GroundPoint> getEndPoints() const {return m_end_points;}
     
     //! @brief Stream output for labelling purposes
-    void printLabel(ostream& out) const {out << getVFOName(FIELDLINE) << " " << Vector2<double>(m_rho, m_phi);}
-    //! @brief Brief stream output for labelling purposes
-    //void printLabelBrief(ostream& out) const {out << getVFOName(FIELDLINE) << " " << }
-    Vector2<double> getShortLabel() const {return Vector2<double>(m_rho, m_phi);}
+    void printLabel(ostream& out) const;
 
-    //! @brief Calculation of error for optimisation - assumed measured = (rho, phi)
-    double findError(const Vector2<double>& measured) const;
-    double findError(const FieldLine& measured) const;
+    //dummy until localisation can handle lines
+    bool addToExternalFieldObjects(FieldObjects *fieldobjects, float timestamp) const {return false && fieldobjects && timestamp==0;}
 
-    void render(cv::Mat& mat) const;
+    //! @brief Calculation of error for optimisation
+    virtual double findScreenError(VisionFieldObject* other) const;
+    virtual double findGroundError(VisionFieldObject* other) const;
 
     //! @brief output stream operator
     friend ostream& operator<< (ostream& output, const FieldLine& l);
     //! @brief output stream operator for a vector of FieldLines
     friend ostream& operator<< (ostream& output, const vector<FieldLine>& v);
 
-    double m_rho,
-           m_phi;
+private:
+    Line m_screen_line,
+         m_ground_line;
+    Vector2<GroundPoint> m_end_points;
 };
 
 #endif // FIELDLINE_H

@@ -12,6 +12,7 @@
 
 
 #include <math.h>
+#include <iostream>
 
 /** This class represents a 3-vector */
 template <class V = float> class Vector3
@@ -161,6 +162,11 @@ public:
   {
     return  (&x)[i];
   }
+
+  const V& operator[](int i) const
+  {
+    return  (&x)[i];
+  }
   
   /** Calculation of the length of this vector.
   *\return The length.
@@ -218,37 +224,32 @@ public:
     {
         return Vector3<V>(-x, -y, -z);
     }
+
+    /**
+    * @brief output stream operator result of the form (x,y,z)
+    */
+    friend std::ostream& operator<< (std::ostream& output, const Vector3<V>& v)
+    {
+        output << "(" << v.x << "," << v.y << "," << v.z << ")";
+        return output;
+    }
+
+    /**
+    * @brief input stream operator for the form (x,y,z)
+    */
+    friend std::istream& operator>>(std::istream& stream, Vector3<V>& v)
+    {
+        stream.ignore(2,'(');
+        stream >> v.x;
+        stream.ignore(2,',');
+        stream >> v.y;
+        stream.ignore(2,',');
+        stream >> v.z;
+        stream.ignore(2,')');
+        stream.peek();
+        return stream;
+    }
 };
 
-/**
-* Streaming operator that reads a Vector3<V> from a stream.
-* @param stream The stream from which is read.
-* @param vector3 The Vector3<V> object.
-* @return The stream.
-*/ 
-/*
-template <class V> In& operator>>(In& stream, Vector3<V>& vector3)
-{
-  stream >> vector3.x;
-  stream >> vector3.y;
-  stream >> vector3.z;
-  return stream;
-}
-*/
-/**
-* Streaming operator that writes a Vector3<V> to a stream.
-* @param stream The stream to write on.
-* @param vector3 The Vector3<V> object.
-* @return The stream.
-*/
-/*
-template <class V> Out& operator<<(Out& stream, const Vector3<V>& vector3)
-{
-  stream << vector3.x;
-  stream << vector3.y;
-  stream << vector3.z;
-  return stream;
-}
-*/
 #endif // __Vector3_h__
 

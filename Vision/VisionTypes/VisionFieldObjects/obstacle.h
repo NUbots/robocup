@@ -8,10 +8,8 @@
 class Obstacle : public VisionFieldObject
 {
 public:
-    Obstacle(const PointType& position=PointType(0,0), int width=0, int height=0);
+    Obstacle(Point position=Point(0,0), double width=0, double height=0);
 
-    //! @brief returns the field position relative to the robot.
-    Vector3<float> getRelativeFieldCoords() const;
     /*!
       @brief pushes the obstacle to the external field objects.
       @param fieldobjects a pointer to the global list of field objects.
@@ -23,14 +21,10 @@ public:
     bool check() const;
     
     //! @brief Stream output for labelling purposes
-    void printLabel(ostream& out) const {out << getVFOName(OBSTACLE) << " " << m_location_pixels << " " << m_size_on_screen;}
-    //! @brief Brief stream output for labelling purposes
-    //void printLabelBrief(ostream& out) const {out << getVFOName(OBSTACLE) << " " << m_location_pixels;}
-    Vector2<double> getShortLabel() const {return Vector2<double>(m_location_pixels.x, m_location_pixels.y);}
+    void printLabel(ostream& out) const {out << VFOName(OBSTACLE) << " " << m_location << " " << m_size_on_screen;}
 
-    double findError(const Vector2<double>& measured) const {return sqrt( pow(m_location_pixels.x - measured.x,2) + pow(m_location_pixels.y - measured.y,2));}
-
-    void render(cv::Mat& mat) const;
+    virtual double findScreenError(VisionFieldObject* other) const;
+    virtual double findGroundError(VisionFieldObject* other) const;
 
     //! @brief output stream operator.
     friend ostream& operator<< (ostream& output, const Obstacle& o);
@@ -43,16 +37,10 @@ private:
       @return whether the obstacle is valid.
       */
     bool calculatePositions();
-    /*!
-      @brief calculates distance to the obstacle based on the global obstacle distance metric.
-      @param bearing the angle between the obstacle and the image centre in the xy plane.
-      @param elevation the angle between the obstacle and the image centre in the xz plane.
-      @return the distance to the obstacle in cm.
-      */
-    float distanceToObstacle(float bearing, float elevation);
     
 private:
     float d2p;                      //! @variable the distance of the obstacle in cm as found by the distance to point method
+    double m_arc_width;               //! @variable the angle subtended by the obstacle (based on the screen width)
 };
 
 #endif // OBSTACLE_H

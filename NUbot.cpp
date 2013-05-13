@@ -24,6 +24,7 @@
 // ---------------------------------------------------------------- Compulsory header files
 #include "NUPlatform/NUPlatform.h"
 #include "NUPlatform/NUIO.h"
+#include "NUPlatform/NUAPI.h"
 #include "Infrastructure/NUBlackboard.h"
 #include "Infrastructure/NUSensorsData/NUSensorsData.h"
 #include "Infrastructure/NUActionatorsData/NUActionatorsData.h"
@@ -32,6 +33,8 @@
 #include "Infrastructure/Jobs/Jobs.h"
 #include "Infrastructure/GameInformation/GameInformation.h"
 #include "Infrastructure/TeamInformation/TeamInformation.h"
+#include "ConfigSystem/ConfigManager.h"
+using ConfigSystem::ConfigManager;
 
 #include "debugverbositynubot.h"
 #include "debug.h"
@@ -77,6 +80,7 @@
 #elif defined(TARGET_IS_DARWIN)
     #include "NUPlatform/Platforms/Darwin/DarwinPlatform.h"
     #include "NUPlatform/Platforms/Darwin/DarwinIO.h"
+	#include "NUPlatform/Platforms/Darwin/DarwinAPI.h"
 #elif defined(TARGET_IS_NUVIEW)
     #error You should not be compiling NUbot.cpp when targeting NUview, you should use the virtualNUbot.
 #else
@@ -220,6 +224,8 @@ void NUbot::createBlackboard()
     m_blackboard->add(new JobList());
     m_blackboard->add(new GameInformation(m_platform->getRobotNumber(), m_platform->getTeamNumber()));
     m_blackboard->add(new TeamInformation(m_platform->getRobotNumber(), m_platform->getTeamNumber()));
+    m_blackboard->add(new NUCameraData((string(CONFIG_DIR) + string("CameraSpecs.cfg")).c_str()));
+    m_blackboard->add(new ConfigManager());
 }
 
 /*! @brief Destroys the Blackboard, aka delete the m_blackboard */
@@ -250,6 +256,7 @@ void NUbot::createNetwork()
         m_io = new BearIO(this);
     #elif defined(TARGET_IS_DARWIN)
         m_io = new DarwinIO(this);
+		m_api = new DarwinAPI();
     #else
         #error You need to create an IO class for this platform
     #endif
@@ -264,6 +271,8 @@ void NUbot::destroyNetwork()
     
     delete m_io;
     m_io = 0;
+	
+	delete m_api;
 }
 
 /*! @brief Creates the Modules, this includes Vision, Localisation, Behaviour and Motion */

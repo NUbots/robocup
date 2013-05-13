@@ -17,42 +17,32 @@
 
 #include "../Kinematics/Kinematics.h"
 
-virtualNUbot* this_vn = NULL;
-
-void callBack(vector< Vector2<int> > updatedPoints, GLDisplay::display displayId)
-{
-    if(this_vn != NULL)
-        emit this_vn->emitPoints(updatedPoints, displayId);
-    else
-        debug << "virtualNUbot callBack - this_vn == NULL";
-}
-
-void virtualNUbot::emitPoints(vector< Vector2<int> > updatedPoints, GLDisplay::display displayId)
-{
-    emit pointsDisplayChanged(updatedPoints, displayId);
-}
-
 virtualNUbot::virtualNUbot(QObject * parent): QObject(parent)
 {
     vision = VisionControlWrapper::getInstance();
-    this_vn = this;
-    vision->wrapper->display_callback = &callBack;
+
+    //make connections
+    QObject::connect(vision->wrapper, SIGNAL(pointsUpdated(std::vector<Point>,GLDisplay::display)), this, SIGNAL(pointsDisplayChanged(std::vector<Point>,GLDisplay::display)));
+    QObject::connect(vision->wrapper, SIGNAL(linesUpdated(std::vector<LSFittedLine>,GLDisplay::display)), this, SIGNAL(fittedLineDisplayChanged(std::vector<LSFittedLine>,GLDisplay::display)));
+    QObject::connect(vision->wrapper, SIGNAL(segmentsUpdated(std::vector<std::vector<ColourSegment> >,GLDisplay::display)), this, SIGNAL(segmentsDisplayChanged(std::vector<std::vector<ColourSegment> >,GLDisplay::display)));
+    QObject::connect(vision->wrapper, SIGNAL(plotUpdated(QString, QVector<QPointF>)), this, SIGNAL(curveChanged(QString, QVector<QPointF>)));
+
     //! TODO: Load LUT from filename.
     AllObjects = new FieldObjects();
     classificationTable = new unsigned char[LUTTools::LUT_SIZE];
     tempLut = new unsigned char[LUTTools::LUT_SIZE];
     for (int i = 0; i < LUTTools::LUT_SIZE; i++)
     {
-        classificationTable[i] = ClassIndex::unclassified;
-        tempLut[i] = ClassIndex::unclassified;
+        classificationTable[i] = Vision::unclassified;
+        tempLut[i] = Vision::unclassified;
     }
     classImage.useInternalBuffer();
     previewClassImage.useInternalBuffer();
     nextUndoIndex = 0;
     rawImage = 0;
-    jointSensors = 0;
-    balanceSensors = 0;
-    touchSensors = 0;
+//    jointSensors = 0;
+//    balanceSensors = 0;
+//    touchSensors = 0;
 
     autoSoftColour = false;
 
@@ -73,18 +63,17 @@ void virtualNUbot::setRawImage(const NUImage* image)
 }
 
 
-void virtualNUbot::setSensorData(const float* joint, const float* balance, const float* touch)
-{
-    jointSensors = joint;
-    balanceSensors = balance;
-    touchSensors = touch;
-    horizonLine.Calculate(balanceSensors[4],balanceSensors[3],jointSensors[0],jointSensors[1],cameraNumber);
-    emit lineDisplayChanged(&horizonLine, GLDisplay::horizonLine);
+//void virtualNUbot::setSensorData(const float* joint, const float* balance, const float* touch)
+//{
+//    jointSensors = joint;
+//    balanceSensors = balance;
+//    touchSensors = touch;
+//    horizonLine.Calculate(balanceSensors[4],balanceSensors[3],jointSensors[0],jointSensors[1],cameraNumber);
+//    emit lineDisplayChanged(&horizonLine, GLDisplay::horizonLine);
+//}
 
-}
 void virtualNUbot::setSensorData(NUSensorsData* newsensorsData)
 {
-
     //std::stringstream data;
     //newsensorsData->summaryTo(data);
     //qDebug() << data.str().c_str() << endl;
@@ -99,7 +88,7 @@ void virtualNUbot::setSensorData(NUSensorsData* newsensorsData)
     }
     else
     {
-        horizonLine.setLineFromPoints(Point(0, 0), Point(320,0));
+        horizonLine.setLineFromPoints(Vector2<double>(0, 0), Vector2<double>(320,0));
     }
     emit lineDisplayChanged(&horizonLine, GLDisplay::horizonLine);
 
@@ -161,7 +150,6 @@ void virtualNUbot::generateClassifiedImage()
     return;
 }
 
-
 void virtualNUbot::processVisionFrame()
 {
     processVisionFrame(rawImage);
@@ -170,6 +158,7 @@ void virtualNUbot::processVisionFrame()
 void virtualNUbot::processVisionFrame(const NUImage* image)
 {
     if(image != NULL) {
+        emit clearPlots();
         vision->setSensorData(sensorsData);
         vision->setFieldObjects(AllObjects);
         vision->setRawImage(image);
@@ -242,14 +231,14 @@ void virtualNUbot::processVisionFrame(ClassifiedImage& image)
     return;
 }
 
-void virtualNUbot::updateSelection(ClassIndex::Colour colour, std::vector<Pixel> indexs)
+void virtualNUbot::updateSelection(Vision::Colour colour, std::vector<Pixel> indexs)
 {
     if(!imageAvailable()) return;
     Pixel temp;
-    float LUTSelectedCounter[ClassIndex::num_colours+1];
+    float LUTSelectedCounter[Vision::num_colours+1];
 
     //Set colour counters to 0;
-    for (int col = 0; col < ClassIndex::num_colours+1; col++)
+    for (int col = 0; col < Vision::num_colours+1; col++)
     {
         LUTSelectedCounter[col] = 0;
     }
@@ -259,8 +248,8 @@ void virtualNUbot::updateSelection(ClassIndex::Colour colour, std::vector<Pixel>
     {
         temp = indexs[i];
         unsigned int index = LUTTools::getLUTIndex(temp);
-        LUTSelectedCounter[ClassIndex::Colour(classificationTable[index])] = LUTSelectedCounter[ClassIndex::Colour(classificationTable[index])] +1;
-        tempLut[index] = getUpdateColour(ClassIndex::Colour(classificationTable[index]),colour);
+        LUTSelectedCounter[Vision::Colour(classificationTable[index])] = LUTSelectedCounter[Vision::Colour(classificationTable[index])] +1;
+        tempLut[index] = getUpdateColour(Vision::Colour(classificationTable[index]),colour);
     }
 
     //Send Stats to Classification widget to display
@@ -274,7 +263,7 @@ void virtualNUbot::updateSelection(ClassIndex::Colour colour, std::vector<Pixel>
     {
         temp = indexs[i];
         unsigned int index = LUTTools::getLUTIndex(temp);
-        tempLut[index] = ClassIndex::unclassified;
+        tempLut[index] = Vision::unclassified;
     }
     emit classifiedDisplayChanged(&previewClassImage, GLDisplay::classificationSelection);
 }
@@ -294,7 +283,7 @@ void virtualNUbot::UndoLUT()
 }
 
 
-void virtualNUbot::UpdateLUT(ClassIndex::Colour colour, std::vector<Pixel> indexs)
+void virtualNUbot::UpdateLUT(Vision::Colour colour, std::vector<Pixel> indexs)
 {
     Pixel temp;
     undoHistory[nextUndoIndex].clear();
@@ -307,7 +296,7 @@ void virtualNUbot::UpdateLUT(ClassIndex::Colour colour, std::vector<Pixel> index
         if(classificationTable[index] != colour)
         {
             undoHistory[nextUndoIndex].push_back(classEntry(index,classificationTable[index])); // Save index and colour
-            classificationTable[index] = getUpdateColour(ClassIndex::Colour(classificationTable[index]),colour);
+            classificationTable[index] = getUpdateColour(Vision::Colour(classificationTable[index]),colour);
         }
     }
     nextUndoIndex++;
@@ -318,18 +307,18 @@ void virtualNUbot::UpdateLUT(ClassIndex::Colour colour, std::vector<Pixel> index
     return;
 }
 
-ClassIndex::Colour virtualNUbot::getUpdateColour(ClassIndex::Colour currentColour, ClassIndex::Colour requestedColour)
+Vision::Colour virtualNUbot::getUpdateColour(Vision::Colour currentColour, Vision::Colour requestedColour)
 {
     if(autoSoftColour == false) return requestedColour;
     switch(currentColour)
     {
-        case ClassIndex::pink:
+        case Vision::pink:
         {
             switch(requestedColour)
             {
-            case ClassIndex::orange:
-            case ClassIndex::pink_orange:
-                return ClassIndex::pink_orange;
+            case Vision::orange:
+            case Vision::pink_orange:
+                return Vision::pink_orange;
                 break;
             default:
                 return requestedColour;
@@ -337,14 +326,14 @@ ClassIndex::Colour virtualNUbot::getUpdateColour(ClassIndex::Colour currentColou
             }
             break;
         }
-        case ClassIndex::pink_orange:
+        case Vision::pink_orange:
         {
             switch(requestedColour)
             {
-            case ClassIndex::pink:
-            case ClassIndex::orange:
-            case ClassIndex::pink_orange:
-                return ClassIndex::pink_orange;
+            case Vision::pink:
+            case Vision::orange:
+            case Vision::pink_orange:
+                return Vision::pink_orange;
                 break;
             default:
                 return requestedColour;
@@ -352,17 +341,17 @@ ClassIndex::Colour virtualNUbot::getUpdateColour(ClassIndex::Colour currentColou
             }
             break;
         }
-        case ClassIndex::orange:
+        case Vision::orange:
         {
             switch(requestedColour)
             {
-            case ClassIndex::pink:
-            case ClassIndex::pink_orange:
-                return ClassIndex::pink_orange;
+            case Vision::pink:
+            case Vision::pink_orange:
+                return Vision::pink_orange;
                 break;
-            case ClassIndex::yellow:
-            case ClassIndex::yellow_orange:
-                return ClassIndex::yellow_orange;
+            case Vision::yellow:
+            case Vision::yellow_orange:
+                return Vision::yellow_orange;
                 break;
             default:
                 return requestedColour;
@@ -370,14 +359,14 @@ ClassIndex::Colour virtualNUbot::getUpdateColour(ClassIndex::Colour currentColou
             }
             break;
         }
-        case ClassIndex::yellow_orange:
+        case Vision::yellow_orange:
         {
             switch(requestedColour)
             {
-            case ClassIndex::yellow:
-            case ClassIndex::orange:
-            case ClassIndex::yellow_orange:
-                return ClassIndex::yellow_orange;
+            case Vision::yellow:
+            case Vision::orange:
+            case Vision::yellow_orange:
+                return Vision::yellow_orange;
                 break;
             default:
                 return requestedColour;
@@ -385,13 +374,13 @@ ClassIndex::Colour virtualNUbot::getUpdateColour(ClassIndex::Colour currentColou
             }
             break;
         }
-        case ClassIndex::yellow:
+        case Vision::yellow:
         {
             switch(requestedColour)
             {
-            case ClassIndex::orange:
-            case ClassIndex::yellow_orange:
-                return ClassIndex::yellow_orange;
+            case Vision::orange:
+            case Vision::yellow_orange:
+                return Vision::yellow_orange;
                 break;
             default:
                 return requestedColour;

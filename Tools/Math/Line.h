@@ -1,6 +1,7 @@
 /*!
   @file Line.h
   @author Steven Nicklin
+  @author Shannon Fenn (modified)
   @brief Definition of the Point and Line class.
 */
 
@@ -8,54 +9,27 @@
 #define LINE_H_DEFINED
 
 #include <iostream>
-
-/*!
-  @brief Class representing a 2 dimensional (x,y) position.
-  */
-class Point
-{
-  public:
-    /*!
-      @brief Default constructor.
-      */
-    Point() {Point(0.0,0.0); return;};
-    /*!
-      @brief Constructor with initialisers.
-      */
-    Point(double in_x, double in_y) {x = in_x; y = in_y; return;};
-    double x; //!< The points x value.
-    double y; //!< The points y value.
-    //double distance(const Point& p1) const { return sqrt((x-p1.x)*(x-p1.x) + (y-p1.y)*(y-p1.y)); }
-    double dot(Point pt) {return x*pt.x + y*pt.y;}
-
-    // Overloaded functions
-    /*!
-      @brief Equality operator
-      @return True of the two points are equal. False if they are not.
-      */
-    friend bool operator ==(const Point& point1, const Point& point2) {return (point1.x==point2.x)&&(point1.y==point2.y);}
-    /*!
-      @brief Inquality operator
-      @return True of the two points are not equal. False if they are.
-      */
-    friend bool operator !=(const Point& point1, const Point& point2) {return (point1.x!=point2.x)||(point1.y!=point2.y);}
-
-};
+#include <vector>
+#include "Tools/Math/Vector2.h"
 
 /*!
   @brief Class representing a 2 dimensional line in the form Ax + By = C.
   */
+
+using std::vector;
+//typedef Vector2<double> Point;
+
 class Line
 {
   public:
     //! Default Constructor.
     Line();
     //! Constructor with intialising points. A line is created through these 2 points.
-    Line(Point p1, Point p2);
+    Line(Vector2<double> p1, Vector2<double> p2);
     //! Constructor with intialising values.
     Line(double rho, double phi);
     //! Destructor
-    ~Line();
+    virtual ~Line();
 // Make line. Form: Ax + By = C
     /*!
       @brief Assign the line by giving the equation in the form Ax + By = C.
@@ -79,7 +53,7 @@ class Line
       @param p2 The second point.
       @return True if a valid line was assigned using the points. False otherwise.
       */
-    bool setLineFromPoints(Point p1, Point p2);
+    bool setLineFromPoints(Vector2<double> p1, Vector2<double> p2);
     /*!
       @brief Normalises the rho/phi values.
       */
@@ -150,7 +124,7 @@ class Line
     /*!
       @brief Find the angle of the line in radians.
 
-      The angle given is the angle from the x axis to the line.
+      The angle given is the angle from the x axis to the line in an anticlockwise direction.
       @return The angle of the line in radians.
       */
     double getAngle() const;
@@ -173,19 +147,19 @@ class Line
       @param point The point to find the distance to.
       @return The distance from the line to the point.
       */
-    double getLinePointDistance(Point point) const;
+    double getLinePointDistance(Vector2<double> point) const;
     /*Added by Shannon*/
-    /*!
-      @brief retreive the normaliser for the coefficients of the line equation - sqrt(A^2 + B^2).
-      @return sqrt(A^2 + B^2).
-      */
-    double getNormaliser() const;
     /*!
       @brief Find the signed distance between the the line and the point.
       @param point The point to find the distance to.
       @return The signed distance from the line to the point.
       */
-    double getSignedLinePointDistance(Point point) const;
+    double getSignedLinePointDistance(Vector2<double> point) const;
+    /*!
+      @brief retreive the normaliser for the coefficients of the line equation - sqrt(A^2 + B^2).
+      @return sqrt(A^2 + B^2).
+      */
+    double getNormaliser() const;
     /*!
       @brief Find the smallest angle between this and the given line.
       @param other The other line.
@@ -203,18 +177,30 @@ class Line
       */
     double getPhi() const;
     /*!
+      @brief Returns the scalar projection of the point onto the line.
+      @param pt The point to project.
+      @return The scalar projection (length of the vector projection).
+      */
+    double scalarProjection(Vector2<double> pt) const;
+    /*!
       @brief Projects the point onto the line.
       @param pt The point to project.
       @return The projected point.
       */
-    Point projectOnto(Point pt) const;
+    Vector2<double> projectOnto(Vector2<double> pt) const;
+    /*!
+      @brief Projects multiple points onto the line.
+      @param pts A vector of points to project.
+      @return The vector of projected points.
+      */
+    vector< Vector2<double> > projectOnto(const vector< Vector2<double> >& pts) const;
     /*!
       @brief Finds the intersection of the two lines.
       @param other The other line.
       @param pt The resulting point.
       @return Whether the lines intersect.
       */
-    bool getIntersection(const Line& other, Point& pt) const;
+    bool getIntersection(const Line& other, Vector2<double>& pt) const;
     /*Added by Shannon*/
 
 // Overloaded functions
@@ -239,13 +225,14 @@ class Line
       */
     friend std::ostream& operator<< (std::ostream& output, const Line& l);
     
-  private:
+  protected:
     double m_A; //! The lines A value.
     double m_B; //! The lines B value.
     double m_C; //! The lines C value.
     double m_rho;
     double m_phi;
     double m_normaliser;
+    Vector2<double> v, a;   ///! Vector representation
     /*!
       @brief Determine if the line represented by the given equation is valid.
       @param A The A value of the line equation.

@@ -8,16 +8,14 @@ class Ball : public VisionFieldObject
 public:
     
     Ball();
-    Ball(PointType centre, int diameter);
+    Ball(Point centre, double diameter);
     
     /*!
       @brief returns the radius.
       @return the radius of the ball in pixels.
       */
     float getRadius() const;
-    
-    //! @brief returns the field position relative to the robot.
-    Vector3<float> getRelativeFieldCoords() const;
+
     /*!
       @brief pushes the ball to the external field objects.
       @param fieldobjects a pointer to the global list of field objects.
@@ -30,14 +28,10 @@ public:
     bool check() const;
     
     //! @brief Stream output for labelling purposes
-    void printLabel(ostream& out) const {out << getVFOName(BALL) << " " << m_location_pixels << " " << m_diameter;}
-    //! @brief Brief stream output for labelling purposes
-    //void printLabelBrief(ostream& out) const {out << getVFOName(BALL) << " " << m_location_pixels;}
-    Vector2<double> getShortLabel() const {return Vector2<double>(m_location_pixels.x, m_location_pixels.y);}
+    void printLabel(ostream& out) const {out << VFOName(BALL) << " " << m_location.screen << " " << m_diameter;}
 
-    double findError(const Vector2<double>& measured) const {return sqrt( pow(m_location_pixels.x - measured.x,2) + pow(m_location_pixels.y - measured.y,2));}
-
-    void render(cv::Mat& mat) const;
+    virtual double findScreenError(VisionFieldObject* other) const;
+    virtual double findGroundError(VisionFieldObject* other) const;
     
     //! @brief output stream operator
     friend ostream& operator<< (ostream& output, const Ball& b);
@@ -56,7 +50,7 @@ private:
       @param elevation the angle between the ball and the image centre in the xz plane.
       @return the distance to the ball in cm.
       */
-    float distanceToBall(float bearing, float elevation);
+    double distanceToBall(double bearing, double elevation);
     
 public:
     int m_diameter;     //! @variable the radius of the ball in pixels
