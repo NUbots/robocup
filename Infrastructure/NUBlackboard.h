@@ -65,12 +65,8 @@ public:
     void add(JobList* joblist);
     void add(GameInformation* gameinfo);
     void add(TeamInformation* teaminfo);
-<<<<<<< HEAD
-
-=======
     void add(ConfigManager* config);
     
->>>>>>> 5acc54f492a2165e51196a2636dcb4a311d070f7
 public:
     NUSensorsData* Sensors;
     NUActionatorsData* Actions;
