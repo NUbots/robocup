@@ -103,7 +103,7 @@ NUWalk* NUWalk::getWalkEngine(NUSensorsData* data, NUActionatorsData* actions, N
     return new BlankWalk(data, actions);
 }
 
-NUWalk::NUWalk(NUSensorsData* data, NUActionatorsData* actions) : NUMotionProvider("NUWalk", data, actions),m_recalculate_kick_type(true),m_ball_position(0,0),m_ball_target(0,0)
+NUWalk::NUWalk(NUSensorsData* data, NUActionatorsData* actions) : NUMotionProvider("NUWalk", data, actions),m_recalculate_kick_type(false),m_setup_kick(false),m_ball_position(0,0),m_ball_target(0,0)
 {
     m_current_time = 0;
     m_previous_time = 0;
@@ -325,7 +325,10 @@ void NUWalk::process(WalkPerturbationJob* job)
     m_perturbation_direction = job->getDirection();
 }
 
+/*! @brief Process a kick job for the walk engine to execute
+    @param job the kick job to be executed
 
+*/
 void NUWalk::process(WalkKickJob* job)
 {
     #if DEBUG_NUMOTION_VERBOSITY > 2
@@ -335,7 +338,7 @@ void NUWalk::process(WalkKickJob* job)
     m_ball_position = job->getBallPosition();
     m_ball_target = job->getTargetPosition();
     m_recalculate_kick_type = true;
-
+    m_setup_kick = true;
 
 }
 

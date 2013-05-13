@@ -255,11 +255,13 @@ void HeadBehaviour::makeVisionChoice(VisionPolicyID fieldVisionPolicy) {
         case BallLostVisionPolicy:
         case RobotLostVisionPolicy:
         case BallOnlyVisionPolicy:
-            landmarkSeenFrequency = 1000000.;
+            dispatchHeadJob(&Blackboard->Objects->mobileFieldObjects[FieldObjects::FO_BALL]);
+            break;
+        /* landmarkSeenFrequency = 1000000.;
             ballSeenFrequency = 10;
             ballFocusBias = 1000.;
             doPriorityListPolicy();
-            break;
+            break;*/
         case LandmarkOnlyVisionPolicy:
             landmarkSeenFrequency = 10.;
             ballSeenFrequency = 1000000.;
@@ -450,9 +452,9 @@ float HeadBehaviour::calculateReward(){
     float self_reward = -(1-exp(-(errx*errx+erry*erry+errh*errh)/800));
 
     //Weight in terms of distance to ball: ball close to robot means ball more important.
-    /*float weight = 0.25+0.5*(1-exp(-fabs(head_logic->calculateMobilePolarObjectLocation(&(Blackboard->Objects->mobileFieldObjects[FieldObjects::FO_BALL]))[0])/250));
-    float reward = 1+((1-weight)*ball_reward+weight*self_reward);*/
-    float reward = 1+(ball_reward+self_reward)/2.;
+    float weight = 0.25+0.5*(1-exp(-fabs(head_logic->calculateMobilePolarObjectLocation(&(Blackboard->Objects->mobileFieldObjects[FieldObjects::FO_BALL]))[0])/250));
+    float reward = 1+((1-weight)*ball_reward+weight*self_reward);
+    //float reward = 1+(ball_reward+self_reward)/2.;
     //When reward recording desired, uncomment: Rewards are stored in rewards_log_pathname
     //recordReward(reward);
     last_reward = reward;

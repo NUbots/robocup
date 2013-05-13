@@ -26,6 +26,10 @@
 //#include "Tools/Math/Matrix.h"
 //#include "Platform/SoundPlayer.h"
 
+void WalkingEngine::breakPointIndicator(){
+
+}
+
 inline float saveAsinh(float xf)
 {
   double x = xf; // yes, we need double here
@@ -261,16 +265,16 @@ void WalkingEngine::setWalkParameters(const WalkParameters& walkparameters)
 
 void WalkingEngine::writeParameters()
 {
-//#if DEBUG_NUMOTION_VERBOSITY > 0
-    debug << "WalkingEngine::writeParameters: " << endl;
-//#endif
+    #if DEBUG_NUMOTION_VERBOSITY > 0
+        debug << "WalkingEngine::writeParameters: " << endl;
+    #endif
     vector<Parameter>& params = m_walk_parameters.getParameters();
     for(unsigned int i=0; i<params.size(); i++) {
         string& nm = params.at(i).name();
         float value = params.at(i).get();
-//#if DEBUG_NUMOTION_VERBOSITY > 0
-    debug << nm << " : " << value << endl;
-//#endif
+    #if DEBUG_NUMOTION_VERBOSITY > 0
+        debug << nm << " : " << value << endl;
+    #endif
         if(nm.compare("standComPositionZ") == 0)
             p.standComPosition.z = value;
         else if(nm.compare("walkRefX") == 0)
@@ -452,46 +456,57 @@ void WalkingEngine::update(/*WalkingEngineOutput& walkingEngineOutput*/)
             debug << "WalkingEngine::update() doing updateMotionRequest()"<<endl;
         #endif
         updateMotionRequest();
+
         #if DEBUG_NUMOTION_VERBOSITY > 2
             debug << "WalkingEngine::update() doing updateObservedPendulumPlayer()"<<endl;
         #endif
         updateObservedPendulumPlayer();
+
         #if DEBUG_NUMOTION_VERBOSITY > 2
             debug << "WalkingEngine::update() doing computeMeasuredStance()"<<endl;
         #endif
         computeMeasuredStance();
+
         #if DEBUG_NUMOTION_VERBOSITY > 2
             debug << "WalkingEngine::update() doing computeExpectedStance()"<<endl;
         #endif
         computeExpectedStance();
+
         #if DEBUG_NUMOTION_VERBOSITY > 2
             debug << "WalkingEngine::update() doing computeError()"<<endl;
         #endif
         computeError();
+
         #if DEBUG_NUMOTION_VERBOSITY > 2
             debug << "WalkingEngine::update() doing  updatePendulumPlayer()"<<endl;
         #endif
         updatePendulumPlayer();
+
         #if DEBUG_NUMOTION_VERBOSITY > 2
             debug << "WalkingEngine::update() doing updateKickPlayer()"<<endl;
         #endif
         updateKickPlayer();
+
         #if DEBUG_NUMOTION_VERBOSITY > 2
             debug << "WalkingEngine::update() doing generateTargetStance()"<<endl;
         #endif
         generateTargetStance();
+
         #if DEBUG_NUMOTION_VERBOSITY > 2
             debug << "WalkingEngine::update() doing generateJointRequest()"<<endl;
         #endif
         generateJointRequest();
+
         #if DEBUG_NUMOTION_VERBOSITY > 2
             debug << "WalkingEngine::update() doing computeOdometryOffset()"<<endl;
         #endif
         computeOdometryOffset();
+
         #if DEBUG_NUMOTION_VERBOSITY > 2
             debug << "WalkingEngine::update() doing generateOutput()"<<endl;
         #endif
         generateOutput(/*walkingEngineOutput*/);
+
         #if DEBUG_NUMOTION_VERBOSITY > 2
             debug << "WalkingEngine::update() done "<<endl;
         #endif
@@ -509,10 +524,12 @@ void WalkingEngine::update(/*WalkingEngineOutput& walkingEngineOutput*/)
             */
         generateDummyOutput(/*walkingEngineOutput*/);
     }
+    m_setup_kick = false;
 }
 
 void WalkingEngine::updateMotionRequest()
 {
+//old code
 //  if(theMotionRequest.motion == MotionRequest::walk)
 //  {
 //    if(theMotionRequest.walkRequest.mode == WalkRequest::targetMode)
@@ -532,6 +549,7 @@ void WalkingEngine::updateMotionRequest()
     {
       bool mirrored = kickPlayer.isKickMirrored(getKickType( m_ball_position, m_ball_target));
       requestedMotionType = mirrored ? standLeft : standRight;
+      m_walk_requested = false;
     }
     else if(!kickPlayer.isActive() && (fabs(m_target_speed_x) > 0.05 or fabs(m_target_speed_y) > 0.05 or fabs(m_target_speed_yaw) > 0.001))
     {
@@ -563,7 +581,6 @@ void WalkingEngine::updateMotionRequest()
 
 void WalkingEngine::updateObservedPendulumPlayer()
 {
-     cout<<"WalkingEngine::updateObservedPendulumPlayer() - begin"<<endl;
   // motion update
   if(observedPendulumPlayer.isActive())
     observedPendulumPlayer.seek(m_cycle_time);
@@ -576,7 +593,9 @@ void WalkingEngine::updateObservedPendulumPlayer()
   case standRight:
       if(kickPlayer.isActive())
          break;
-    cout<<"WalkingEngine::updateObservedPendulumPlayer() - 1st swritch current motion standRight case"<<endl;
+    #if DEBUG_NUMOTION_VERBOSITY > 2
+    debug<<"WalkingEngine::updateObservedPendulumPlayer() - 1st swritch current motion standRight case"<<endl;
+    #endif
     if(requestedMotionType != currentMotionType)
     {
       SupportLeg supportLeg = SupportLeg(0);
@@ -587,8 +606,11 @@ void WalkingEngine::updateObservedPendulumPlayer()
       switch(currentMotionType)
       {
       case standRight:
+
         //assert(false);
-           cout<<"WalkingEngine::updateObservedPendulumPlayer() - standRight case"<<endl;
+        #if DEBUG_NUMOTION_VERBOSITY > 2
+        debug<<"WalkingEngine::updateObservedPendulumPlayer() - standRight case"<<endl;
+        #endif
         supportLeg = right;
         r = Vector2<>(0.f, -(p.standComPosition.y - p.kickComPosition.y + p.kickX0Y));
         x0 = Vector2<>(currentRefX, p.kickX0Y);
@@ -596,7 +618,7 @@ void WalkingEngine::updateObservedPendulumPlayer()
         stepType = fromStandLeft;
         break;
       case standLeft:
-           cout<<"WalkingEngine::updateObservedPendulumPlayer() - standLeft case"<<endl;
+           debug<<"WalkingEngine::updateObservedPendulumPlayer() - standLeft case"<<endl;
         //assert(false);
         supportLeg = left;
         r = Vector2<>(0.f, p.standComPosition.y - p.kickComPosition.y + p.kickX0Y);
@@ -605,7 +627,10 @@ void WalkingEngine::updateObservedPendulumPlayer()
         stepType = fromStandRight;
         break;
       case stand:
-           cout<<"WalkingEngine::updateObservedPendulumPlayer() - stand case"<<endl;
+           #if DEBUG_NUMOTION_VERBOSITY > 2
+           debug<<"WalkingEngine::updateObservedPendulumPlayer() - stand case"<<endl;
+           #endif
+           breakPointIndicator();
         if(requestedMotionType == standRight || (requestedMotionType == stepping && requestedWalkTarget.translation.y > 0.f))
         {
           supportLeg = left;
@@ -618,29 +643,43 @@ void WalkingEngine::updateObservedPendulumPlayer()
           r = Vector2<>(currentRefX, -p.walkRefY);
           x0 = Vector2<>(0.f, p.walkRefY);
         }
+        breakPointIndicator();
         break;
       default:
-        cout<<"WalkingEngine::updateObservedPendulumPlayer() - default case: asserting false"<<endl;
+        #if DEBUG_NUMOTION_VERBOSITY > 2
+        debug<<"WalkingEngine::updateObservedPendulumPlayer() - default case: asserting false"<<endl;
+        #endif
         assert(false);
         break;
       }
-       cout<<"WalkingEngine::updateObservedPendulumPlayer() - 1"<<endl;
+        #if DEBUG_NUMOTION_VERBOSITY > 2
+       debug<<"WalkingEngine::updateObservedPendulumPlayer() - 1"<<endl;
+        #endif
       lastNextSupportLeg = supportLeg;
-      cout<<"WalkingEngine::updateObservedPendulumPlayer() - 2"<<endl;
+       #if DEBUG_NUMOTION_VERBOSITY > 2
+      debug<<"WalkingEngine::updateObservedPendulumPlayer() - 2"<<endl;
+      #endif
       lastSelectedSpeed = Pose2D();
-      cout<<"WalkingEngine::updateObservedPendulumPlayer() - 3"<<endl;
+       #if DEBUG_NUMOTION_VERBOSITY > 2
+      debug<<"WalkingEngine::updateObservedPendulumPlayer() - 3"<<endl;
+      #endif
       nextPendulumParameters.s = StepSize();
-      cout<<"WalkingEngine::updateObservedPendulumPlayer() - 4"<<endl;
+       #if DEBUG_NUMOTION_VERBOSITY > 2
+      debug<<"WalkingEngine::updateObservedPendulumPlayer() - 4"<<endl;
+      #endif
       observedPendulumPlayer.init(stepType, p.observerMeasurementDelay * -0.001f, supportLeg, r, x0, k, m_cycle_time);
-      cout<<"WalkingEngine::updateObservedPendulumPlayer() - 5"<<endl;
+       #if DEBUG_NUMOTION_VERBOSITY > 2
+      debug<<"WalkingEngine::updateObservedPendulumPlayer() - 5"<<endl;
+      #endif
       currentMotionType = stepping;
-      cout<<"WalkingEngine::updateObservedPendulumPlayer() - 6"<<endl;
+       #if DEBUG_NUMOTION_VERBOSITY > 2
+      debug<<"WalkingEngine::updateObservedPendulumPlayer() - 6"<<endl;
+      #endif
     }
     break;
   default:
     break;
   }
-   cout<<"WalkingEngine::updateObservedPendulumPlayer() - end"<<endl;
 }
 
 void WalkingEngine::computeMeasuredStance()
@@ -817,8 +856,6 @@ void WalkingEngine::updatePendulumPlayer()
       default:
         break;
       }
-      if(currentMotionType == requestedMotionType && (requestedMotionType == standLeft || requestedMotionType == standRight) && getKickType( m_ball_position, m_ball_target)!= KickPlayer::none)
-        kickPlayer.init(getKickType( m_ball_position, m_ball_target),  m_ball_position, m_ball_target);
     }
   }
 }
@@ -830,33 +867,35 @@ void WalkingEngine::updateKickPlayer()
     #endif
   if(currentMotionType == stepping)
     {
-    if(!kickPlayer.isActive() && pendulumPlayer.kickType != KickPlayer::none)
+    if(!kickPlayer.isActive() && /*pendulumPlayer.kickType*/getKickType( m_ball_position, m_ball_target)!= KickPlayer::none)
     {
         #if DEBUG_NUMOTION_VERBOSITY > 2
             debug << "WalkingEngine::updateKickPlayer() (!kickPlayer.isActive() && pendulumPlayer.kickType != KickPlayer::none) so init kickPlayer"<<endl;
         #endif
-        kickPlayer.init(pendulumPlayer.kickType, m_ball_position, m_ball_target);
+        kickPlayer.init(/*pendulumPlayer.kickType*/getKickType( m_ball_position, m_ball_target), m_ball_position, m_ball_target);
     }
     if(kickPlayer.isActive())
     {
-      if(kickPlayer.getType() != pendulumPlayer.kickType){
+      if(kickPlayer.getType() != /*pendulumPlayer.kickType*/getKickType( m_ball_position, m_ball_target)){
         #if DEBUG_NUMOTION_VERBOSITY > 2
             debug << "WalkingEngine::updateKickPlayer() kickPlayer.isActive() and (kickPlayer.getType() != pendulumPlayer.kickType) so stop kickPlayer"<<endl;
         #endif
-        kickPlayer.stop();
+        //kickPlayer.stop();
       }
       else
       {
         #if DEBUG_NUMOTION_VERBOSITY > 2
             debug << "WalkingEngine::updateKickPlayer() !kickPlayer.isActive() so getLength"<<endl;
         #endif
-            //error in here, prob uninitialised var
+
         float length = kickPlayer.getLength();
-        assert(length >= 0.f);
-    #if DEBUG_NUMOTION_VERBOSITY > 2
-        debug << "WalkingEngine::updateKickPlayer() !kickPlayer.isActive() calculate pos"<<endl;
-    #endif
+        if(length < 0.f){cout<< "WARNING: kickPlayer.length is negative!"<< endl;}
+
+
         float pos = length * (pendulumPlayer.t - pendulumPlayer.tb) / (pendulumPlayer.te - pendulumPlayer.tb);
+    #if DEBUG_NUMOTION_VERBOSITY > 2
+        debug << "WalkingEngine::updateKickPlayer() !kickPlayer.isActive() calculate pos = "<< pos <<endl;
+    #endif
     #if DEBUG_NUMOTION_VERBOSITY > 2
         debug << "WalkingEngine::updateKickPlayer() !kickPlayer.isActive() seek"<<endl;
     #endif
@@ -874,8 +913,7 @@ void WalkingEngine::updateKickPlayer()
             debug << "WalkingEngine::updateKickPlayer() kickplayer.seek"<<endl;
         #endif
         kickPlayer.seek(m_cycle_time);
-    }
-    else if(KickPlayer::KickType(getKickType( m_ball_position, m_ball_target)) != KickPlayer::none && currentMotionType == requestedMotionType && (requestedMotionType == standLeft || requestedMotionType == standRight)){
+    }   else if(KickPlayer::KickType(getKickType( m_ball_position, m_ball_target)) != KickPlayer::none && currentMotionType == requestedMotionType && (requestedMotionType == standLeft || requestedMotionType == standRight)){
         #if DEBUG_NUMOTION_VERBOSITY > 2
             debug << "WalkingEngine::updateKickPlayer() kickplayer.init"<<endl;
         #endif
@@ -888,36 +926,62 @@ void WalkingEngine::updateKickPlayer()
 }
 
 WalkingEngine::KickPlayer::KickType WalkingEngine::getKickType( Vector2<> position, Vector2<> target){
-    if(m_recalculate_kick_type){
+    if (false/*!m_setup_kick*/){
+        //testing by commenting this out
+        m_kick_type = KickPlayer::none;
+        return m_kick_type;
+    }else if(m_recalculate_kick_type){
         #if DEBUG_NUMOTION_VERBOSITY > 2
-            debug << "WalkingEngine::getKickType()"<<endl;
+            debug << "WalkingEngine::getKickType(...)"<<endl;
         #endif
+
         float ball_x = position.x;//Relative coords
         float ball_y = position.y;
 
         float target_x = target.x;
         float target_y = target.y;
+        //Check for division by zero or zero vectors:
+        if (target_x - ball_x == 0 and target_y == ball_y) {
+            cout<<"WalkingEngine::KickPlayer::KickType WalkingEngine::getKickType -  ball postition and target position identical" <<endl;
+            m_recalculate_kick_type = false;
+            m_kick_type = KickPlayer::none;
+            return m_kick_type;
+        }
+        double theta;
+        if(target_x-ball_x!=0){
+            theta = atan2(target_y - ball_y, target_x - ball_x);
+        } else {
+            if(target_y>ball_y){
+                //delta_y positive
+                theta = mathGeneral::PI /2.0;
+            }else{
+                //delta_y negative
+                theta = -mathGeneral::PI /2.0;
+            }
+        }
 
-        double theta = atan2(target_y - ball_y, target_x - ball_x);
-
-        float angle_margin = mathGeneral::PI / 4.0f; //triggers sidekick too often with -45 deg to 45 deg front kick zone
+        float angle_margin = mathGeneral::PI /2.0f; //triggers sidekick too often with -45 deg to 45 deg front kick zone
 
 
         if(theta > angle_margin)
         {
             m_kick_type = KickPlayer::sidewardsRight;
+            cout<<"WalkingEngine::KickPlayer::KickType WalkingEngine::getKickType - kick type set to sidewardsLeft"<< endl;
         }
         else if(theta <= angle_margin and theta >= -angle_margin and ball_y>=0)
         {
             m_kick_type = KickPlayer::left;
+            cout<<"WalkingEngine::KickPlayer::KickType WalkingEngine::getKickType - kick type set to left"<< endl;
         }
         else if(theta < -angle_margin)
         {
             m_kick_type = KickPlayer::sidewardsLeft;
+            cout<<"WalkingEngine::KickPlayer::KickType WalkingEngine::getKickType - kick type set to sidewardsRight"<< endl;
         }
         else if(theta >= -angle_margin and theta <= angle_margin and ball_y<0)
         {
             m_kick_type = KickPlayer::right;
+            cout<<"WalkingEngine::KickPlayer::KickType WalkingEngine::getKickType - kick type set to right"<< endl;
         }
         else
         {
@@ -958,8 +1022,10 @@ void WalkingEngine::generateTargetStance()
   targetStance.rightArmJointAngles[3] = -(-p.standArmJointAngles.y - rightArmAngle - halfArmRotation);
 
   // playing a kick motion!?
+  //KICKDEBUG - check if statement
   if(kickPlayer.isActive())
   {
+      cout<< "WalkingEngine::generateTargetStance() - kick is active - applying kickstance "<<endl;
     kickPlayer.setParameters( m_ball_position, m_ball_target);
     kickPlayer.apply(targetStance);
   }
@@ -1133,17 +1199,18 @@ void WalkingEngine::generateJointRequest()
   
   // Hack to move both feet.
   const unsigned int hip_yaw_index = 2;
-  if (fabs(nu_nextRightLegJoints[hip_yaw_index]) < fabs(nu_nextLeftLegJoints[hip_yaw_index]))
-  {
-    nu_nextRightLegJoints[hip_yaw_index] = nu_nextLeftLegJoints[hip_yaw_index] / -2.0f;
-    nu_nextLeftLegJoints[hip_yaw_index] /= 2.0f;
+  if( !kickPlayer.isActive()/*Here to test kick, remove if kick works*/){
+      if (fabs(nu_nextRightLegJoints[hip_yaw_index]) < fabs(nu_nextLeftLegJoints[hip_yaw_index]))
+      {
+        nu_nextRightLegJoints[hip_yaw_index] = nu_nextLeftLegJoints[hip_yaw_index] / -2.0f;
+        nu_nextLeftLegJoints[hip_yaw_index] /= 2.0f;
+      }
+      else if (fabs(nu_nextRightLegJoints[hip_yaw_index]) >  fabs(nu_nextLeftLegJoints[hip_yaw_index]))
+      {
+        nu_nextLeftLegJoints[hip_yaw_index] = nu_nextRightLegJoints[hip_yaw_index] / -2.0f;
+        nu_nextRightLegJoints[hip_yaw_index] /= 2.0f;
+      }
   }
-  else if (fabs(nu_nextRightLegJoints[hip_yaw_index]) >  fabs(nu_nextLeftLegJoints[hip_yaw_index]))
-  {
-    nu_nextLeftLegJoints[hip_yaw_index] = nu_nextRightLegJoints[hip_yaw_index] / -2.0f;
-    nu_nextRightLegJoints[hip_yaw_index] /= 2.0f;
-  }
-
   // If generated motion was a standing motion, save this as the new initial target.
   if(currentMotionType == stand)
   {
@@ -1253,7 +1320,7 @@ void WalkingEngine::generateNextStepSize(SupportLeg nextSupportLeg, StepType las
 //      if(theMotionRequest.motion == MotionRequest::bike)
 //        next.r.x  = p.standBikeRefX;
 //      else
-        next.r.x = p.walkRefX;
+      next.r.x = p.walkRefX;
       next.x0 = Vector2<>(0.f, -next.r.y);
       next.xv0 = Vector2<>();
       next.xtb = Vector2<>(next.r.x, 0.f);
@@ -2120,6 +2187,8 @@ float WalkingEngine::PendulumPlayer::smoothShape(float r) const
   }
 }
 
+/*! @brief Loads the kick config files from the config directory. The number of kicks loaded is 2 (==kicks.size()), the other two kicks are derived by reflecting the left kicks.
+*/
 WalkingEngine::KickPlayer::KickPlayer() : kick(NULL)
 {
   config_filepath = string(CONFIG_DIR) + string("/Motion/Kicks/%s.cfg");
@@ -2133,7 +2202,7 @@ WalkingEngine::KickPlayer::KickPlayer() : kick(NULL)
         debug << "WalkingEngine::KickPlayer::KickPlayer() loading walk-kick from file"<<s<<endl;
     #endif
     kicks.push_back(WalkingEngineKick());
-    cout << "WalkingEngineKick success: " << kicks.back().load(filePath) << endl;
+    cout << "WalkingEngineKick load success: " << kicks.back().load(filePath) << endl;
     //kicks[i].load(filePath);
   }
 
@@ -2206,38 +2275,21 @@ void WalkingEngine::KickPlayer::init(KickType type, const Vector2<>& ballPositio
     #if DEBUG_NUMOTION_VERBOSITY > 2
         debug << " WalkingEngine::KickPlayer::init "<<endl;
     #endif
-  assert(!kick);
-    #if DEBUG_NUMOTION_VERBOSITY > 2
-        debug << "WalkingEngine::KickPlayer::init"<<endl;
-    #endif
+  assert(!kick);    
   mirrored = (type - 1) % 2 != 0;//If even
-    #if DEBUG_NUMOTION_VERBOSITY > 2
-        debug << "WalkingEngine::KickPlayer::init"<<endl;
-    #endif
   this->type = type;
-    #if DEBUG_NUMOTION_VERBOSITY > 2
-        debug << "WalkingEngine::KickPlayer::init"<<endl;
-    #endif
-  kick = &kicks[mirrored ? (type - 2) / 2 : (type - 1) / 2];
-    #if DEBUG_NUMOTION_VERBOSITY > 2
-        debug << "WalkingEngine::KickPlayer::init"<<endl;
-    #endif
-  setParameters(ballPosition, target);
-    #if DEBUG_NUMOTION_VERBOSITY > 2
-        debug << "WalkingEngine::KickPlayer::init"<<endl;
-    #endif
+  kick = &kicks[mirrored ? (type - 2) / 2 : (type - 1) / 2];   
+  setParameters(ballPosition, target);    
   kick->init();
 }
 
 void WalkingEngine::KickPlayer::seek(float deltaT)
 {
-    cout<<"Kick -> "<< kick << endl;
-    for(int i = 0; i<(numOfKickTypes - 1) / 2; i++){
-        cout<<"Kicks["<<i<<"] -> "<< &kicks[i] <<endl;
-    }
-    //cout<<"Numof kicks ="<<kicks.size()<<endl;
-  if(kick)
+   if(kick)
     if(!kick->seek(deltaT))
+        #if DEBUG_NUMOTION_VERBOSITY > 2
+            debug << " WalkingEngine::KickPlayer::seek():: seek failed -  - setting kick to none "<<endl;
+        #endif
       kick = 0;
 }
 
@@ -2318,6 +2370,7 @@ void WalkingEngine::KickPlayer::apply(Stance& stance)
     stance.leftArmJointAngles[i] += additionLeftArmAngles[i];
     stance.rightArmJointAngles[i] += additionRightArmAngles[i];
   }
+
 }
 
 void WalkingEngine::KickPlayer::setParameters(const Vector2<>& ballPosition, const Vector2<>& target)

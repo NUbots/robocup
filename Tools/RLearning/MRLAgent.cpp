@@ -143,7 +143,7 @@ void MRLAgent::giveMotivationReward(float env_rew){
     expectation_map->doLearningEpisode(obs,val,lambda,10);
 
     float motivation = wundtFunction(novelty);
-    cout<<"MRLAGENT:: giveMotivationReward - novelty = "<<novelty<< " Reward = "<< motivation<<" + "<<env_rew<<endl;
+    //cout<<"MRLAGENT:: giveMotivationReward - novelty = "<<novelty<< " Reward = "<< motivation<<" + "<<env_rew<<endl;
     giveReward(motivation+env_rew);
 
    /*OLD NOVELTY

@@ -20,7 +20,6 @@ public:
     bool isUsingHead();
     bool isUsingArms();
     bool isUsingLegs();
-
     bool requiresHead();
     bool requiresArms();
     bool requiresLegs();

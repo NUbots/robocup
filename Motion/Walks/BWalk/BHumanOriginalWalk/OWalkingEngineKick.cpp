@@ -7,9 +7,7 @@
 #include <cstring>
 
 #include "WalkingEngineKick.h"
-#include "File.h"
-#include "debug.h"
-#include <ctime>
+#include "Platform/File.h"
 
 bool WalkingEngineKick::String::operator==(const WalkingEngineKick::String& other) const
 {
@@ -142,7 +140,7 @@ WalkingEngineKick::Value* WalkingEngineKick::readMultFormula(char*& buf)
       break;
     default:
       value = 0;
-      std::cout<< "WalkingEngineKick::Value* WalkingEngineKick::readMultFormula(char*& buf) asserted the following false: false"<<endl;
+      ASSERT(false);
       break;
     }
     value1 = value;
@@ -152,8 +150,6 @@ WalkingEngineKick::Value* WalkingEngineKick::readMultFormula(char*& buf)
 
 bool WalkingEngineKick::load(const char* filePath, char* buf)
 {
-    cout << "WalkingEngineKick::load - start"<< endl;
-
   initialized = false;
 
   int lineNumber = 0;
@@ -176,11 +172,7 @@ bool WalkingEngineKick::load(const char* filePath, char* buf)
 
       if(*buf != '#' && *buf != ';' && *buf != '\r' && *buf != '\n')
       {
-
         String str = readString(buf);
-        //#if DEBUG_NUMOTION_VERBOSITY > 2
-            cout << "WalkingEngineKick::load - loading data:"<< string(str.ptr) <<endl;
-        //#endif
         if(str == "setType")
         {
           String str = readString(buf);
@@ -273,7 +265,7 @@ bool WalkingEngineKick::load(const char* filePath, char* buf)
     }
     catch(ParseException e)
     {
-      std::cout<< "WalkingEngineKick::load(const char* filePath, char* buf) -"<< filePath << ":" << lineNumber << ": " << e.message<<endl;
+      OUTPUT(idText, text, filePath << ":" << lineNumber << ": " << e.message);
       (void)e;
       error = true;
     }
@@ -290,59 +282,35 @@ bool WalkingEngineKick::load(const char* filePath, char* buf)
   {
     for(int i = 0; i < numOfTracks; ++i)
       tracks[i].clear();
-    std::cout<< "WalkingEngineKick::load(const char* filePath, char* buf) -"<< filePath << ": failed to load file"<<endl;
+    OUTPUT(idText, text, filePath << ": failed to load file");
     return false;
   }
 
   for(int i = 0; i < numOfTracks; ++i)
     addPhase(Track(i), 0);
 
-//#if DEBUG_NUMOTION_VERBOSITY > 2
-        cout << "WalkingEngineKick::load - finish"<< endl;
-    //#endif
   return true;
 }
 
 bool WalkingEngineKick::load(const char* filePath)
 {
-    cout << string(filePath) << endl;
-
-    ifstream file(filePath, std::ios::binary);
-    //File file(filePath, "rb");
-    //bool success = file.exists();
-    bool success = file.is_open();
-
-
-    cout << "WalkingEngineKick::load file exists: " << success << endl;
-
-    if(success)
-    {
-        std::streampos fsize = 0;
-        fsize = file.tellg();
-        file.seekg( 0, std::ios::end );
-        fsize = file.tellg() - fsize;
-        file.seekg (0, ios::beg);
-
-        cout << "file size: " << fsize << endl;
-
-        char* buffer = new char[(int)fsize + 1];
-        file.read(buffer, fsize);
-        buffer[fsize] = '\0';
-        success = load(filePath, buffer);
-
-        cout << "WalkingEngineKick::load second: " << success << endl;
-
-        delete[] buffer;
-    }
-
-    file.close();
-
-    return success;
+  File file(filePath, "rb");
+  bool success = file.exists();
+  if(success)
+  {
+    int size = file.getSize();
+    char* buffer = new char[size + 1];
+    file.read(buffer, size);
+    buffer[size] = '\0';
+    success = load(filePath, buffer);
+    delete[] buffer;
+  }
+  return success;
 }
 
 WalkingEngineKick::WalkingEngineKick() : initialized(false), firstValue(0), standKick(false),
   preStepSizeRValue(0), preStepSizeXValue(0), preStepSizeYValue(0), preStepSizeZValue(0),
-    stepSizeRValue(0), stepSizeXValue(0), stepSizeYValue(0), stepSizeZValue(0), durationValue(0), refXValue(0), length(0),currentPosition(0) {}
+  stepSizeRValue(0), stepSizeXValue(0), stepSizeYValue(0), stepSizeZValue(0), durationValue(0), refXValue(0) {}
 
 WalkingEngineKick::~WalkingEngineKick()
 {
@@ -355,11 +323,6 @@ WalkingEngineKick::~WalkingEngineKick()
 
 void WalkingEngineKick::addPhase(Track track, Value* value)
 {
-    #if DEBUG_NUMOTION_VERBOSITY > 2
-        debug << "WalkingEngineKick::addPhase Track"<<endl;
-        debug << "WalkingEngineKick::addPhase Track"<<(int)track <<endl;
-        debug << "WalkingEngineKick::addPhase value"<<value->evaluate() <<endl;
-    #endif
   tracks[track].push_back(Phase(value));
 }
 
@@ -390,7 +353,6 @@ void WalkingEngineKick::init()
 
 void WalkingEngineKick::getPreStepSize(float& rotation, Vector3<>& translation) const
 {
-
   rotation = preStepSizeRValue ? preStepSizeRValue->evaluate() : 0.f;
   translation.x = preStepSizeXValue ? preStepSizeXValue->evaluate() : 0.f;
   translation.y = preStepSizeYValue ? preStepSizeYValue->evaluate() : 0.f;
@@ -399,10 +361,10 @@ void WalkingEngineKick::getPreStepSize(float& rotation, Vector3<>& translation) 
 
 void WalkingEngineKick::getStepSize(float& rotation, Vector3<>& translation) const
 {
-  rotation = stepSizeRValue ? ((ConstantValue*)stepSizeRValue)->evaluate() : 0.f;
-  translation.x = stepSizeXValue ? ((ConstantValue*)stepSizeXValue)->evaluate() : 0.f;
-  translation.y = stepSizeYValue ? ((ConstantValue*)stepSizeYValue)->evaluate() : 0.f;
-  translation.z = stepSizeZValue ? ((ConstantValue*)stepSizeZValue)->evaluate() : 0.f;
+  rotation = stepSizeRValue ? stepSizeRValue->evaluate() : 0.f;
+  translation.x = stepSizeXValue ? stepSizeXValue->evaluate() : 0.f;
+  translation.y = stepSizeYValue ? stepSizeYValue->evaluate() : 0.f;
+  translation.z = stepSizeZValue ? stepSizeZValue->evaluate() : 0.f;
 }
 
 float WalkingEngineKick::getDuration() const
@@ -423,43 +385,25 @@ void WalkingEngineKick::setParameters(const Vector2<>& ballPosition, const Vecto
 
 bool WalkingEngineKick::seek(float s)
 {
-    #if DEBUG_NUMOTION_VERBOSITY > 2
-        debug << "WalkingEngineKick::seek - start "<<endl;
-    #endif
   if(!initialized)
     return false;
-    #if DEBUG_NUMOTION_VERBOSITY > 2
-        debug << "WalkingEngineKick::seek - add to current position"<<endl;
-    #endif
   currentPosition += s * 1000.f;
-
-    #if DEBUG_NUMOTION_VERBOSITY > 2
-        debug << "WalkingEngineKick::seek - initialise phases"<<endl;
-    #endif
   std::vector<Phase>& phases = tracks[0];
-
   int preLastPhase = phases.size() - 2;
-    #if DEBUG_NUMOTION_VERBOSITY > 2
-        debug << "WalkingEngineKick::seek - return current phases"<<endl;
-    #endif
   return currentPhases[0] < preLastPhase || currentPosition < phases.back().start;
 }
 
-float WalkingEngineKick::getValue(Track track, float externValue) //where called: tracks[track] = 0
+float WalkingEngineKick::getValue(Track track, float externValue)
 {
   std::vector<Phase>& phases = tracks[track];
   const int phasesSize = int(phases.size());
   int currentPhase = currentPhases[track];
 
-
-
   const bool init = currentPhase < 0;
   if(init)
     currentPhase = currentPhases[track] = 0;
-  //WARNING the following boolean was conjugated in the original code
-  if(currentPhase > phasesSize - 1){
-      std::cout<< "WalkingEngineKick::getValue(Track track, float externValue) asserted the following false: currentPhase > phasesSize - 1"<<endl;
-  }
+
+  ASSERT(currentPhase < phasesSize - 1);
   Phase* phase = &phases[currentPhase];
   Phase* nextPhase = &phases[currentPhase + 1];
 
@@ -485,12 +429,10 @@ float WalkingEngineKick::getValue(Track track, float externValue) //where called
 
   while(phase->end <= currentPosition)
   {
-    Phase* nextNextPhase = (currentPhase + 2 < phasesSize ? &phases[currentPhase + 2] : 0);
+    Phase* nextNextPhase = currentPhase + 2 < phasesSize ? &phases[currentPhase + 2] : 0;
     if(!nextNextPhase)
-    {      
-      if(nextPhase->posValue != 0){
-          std::cout<< "WalkingEngineKick::getValue(Track track, float externValue) asserted the following: nextPhase->posValue != 0"<<endl;
-      }
+    {
+      ASSERT(nextPhase->posValue == 0);
       return externValue;
     }
 

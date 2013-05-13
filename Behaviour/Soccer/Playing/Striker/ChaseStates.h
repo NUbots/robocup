@@ -188,7 +188,7 @@ protected:
             #endif
         } 
         //Get head behaviour decision
-        head_behaviour->makeVisionChoice(HeadBehaviour::MRLAgentPolicy);//or pass HeadBehaviour::(M)RLAgentPolicy for learning to be active via either motivated or world rewards
+        head_behaviour->makeVisionChoice(HeadBehaviour::BallOnlyVisionPolicy/*MRLAgentPolicy*/);//or pass HeadBehaviour::(M)RLAgentPolicy for learning to be active via either motivated or world rewards
     }
 
 

@@ -6,59 +6,77 @@
 
 #pragma once
 
-#include "Requirements/RobotDimensions.h"
-#include "Requirements/RingBuffer.h"
-#include "Requirements/RingBufferWithSum.h"
-#include "Requirements/Matrix.h"
-#include "Tools/Math/Vector2.h"
-#include "Tools/Math/Vector3.h"
-#include "Requirements/Range.h"
-#include "Requirements/Pose2D.h"
-#include "Requirements/Pose3D.h"
-#include "Requirements/RotationMatrix.h"
-#include "Requirements/RobotModel.h"
-#include "Requirements/WalkingEngineKick.h"
-#include "Motion/NUWalk.h"
+#include "Tools/Module/Module.h"
+#include "Representations/Configuration/RobotDimensions.h"
+#include "Representations/Configuration/MassCalibration.h"
+#include "Representations/Configuration/JointCalibration.h"
+#include "Representations/Configuration/DamageConfiguration.h"
+#include "Representations/Infrastructure/FrameInfo.h"
+#include "Representations/Infrastructure/KeyStates.h"
+#include "Representations/Infrastructure/SensorData.h"
+#include "Representations/Sensing/RobotModel.h"
+#include "Representations/Sensing/TorsoMatrix.h"
+#include "Representations/Modeling/FallDownState.h"
+#include "Representations/MotionControl/MotionSelection.h"
+#include "Representations/MotionControl/MotionRequest.h"
+#include "Representations/MotionControl/WalkingEngineStandOutput.h"
+#include "Representations/MotionControl/WalkingEngineOutput.h"
+#include "Representations/MotionControl/HeadJointRequest.h"
+#include "Representations/MotionControl/OdometryData.h"
+#include "Representations/Sensing/GroundContactState.h"
+#include "Tools/RingBuffer.h"
+#include "Tools/RingBufferWithSum.h"
 #include "Tools/Math/Matrix.h"
+#include "Tools/Optimization/ParticleSwarm.h"
+#include "WalkingEngineKick.h"
 
+MODULE(WalkingEngine)
+  REQUIRES(MotionSelection)
+  REQUIRES(MotionRequest)
+  REQUIRES(RobotModel)
+  REQUIRES(RobotDimensions)
+  REQUIRES(MassCalibration)
+  REQUIRES(HeadJointRequest)
+  REQUIRES(FrameInfo)
+  REQUIRES(KeyStates)
+  REQUIRES(TorsoMatrix)
+  REQUIRES(GroundContactState)
+  REQUIRES(FallDownState)
+  REQUIRES(JointCalibration)
+  REQUIRES(DamageConfiguration)
+  REQUIRES(SensorData)
+  USES(OdometryData)
+  PROVIDES_WITH_MODIFY(WalkingEngineOutput)
+  REQUIRES(WalkingEngineOutput)
+  PROVIDES_WITH_MODIFY(WalkingEngineStandOutput)
+END_MODULE
 
-class NUInverseKinematics;
-
-class WalkingEngine: public NUWalk
+class WalkingEngine : public WalkingEngineBase
 {
 public:
   /**
   * Default constructor
   */
-  WalkingEngine(NUSensorsData* data, NUActionatorsData* actions, NUInverseKinematics* ik);
+  WalkingEngine();
 
   /*
   * Destructor
   */
-  ~WalkingEngine();
-  
-  void setWalkParameters(const WalkParameters& walkparameters);
-  void writeParameters();
-  //Breakpoint function which does nothing but allows gbd to set breakpoints
-  void breakPointIndicator();
-  void doWalk();
-  bool m_initialised;
-  bool m_pedantic;
+  ~WalkingEngine() {theInstance = 0;}
 
-
+  /**
+  * Called from a MessageQueue to distribute messages
+  * @param message The message that can be read
+  * @return True if the message was handled
+  */
+  static bool handleMessage(InMessage& message);
 
 private:
-
-  vector<float> nu_nextLeftArmJoints;   // Left Arm
-  vector<float> nu_nextRightArmJoints;  // Right Arm
-  vector<float> nu_nextLeftLegJoints;   // Left Leg
-  vector<float> nu_nextRightLegJoints;  // Right Leg
-
 
   class PIDCorrector
   {
   public:
-    class Parameters
+    class Parameters : public Streamable
     {
     public:
       float p;
@@ -71,6 +89,15 @@ private:
       Parameters(float p, float i, float d, float max) : p(p), i(i), d(d), max(max) {}
 
     private:
+      virtual void serialize(In* in, Out* out)
+      {
+        STREAM_REGISTER_BEGIN();
+        STREAM(p);
+        STREAM(i);
+        STREAM(d);
+        STREAM(max);
+        STREAM_REGISTER_FINISH();
+      }
     };
 
     PIDCorrector() : sum(0.f), error(0.f) {}
@@ -98,40 +125,46 @@ private:
     //RingBuffer<float, 10> corrections;
   };
 
-  class PhaseParameters
+  class PhaseParameters : public Streamable
   {
   public:
     float start;
     float duration;
 
     PhaseParameters() : start(0.f), duration(1.f) {}
+
+  private:
+    virtual void serialize(In* in, Out* out)
+    {
+      STREAM_REGISTER_BEGIN();
+      STREAM(start);
+      STREAM(duration);
+      STREAM_REGISTER_FINISH();
+    }
   };
 
   /**
   * A collection of walking engine parameters
   */
-  class Parameters
+  class Parameters : public Streamable
   {
   public:
-    enum FadeInShape
-      {
+    ENUM(FadeInShape,
       sine,
       sqr
-      };
+    );
 
-    enum MeasurementMode
-      {
+    ENUM(MeasurementMode,
       torsoMatrix,
       robotModel
-      };
+    );
 
-    enum ObserverErrorMode
-      {
+    ENUM(ObserverErrorMode,
       direct,
       indirect,
       average,
       mixed
-      };
+    );
 
     /** Default constructor */
     Parameters() {}
@@ -226,6 +259,90 @@ private:
       standBodyRotation = RotationMatrix(Vector3<>(0.f, standBodyTilt, 0.f));
     }
 
+  private:
+    /**
+    * Makes the object streamable
+    * @param in The stream from which the object is read
+    * @param out The stream to which the object is written.
+    */
+    void serialize(In* in, Out* out)
+    {
+      STREAM_REGISTER_BEGIN();
+
+      STREAM(standBikeRefX);
+      STREAM(standStandbyRefX);
+      STREAM(standComPosition);
+      STREAM(standBodyTilt);
+      STREAM(standArmJointAngles);
+      STREAM(standHardnessAnklePitch);
+      STREAM(standHardnessAnkleRoll);
+
+      STREAM(walkRefX);
+      STREAM(walkRefXAtFullSpeedX);
+      STREAM(walkRefY);
+      STREAM(walkRefYAtFullSpeedX);
+      STREAM(walkRefYAtFullSpeedY);
+      STREAM(walkStepDuration);
+      STREAM(walkStepDurationAtFullSpeedX);
+      STREAM(walkStepDurationAtFullSpeedY);
+      STREAM(walkHeight);
+      STREAM(walkArmRotation);
+      STREAM(walkRefXSoftLimit);
+      STREAM(walkRefXLimit);
+      STREAM(walkRefYLimit);
+      STREAM(walkRefYLimitAtFullSpeedX);
+      STREAM(walkMovePhase);
+      STREAM(walkLiftPhase);
+      STREAM(walkLiftOffset);
+      STREAM(walkLiftOffsetJerk);
+      STREAM(walkLiftOffsetAtFullSpeedY);
+      STREAM(walkLiftRotation);
+      STREAM(walkAntiLiftOffset);
+      STREAM(walkAntiLiftOffsetAtFullSpeedY);
+      STREAM(walkComBodyRotation);
+      STREAM(walkFadeInShape);
+
+      STREAM(kickComPosition);
+      STREAM(kickX0Y);
+      STREAM(kickHeight);
+
+      STREAM(speedMax);
+      STREAM(speedMaxMin);
+      STREAM(speedMaxBackwards);
+      STREAM(speedMaxChange);
+
+      STREAM(observerMeasurementMode);
+      STREAM(observerMeasurementDelay);
+      STREAM(observerErrorMode);
+      STREAM(observerProcessDeviation);
+      STREAM(observerMeasurementDeviation);
+      STREAM(observerMeasurementDeviationAtFullSpeedX);
+      STREAM(observerMeasurementDeviationWhenInstable);
+
+      STREAM(balance);
+      STREAM(balanceMinError);
+      STREAM(balanceMaxError);
+      STREAM(balanceCom);
+      STREAM(balanceBodyRotation);
+      STREAM(balanceStepSize);
+      STREAM(balanceStepSizeWhenInstable);
+      STREAM(balanceStepSizeWhenPedantic);
+      STREAM(balanceStepSizeInterpolation);
+
+      STREAM(stabilizerOnThreshold);
+      STREAM(stabilizerOffThreshold);
+      STREAM(stabilizerDelay)
+
+      STREAM(odometryUseTorsoMatrix);
+      STREAM(odometryScale);
+      STREAM(odometryUpcomingScale);
+      STREAM(odometryUpcomingOffset);
+
+      STREAM_REGISTER_FINISH();
+
+      if(in)
+        computeContants();
+    }
   };
 
   class LegStance
@@ -247,16 +364,14 @@ private:
 
   class Stance : public LegStance, public ArmAndHeadStance {};
 
-  enum MotionType
-    {
+  ENUM(MotionType,
     stand,
     standLeft,
     standRight,
     stepping
-    };
+  );
 
-  enum StepType
-    {
+  ENUM(StepType,
     normal,
     unknown,
     fromStand,
@@ -265,7 +380,7 @@ private:
     toStandLeft,
     fromStandRight,
     toStandRight
-    };
+  );
 
   class StepSize
   {
@@ -320,48 +435,7 @@ private:
       return Pose2D(rotation, translation.x, translation.y);
     }
   };
-  class KickPlayer
-  {
-  public:
-    enum KickType{
-        none =0, /**< do not kick */
-        left =1, /**< kick using the left foot */
-        right = 2, /**< kick using the right foot */
-        sidewardsLeft = 3,
-        sidewardsRight = 4
-    };
-    const static int numOfKickTypes = 5;
-    string config_filepath;
 
-    KickPlayer();
-
-    void init(KickType type, const Vector2<>& ballPosition, const Vector2<>& target);
-
-    void seek(float deltaT);
-    float getLength() const;
-    float getCurrentPosition() const;
-    void apply(Stance& stance);
-    void stop() {kick = 0;}
-    inline bool isActive() const {return kick ? true : false;}
-    inline KickType getType() const {return type;}
-    void setParameters(const Vector2<>& ballPosition, const Vector2<>& target);
-   // bool handleMessage(InMessage& message);
-
-    inline bool isKickMirrored(KickType type) const {return (type - 1) % 2 != 0;}
-    bool isKickStandKick(KickType type) const;
-    void getKickStepSize(KickType type, float& rotation, Vector3<>& translation) const;
-    void getKickPreStepSize(KickType type, float& rotation, Vector3<>& translation) const;
-    float getKickDuration(KickType type) const;
-    float getKickRefX(KickType type, float defaultValue) const;
-    string getName(KickType t);
-  private:
-    WalkingEngineKick* kick;
-    bool mirrored;
-    KickType type;
-
-    //WalkingEngineKick kicks[(numOfKickTypes - 1) / 2];
-    vector<WalkingEngineKick> kicks;
-  };
   class PendulumParameters
   {
   public:
@@ -382,21 +456,19 @@ private:
     Range<> sXLimit;
     Range<> rXLimit;
     Range<> rYLimit;
-    KickPlayer::KickType kickType;
+    WalkRequest::KickType kickType;
     float originalRX;
-    PendulumParameters() : type(unknown),kickType(KickPlayer::none) {}
+    PendulumParameters() : type(unknown) {}
   };
 
-  enum SupportLeg
-    {
+  ENUM(SupportLeg,
     left,
     right
-    };
+  );
 
   class PendulumPlayer : public PendulumParameters
   {
   public:
-
     WalkingEngine* walkingEngine;
     SupportLeg supportLeg;
     bool active;
@@ -426,12 +498,41 @@ private:
     void applyCorrection(const Vector3<>& leftError, const Vector3<>& rightError, float deltaTime);
 
   private:
-    b_human::Matrix4x4f cov;
+    Matrix4x4f cov;
   };
 
+  class KickPlayer
+  {
+  public:
+    KickPlayer();
 
+    void init(WalkRequest::KickType type, const Vector2<>& ballPosition, const Vector2<>& target);
+    void seek(float deltaT);
+    float getLength() const;
+    float getCurrentPosition() const;
+    void apply(Stance& stance);
+    void stop() {kick = 0;};
+    inline bool isActive() const {return kick ? true : false;}
+    inline WalkRequest::KickType getType() const {return type;}
+    void setParameters(const Vector2<>& ballPosition, const Vector2<>& target);
+    bool handleMessage(InMessage& message);
 
-//  PROCESS_WIDE_STORAGE_STATIC(WalkingEngine) theInstance; /**< Points to the only instance of this class in this process or is 0 if there is none */
+    inline bool isKickMirrored(WalkRequest::KickType type) const {return (type - 1) % 2 != 0;}
+    bool isKickStandKick(WalkRequest::KickType type) const;
+    void getKickStepSize(WalkRequest::KickType type, float& rotation, Vector3<>& translation) const;
+    void getKickPreStepSize(WalkRequest::KickType type, float& rotation, Vector3<>& translation) const;
+    float getKickDuration(WalkRequest::KickType type) const;
+    float getKickRefX(WalkRequest::KickType type, float defaultValue) const;
+
+  private:
+    WalkingEngineKick* kick;
+    bool mirrored;
+    WalkRequest::KickType type;
+
+    WalkingEngineKick kicks[(WalkRequest::numOfKickTypes - 1) / 2];
+  };
+
+  PROCESS_WIDE_STORAGE_STATIC(WalkingEngine) theInstance; /**< Points to the only instance of this class in this process or is 0 if there is none */
   Parameters p; /**< The walking engine parameters */
 
   void init();
@@ -440,27 +541,37 @@ private:
   * The central update method to generate the walking motion
   * @param walkingEngineOutput The WalkingEngineOutput (mainly the resulting joint angles)
   */
-  void update();
+  void update(WalkingEngineOutput& walkingEngineOutput);
   bool emergencyShutOff;
   MotionType currentMotionType;
   float currentRefX;
   Stance targetStance;
+  JointRequest jointRequest;
   ObservedPendulumPlayer observedPendulumPlayer;
   PendulumPlayer pendulumPlayer;
   KickPlayer kickPlayer;
 
-//  /**
-//  * The update method to generate the standing stance
-//  * @param standOutput The WalkingEngineStandOutput (mainly the resulting joint angles)
-//  */
-//  void update(WalkingEngineStandOutput& standOutput) {(JointRequest&)standOutput = jointRequest;}
+  /**
+  * The update method to generate the standing stance
+  * @param standOutput The WalkingEngineStandOutput (mainly the resulting joint angles)
+  */
+  void update(WalkingEngineStandOutput& standOutput) {(JointRequest&)standOutput = jointRequest;}
 
-  float m_prev_time;
-  float m_cycle_time;
-  bool m_walk_requested;
-  RobotModel theRobotModel;
-  MassCalibration theMassCalibration;
-  NUInverseKinematics* m_ik;
+  // attributes used for module:WalkingEngine:testing debug response
+  bool testing;
+  unsigned int testingNextParameterSet;
+  Pose2D testingStartOdometryData;
+  unsigned int testingStartTime;
+  RingBufferWithSum<float, 500> testingComErrorSqr;
+  RingBufferWithSum<float, 500> testingComError;
+  RingBufferWithSum<float, 500> testingCurrent;
+
+  // attributes used for module:WalkingEngine:optimize debug response
+  ParticleSwarm optimizeOptimizer;
+  RingBufferWithSum<float, 300> optimizeFitness;
+  bool optimizeStarted;
+  unsigned int optimizeStartTime;
+  Parameters optimizeBestParameters;
 
   void updateMotionRequest();
   MotionType requestedMotionType;
@@ -500,15 +611,14 @@ private:
   Vector3<> bodyToCom;
   Vector3<> lastAverageComToAnkle;
 
-  void generateOutput();
-  void generateDummyOutput();
+  void generateOutput(WalkingEngineOutput& walkingEngineOutput);
+  void generateDummyOutput(WalkingEngineOutput& walkingEngineOutput);
 
-  //void generateNextStepSize(SupportLeg nextSupportLeg, StepType lastStepType, WalkRequest::KickType lastKickType, PendulumParameters& next);
-  void generateNextStepSize(SupportLeg nextSupportLeg, StepType lastStepType, PendulumParameters& next);
+  void generateNextStepSize(SupportLeg nextSupportLeg, StepType lastStepType, WalkRequest::KickType lastKickType, PendulumParameters& next);
   SupportLeg lastNextSupportLeg;
   PendulumParameters nextPendulumParameters;
   Pose2D lastSelectedSpeed;
-  KickPlayer::KickType lastExecutedWalkingKick;
+  WalkRequest::KickType lastExecutedWalkingKick;
 
   void computeOdometryOffset();
   Pose2D odometryOffset;
@@ -517,9 +627,4 @@ private:
   StepSize lastStepOffset;
   Pose2D upcomingOdometryOffset;
   bool upcomingOdometryOffsetValid;
-
-  Matrix Pose2Matrix(const Pose3D& pose);
-
-  KickPlayer::KickType getKickType( Vector2<> position, Vector2<> target);
-  KickPlayer::KickType m_kick_type;
 };

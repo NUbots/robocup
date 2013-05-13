@@ -32,6 +32,7 @@
 #include "Infrastructure/TeamInformation/TeamInformation.h"
 
 #include "Infrastructure/Jobs/MotionJobs/KickJob.h"
+#include "Infrastructure/Jobs/MotionJobs/WalkKickJob.h"
 #include "Infrastructure/Jobs/MotionJobs/WalkJob.h"
 #include "Infrastructure/Jobs/MotionJobs/HeadJob.h"
 #include "Infrastructure/Jobs/MotionJobs/HeadTrackJob.h"
@@ -42,6 +43,8 @@
 
 #include "debug.h"
 
+#include "Tools/Math/Vector2.h"
+#include <ctime>
 class KickerState : public BehaviourState
 {
 public:
@@ -82,8 +85,11 @@ public:
     KickState(KickerProvider* provider) : KickerState(provider)
     {
         m_kickActivePrev = false;
-        m_kickPos = vector<float>(2,0);
-        m_kickTarget = vector<float>(2,0);
+        m_kickPos = Vector2<float>(2,0);
+        m_kickTarget = Vector2<float>(2,0);
+        kicktype = 0;
+        kickagain = true;
+        time(&kicktime);
     };
     BehaviourState* nextState()
     {
@@ -91,21 +97,27 @@ public:
         m_provider->m_data->get(NUSensorsData::MotionKickActive, kickActive);
         bool kickFinished = m_kickActivePrev && !kickActive;
         m_kickActivePrev = kickActive;
-
-        if (kickFinished)
+        //Wait 5 seconds before waiting again.
+        time(&now);
+        if (difftime(now,kicktime)>=5)
         {
+            time(&now);
             debug << "Kicking -> Waiting" << endl;
+            kickagain = true;
             return m_provider->m_wait_state;
         }
-        else
+        else{
+            kickagain = false;
             return m_provider->m_state;
+
+        }
     };
     
     void doState()
     {
 
         // left
-        if(true)
+        if(kicktype == 0)
         {
             m_kickPos[0] = 10.0;
             m_kickPos[1] = 5.0;
@@ -113,7 +125,7 @@ public:
             m_kickTarget[1] = 5.0;
         }
         // right
-        else if(true)
+        else if(kicktype == 1)
         {
             m_kickPos[0] = 10.0;
             m_kickPos[1] = -5.0;
@@ -121,7 +133,7 @@ public:
             m_kickTarget[1] = -5.0;
         }
         // left side
-        else if(true)
+        else if(kicktype == 2)
         {
             m_kickPos[0] = 10.0;
             m_kickPos[1] = 5.0;
@@ -129,21 +141,30 @@ public:
             m_kickTarget[1] = 100.0;
         }
         // right side
-        else if(true)
+        else if(kicktype == 3)
         {
             m_kickPos[0] = 10.0;
             m_kickPos[1] = -5.0;
             m_kickTarget[0] = 10.0;
             m_kickTarget[1] = -100.0;
         }
+        if(kickagain){
+            kicktype = (kicktype+1)%4;
+            time(&kicktime);
 
-        KickJob* kick = new KickJob(0,m_kickPos,m_kickTarget);
-        m_provider->m_jobs->addMotionJob(kick);
+            WalkKickJob* kick = new WalkKickJob(0,m_kickPos,m_kickTarget);
+            m_provider->m_jobs->addMotionJob(kick);
+        }
     };
 private:
     bool m_kickActivePrev;
-    vector<float> m_kickPos;
-    vector<float> m_kickTarget;
+    Vector2<float> m_kickPos;
+    Vector2<float> m_kickTarget;
+    int kicktype;
+    time_t kicktime;
+    time_t now;
+    bool kickagain;
+
 };
 
 #endif

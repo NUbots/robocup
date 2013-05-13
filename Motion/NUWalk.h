@@ -114,6 +114,7 @@ protected:
     Vector2<> m_ball_position;                      //!< The ball's current position
     Vector2<> m_ball_target;                         //!< The desired ball position after kick
     bool m_recalculate_kick_type;
+    bool m_setup_kick;
 
     
     vector<float> m_initial_larm;
