@@ -11,12 +11,12 @@
 #define LOOKUPTABLE_H
 
 #include <string>
-#include <opencv2/core/core.hpp>
 #include "Tools/FileFormats/LUTTools.h"
+#include "Vision/VisionTools/classificationcolours.h"
 #include "Infrastructure/NUImage/NUImage.h"
 #include "debug.h"
 
-using namespace std;
+using namespace Vision;
 
 class LookUpTable
 {
@@ -42,24 +42,18 @@ public:
     *  @param p The pixel to be classified.
     *  @return Returns the classfied colour index for the given pixel.
     */
-    inline unsigned char classifyPixel(const Pixel& p) const
+    inline Colour classifyPixel(const Pixel& p) const
     {
         //return  currentLookupTable[(temp->y<<16) + (temp->cb<<8) + temp->cr]; //8 bit LUT
-        if(LUT != NULL) {
-            return  LUT[LUTTools::getLUTIndex(p)]; // 7bit LUT
-        }
-        else {
-            errorlog << "LookUpTable::classifyPixel - null LUT" << std::endl;
-            return 0;
-        }
+        return getColourFromIndex(LUT[LUTTools::getLUTIndex(p)]); // 7bit LUT
     }
 
-    /*!
-      @brief classifies and entire image into an opencv Mat
-      @param src the image to classify.
-      @param dest the resulting classified image.
-      */
-    void classifyImage(const NUImage& src, cv::Mat& dest) const;
+//    /*!
+//      @brief classifies and entire image into an opencv Mat
+//      @param src the image to classify.
+//      @param dest the resulting classified image.
+//      */
+//    void classifyImage(const NUImage& src, cv::Mat& dest) const;
 
     void zero();
 

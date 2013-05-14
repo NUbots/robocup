@@ -12,10 +12,6 @@
 #include <stdio.h>
 #include <iostream>
 
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-
 #include "Vision/visionblackboard.h"
 //#include "../VisionTools/classificationcolours.h"
 
@@ -44,11 +40,11 @@ private:
     /**
     *   @brief  classifies a single horizontal scanline.
     */
-    static vector<ColourSegment> classifyHorizontalScan(const VisionBlackboard& vbb, const NUImage& img, unsigned int y);
+    static vector<ColourSegment> classifyHorizontalScan(const LookUpTable& lut, const NUImage& img, unsigned int y);
     /**
     *   @brief  classifies a single vertical scanline.
     */
-    static vector<ColourSegment> classifyVerticalScan(const VisionBlackboard& vbb, const NUImage& img, const PointType& start);
+    static vector<ColourSegment> classifyVerticalScan(const LookUpTable& lut, const NUImage& img, const Vector2<double>& start);
     
     
 };

@@ -1,30 +1,141 @@
 #ifndef BASICVISIONTYPES_H
 #define BASICVISIONTYPES_H
 
-#include <opencv2/core/core.hpp>
 #include "Tools/Math/Vector2.h"
 
-//typedef cv::Point2i PointType;      //! Use opencv points.
-typedef Vector2<int> PointType;
+//#include "Vision/VisionTypes/groundpoint.h"
+typedef Vector2<double> Point;
 
-namespace VisionID {
+namespace Vision {
     enum ScanDirection {
         VERTICAL,
         HORIZONTAL
     };
 
-//    enum EXTERNAL_FIELD_OBJECT_ID {
-//        BALL,
-//        GOAL_Y,
-//        GOAL_B,
-//        LINE,
-//        CORNER,
-//        CENTRE_CIRCLE,
-//        OBSTACLE,
-//        UNKNOWN
-//    };
+    enum COLOUR_CLASS {
+        BALL_COLOUR,
+        GOAL_COLOUR,
+//        GOAL_Y_COLOUR,
+//        GOAL_B_COLOUR,
+        LINE_COLOUR,
+        UNKNOWN_COLOUR
+    };
+
+    //! VFO_ID enum and associated string conversion methods
+    enum VFO_ID {
+        BALL            = 0,
+        GOAL_L          = 1,
+        GOAL_R          = 2,
+        GOAL_U          = 3,
+        FIELDLINE       = 4,
+        CORNER          = 5,
+        CENTRE_CIRCLE   = 6,
+        OBSTACLE        = 7,
+        INVALID         = 8
+//        GOAL_Y_L=1,
+//        GOAL_Y_R=2,
+//        GOAL_Y_U=3,
+//        GOAL_B_L=4,
+//        GOAL_B_R=5,
+//        GOAL_B_U=6,
+//        BEACON_Y=7,
+//        BEACON_B=8,
+//        BEACON_U=9,
+//        FIELDLINE=10,
+//        OBSTACLE=11,
+//        INVALID=12
+    };
+
+    enum DEBUG_ID {
+        DBID_IMAGE                  = 0,
+        DBID_CLASSED_IMAGE          = 1,
+        DBID_H_SCANS                = 2,
+        DBID_V_SCANS                = 3,
+        DBID_SEGMENTS               = 4,
+        DBID_FILTERED_SEGMENTS      = 5,
+        DBID_MATCHED_SEGMENTS       = 6,
+        DBID_HORIZON                = 7,
+        DBID_GREENHORIZON_SCANS     = 8,
+        DBID_GREENHORIZON_THROWN    = 9,
+        DBID_GREENHORIZON_FINAL     = 10,
+        DBID_OBSTACLE_POINTS          = 11,
+        DBID_GOALS                  = 12,
+        DBID_BALLS                  = 13,
+        DBID_OBSTACLES              = 14,
+        DBID_LINES                  = 15,
+        DBID_CENTRE_CIRCLES         = 16,
+        DBID_CORNERS                = 17,
+        DBID_GOAL_LINES_START       = 18,
+        DBID_GOAL_LINES_END         = 19,
+        DBID_GOALS_HIST             = 21,
+        DBID_GOALS_RANSAC_EDGES     = 22
+//        DBID_BEACONS            = 12,
+//        DBID_BALLS              = 13,
+//        DBID_OBSTACLES          = 14,
+//        DBID_LINES              = 15,
+//        DBID_GOAL_LINES_START   = 16,
+//        DBID_GOAL_LINES_END     = 17,
+//        NUMBER_OF_IDS           = 18
+    };
+
+    enum DEBUG_PLOT_ID {
+        POINTS_PLOT,
+        LINES_PLOT
+    };
+
+    enum DistanceMethod {
+        Width,
+        D2P,
+        Average,
+        Least
+    };
+
+    enum LineDetectionMethod {
+        SAM,
+        RANSAC
+    };
+
+    std::string debugIDName(DEBUG_ID id);
+
+    DEBUG_ID debugIDFromInt(int id);
+
+    int intFromeDebugID(DEBUG_ID id);
+
+    int numDebugIDs();
+
+    //! @brief returns whether the given id maps to a goal
+    inline bool isGoal(VFO_ID id) { return id >= GOAL_L && id <= GOAL_U;}
+    //inline bool isBlueGoal(VFO_ID id) {return id >= GOAL_B_L && id <= GOAL_B_U;}
+    //inline bool isYellowGoal(VFO_ID id) {return id >= GOAL_Y_L && id <= GOAL_Y_U;}
+    //inline bool isBeacon(VFO_ID id) {return id >= BEACON_Y && id <= BEACON_U;}
+
+    //! @brief converts a VisionFieldObject Id into a string.
+    std::string VFOName(VFO_ID id);
+
+    //! @brief converts a string into a VisionFieldObject Id.
+    VFO_ID VFOFromName(const std::string &name);
+
+    //! @brief converts an int into a VisionFieldObject Id.
+    VFO_ID VFOFromInt(int n);
+
+    //! @brief converts a VisionFieldObject Id into an int.
+    int intFromVFO(VFO_ID id);
+
+    int numVFOIDs();
+
+    //! @brief converts a colour class into a string.
+    std::string getColourClassName(COLOUR_CLASS id);
+
+    //! @brief converts a string into a colour class.
+    COLOUR_CLASS getColourClassFromName(const std::string& name);
+
+    DistanceMethod getDistanceMethodFromName(std::string name);
+
+    std::string getDistanceMethodName(DistanceMethod method);
+
+    LineDetectionMethod getLineMethodFromName(std::string name);
+
+    std::string getLineMethodName(LineDetectionMethod method);
 }
-
-
 
 #endif // BASICVISIONTYPES_H

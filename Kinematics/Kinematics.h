@@ -81,7 +81,7 @@ public:
 
     void UpdateEffector(unsigned int index, const std::vector<float>& jointValues);
     Matrix EndEffectorPosition(unsigned int index) const;
-    Vector3<float> calculateCentreOfMass();
+    //Vector3<float> calculateCentreOfMass();
 
 
     /*!
@@ -104,11 +104,10 @@ public:
     * @param origin2Camera The transform from the origin to the camera space
     * @return Transform matrix from the camera to the ground space.
     */
-
     static Matrix CalculateCamera2GroundTransform(const Matrix& origin2SupportLegTransform, const Matrix& origin2Camera);
 
     /*!
-    * @brief Calculates the position of an object in sperical coordinates centred at the robot origin, given the position in an image.
+    * @brief Calculates the position of an object in sperical coordinates centred at the robot feet, given the position in an image.
     *
     * The distance to point calculation takes a position in the camera image and projects this point until it intercepts the ground plane.
     * The sperical position in terms of distance, heading and elevation are calculated for this intercept point.
@@ -118,7 +117,7 @@ public:
     * @param angleFromCameraCentreY The angle of the point from the centre of the image along the images vertical y-axis.
     * @return A vector containing the three elements, distance, heading and elevation to the point.
     */
-    static Vector3<float> DistanceToPoint(const Matrix& Camera2GroundTransform, double angleFromCameraCentreX, double angleFromCameraCentreY);
+    static Vector3<double> DistanceToPoint(const Matrix& Camera2GroundTransform, double angleFromCameraCentreX, double angleFromCameraCentreY);
 
     /*!
     * @brief Converts a position from the camera space to the origin space. The position is described in spherical coordinates.
@@ -130,7 +129,7 @@ public:
     * @param cameraBasedPosition A vector containing the position to be converted in sperical coordinates.
     * @return A vector containing the three elements, distance, heading and elevation to the point. Now in origin coordinates.
     */
-    static std::vector<float> TransformPosition(const Matrix& Camera2GroundTransform, const std::vector<float>& cameraBasedPosition);
+    static std::vector<double> TransformPosition(const Matrix& Camera2GroundTransform, const std::vector<double>& cameraBasedPosition);
 
     /*!
     * @brief Converts a position from the camera space to the origin space. The position is described in spherical coordinates.
@@ -142,7 +141,7 @@ public:
     * @param cameraBasedPosition A Vector3 containing the position to be converted in sperical coordinates.
     * @return A Vector3 containing the three elements, distance, heading and elevation to the point. Now in origin coordinates.
     */
-    static Vector3<float> TransformPosition(const Matrix& Camera2GroundTransform, const Vector3<float>& cameraBasedPosition);
+    static Vector3<double> TransformPosition(const Matrix& Camera2GroundTransform, const Vector3<double>& cameraBasedPosition);
 
     /*!
     * @brief Converts a position from the camera space to the origin space. The position is described in spherical coordinates.

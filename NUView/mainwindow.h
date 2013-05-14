@@ -19,6 +19,7 @@
 #include "ObjectDisplayWidget.h"
 #include "GameInformationDisplayWidget.h"
 #include "TeamInformationDisplayWidget.h"
+#include "plotselectionwidget.h"
 #include <QHostInfo>
 #include <QList>
 
@@ -107,9 +108,12 @@ public slots:
     void imageFrameChanged(int currFrame, int totalFrames);
 protected slots:
     QMdiSubWindow* createGLDisplay();
+    QMdiSubWindow* createPlotDisplay();
     QMdiSubWindow* createLocWmGlDisplay();
     QMdiSubWindow* createLUTGlDisplay();
     void PrintConnectionInfo(const QHostInfo &hostInfo, int);
+
+    void clearPlots() {PlotDisplay::clearMap();}
 
 private:
     enum ColourScheme
@@ -147,6 +151,8 @@ private:
     ClassificationWidget* classification;       //!< Instance of the classification widget
     ConnectionWidget* connection;               //!< Instance of the connection widget; allows connections with robots
     LocalisationWidget* localisation;           //!< Instance of the localisation widget.
+
+    PlotSelectionWidget* plotSelection;
 
     LayerSelectionWidget* layerSelection;
     visionStreamWidget* VisionStreamer;         //!< Instance of VisionStreamWidget
@@ -192,6 +198,7 @@ private:
     QAction *tileAction;            //!< Instance of the tile window action
     QAction *nativeAspectAction;    //!< Instance of the Native Aspect Ratio Action
     QAction *newVisionDisplayAction;//!< Instance of the new vision display action.
+    QAction *newPlotDisplayAction;  //!< Instance of the new plot display action.
     QAction *newLocWMDisplayAction;//!< Instance of the new vision display action.
     QAction *newLUTDisplayAction;   //!< Instance of new look up table display action.
     QAction *runOfflineLocalisatonAction; //!< Instance of the offline localisation action.
@@ -200,7 +207,6 @@ private:
     OfflineLocalisationDialog* offlinelocDialog;
     LogFileReader* LogReader;
     ColourScheme currentColourScheme;
-
 protected:
     void closeEvent(QCloseEvent *event);
 };

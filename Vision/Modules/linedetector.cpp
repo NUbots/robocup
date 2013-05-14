@@ -2,35 +2,42 @@
 #include "boost/foreach.hpp"
 #include "Tools/Math/LSFittedLine.h"
 
-LineDetector::LineDetector()
-{
-}
+LineDetector::LineDetector() {}
 
-vector<LinePoint> LineDetector::getPointsFromSegments(const vector<ColourSegment> &h_segments, const vector<ColourSegment> &v_segments)
-{
-    vector<LinePoint> points;
-    LinePoint pt;
-    BOOST_FOREACH(ColourSegment s, h_segments) {
-        pt.x = s.getCentre().x;
-        pt.y = s.getCentre().y;
-        points.push_back(pt);
-    }
-    BOOST_FOREACH(ColourSegment s, v_segments) {
-        pt.x = s.getCentre().x;
-        pt.y = s.getCentre().y;
-        points.push_back(pt);
-    }
+LineDetector::~LineDetector() {}
 
-    return points;
-}
-
-vector<LinePoint> LineDetector::pointsUnderGreenHorizon(const vector<LinePoint>& points, const GreenHorizon& gh)
+/// @note this merges based on the first line, so ordering them is important
+vector<pair<LSFittedLine, LSFittedLine> > LineDetector::mergeColinear(vector<pair<LSFittedLine, LSFittedLine> > lines,
+                                                                      double angle_threshold, double distance_threshold) const
 {
-    vector<LinePoint> under;
-    BOOST_FOREACH(LinePoint p, points) {
-        if(gh.isBelowHorizon(PointType(p.x, p.y))) {
-            under.push_back(p);
+    //O(l^2)  -  l=number of lines
+    // Compares all lines and merges based on the angle between and the average distance between
+
+    vector<pair<LSFittedLine, LSFittedLine> > finals; // this vector contains lines that have been merged or did not need to be.
+    pair<LSFittedLine, LSFittedLine> current; // line currently being compared with the rest.
+
+    while(!lines.empty()) {
+        //get next line
+        current = lines.back();
+        lines.pop_back();
+
+        vector<pair<LSFittedLine, LSFittedLine> >::iterator it = lines.begin();
+        //go through all lines and find any that should be merged - merge them
+        while(it < lines.end()) {
+            if(current.first.getAngleBetween(it->first) <= angle_threshold &&
+               current.first.averageDistanceBetween(it->first) <= distance_threshold) {
+                current.first.joinLine(it->first);  //join the other line to current
+                current.second.joinLine(it->second);  //join the other paired lines
+                it = lines.erase(it);   //remove the other line
+            }
+            else {
+                it++;
+            }
         }
+        //Now current should have been merged with any valid lines
+        //push current to finals
+        finals.push_back(current);
     }
-    return under;
+
+    return finals;
 }

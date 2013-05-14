@@ -13,8 +13,8 @@ Goal::Goal(VFO_ID id, const Quad &corners)
     m_id = id;
     m_corners = corners;
 
-    m_size_on_screen = Vector2<int>(corners.getWidth(), corners.getHeight());
-    m_location_pixels = corners.getBottomCentre();
+    m_location.screen = corners.getBottomCentre();
+    m_size_on_screen = Vector2<double>(corners.getAverageWidth(), corners.getAverageHeight());
 
 //    if(VisionConstants::DO_RADIAL_CORRECTION) {
 //        VisionBlackboard* vbb = VisionBlackboard::getInstance();
@@ -29,18 +29,18 @@ Goal::Goal(VFO_ID id, const Quad &corners)
     valid = check();
 }
 
+void Goal::setBase(Point base)
+{
+    m_location.screen = base;
+
+    valid = calculatePositions();
+    //valid = valid && check();
+    valid = check();
+}
+
 const Quad& Goal::getQuad() const
 {
     return m_corners;
-}
-
-/*!
-*   @brief Returns the position in spherical coordinates.
-*   @return m_spherical_position The spherical coordinates for this goal.
-*/
-Vector3<float> Goal::getRelativeFieldCoords() const
-{
-    return m_spherical_position;
 }
 
 /*!
@@ -54,80 +54,83 @@ Vector3<float> Goal::getRelativeFieldCoords() const
 */
 bool Goal::addToExternalFieldObjects(FieldObjects *fieldobjects, float timestamp) const
 {
-    #if VISION_FIELDOBJECT_VERBOSITY > 1
-        debug << "Goal::addToExternalFieldObjects - m_id: " << VisionFieldObject::getVFOName(m_id) << endl;
+    #if VISION_GOAL_VERBOSITY > 1
+        debug << "Goal::addToExternalFieldObjects - m_id: " << VFOName(m_id) << endl;
         debug << "    " << *this << endl;
     #endif
     if(valid) {
-        #if VISION_FIELDOBJECT_VERBOSITY > 1
+        #if VISION_GOAL_VERBOSITY > 1
             debug << "Goal::addToExternalFieldObjects - valid" << endl;
         #endif
         AmbiguousObject newAmbObj;
-        FieldObjects::StationaryFieldObjectID stat_id;
-        bool stationary = false;
 
         switch(m_id) {
-        case GOAL_Y_L:
-            stat_id = FieldObjects::FO_YELLOW_LEFT_GOALPOST;
-            stationary = true;
+        case GOAL_L:
+            newAmbObj = AmbiguousObject(FieldObjects::FO_YELLOW_GOALPOST_UNKNOWN, "Left Yellow Post");
+            newAmbObj.addPossibleObjectID(FieldObjects::FO_YELLOW_LEFT_GOALPOST);
+            newAmbObj.addPossibleObjectID(FieldObjects::FO_BLUE_LEFT_GOALPOST);
             break;
-        case GOAL_Y_R:
-            stat_id = FieldObjects::FO_YELLOW_RIGHT_GOALPOST;
-            stationary = true;
+        case GOAL_R:
+            newAmbObj = AmbiguousObject(FieldObjects::FO_YELLOW_GOALPOST_UNKNOWN, "Right Yellow Post");
+            newAmbObj.addPossibleObjectID(FieldObjects::FO_YELLOW_RIGHT_GOALPOST);
+            newAmbObj.addPossibleObjectID(FieldObjects::FO_BLUE_RIGHT_GOALPOST);
             break;
-        case GOAL_B_L:
-            stat_id = FieldObjects::FO_BLUE_LEFT_GOALPOST;
-            stationary = true;
-            break;
-        case GOAL_B_R:
-            stat_id = FieldObjects::FO_BLUE_RIGHT_GOALPOST;
-            stationary = true;
-            break;
-        case GOAL_Y_U:
+        case GOAL_U:
             newAmbObj = AmbiguousObject(FieldObjects::FO_YELLOW_GOALPOST_UNKNOWN, "Unknown Yellow Post");
             newAmbObj.addPossibleObjectID(FieldObjects::FO_YELLOW_LEFT_GOALPOST);
             newAmbObj.addPossibleObjectID(FieldObjects::FO_YELLOW_RIGHT_GOALPOST);
-            stationary = false;
-            break;
-        case GOAL_B_U:
-            newAmbObj = AmbiguousObject(FieldObjects::FO_BLUE_GOALPOST_UNKNOWN, "Unknown Blue Post");
             newAmbObj.addPossibleObjectID(FieldObjects::FO_BLUE_LEFT_GOALPOST);
             newAmbObj.addPossibleObjectID(FieldObjects::FO_BLUE_RIGHT_GOALPOST);
-            stationary = false;
             break;
+//        case GOAL_Y_L:
+//            stat_id = FieldObjects::FO_YELLOW_LEFT_GOALPOST;
+//            stationary = true;
+//            break;
+//        case GOAL_Y_R:
+//            stat_id = FieldObjects::FO_YELLOW_RIGHT_GOALPOST;
+//            stationary = true;
+//            break;
+//        case GOAL_Y_U:
+//            newAmbObj = AmbiguousObject(FieldObjects::FO_YELLOW_GOALPOST_UNKNOWN, "Unknown Yellow Post");
+//            newAmbObj.addPossibleObjectID(FieldObjects::FO_YELLOW_LEFT_GOALPOST);
+//            newAmbObj.addPossibleObjectID(FieldObjects::FO_YELLOW_RIGHT_GOALPOST);
+//            stationary = false;
+//            break;
+//        case GOAL_B_L:
+//            stat_id = FieldObjects::FO_BLUE_LEFT_GOALPOST;
+//            stationary = true;
+//            break;
+//        case GOAL_B_R:
+//            stat_id = FieldObjects::FO_BLUE_RIGHT_GOALPOST;
+//            stationary = true;
+//            break;
+//        case GOAL_B_U:
+//            newAmbObj = AmbiguousObject(FieldObjects::FO_BLUE_GOALPOST_UNKNOWN, "Unknown Blue Post");
+//            newAmbObj.addPossibleObjectID(FieldObjects::FO_BLUE_LEFT_GOALPOST);
+//            newAmbObj.addPossibleObjectID(FieldObjects::FO_BLUE_RIGHT_GOALPOST);
+//            stationary = false;
+//            break;
         default:
             //invalid object - do not push to fieldobjects
-            errorlog << "Goal::addToExternalFieldObjects - attempt to add invalid Goal object id: " << getVFOName(m_id) << endl;
-            #if VISION_FIELDOBJECT_VERBOSITY > 1
-                debug << "Goal::addToExternalFieldObjects - attempt to add invalid Goal object id: " << getVFOName(m_id) << endl;
+            errorlog << "Goal::addToExternalFieldObjects - attempt to add invalid Goal object id: " << VFOName(m_id) << endl;
+            #if VISION_GOAL_VERBOSITY > 1
+                debug << "Goal::addToExternalFieldObjects - attempt to add invalid Goal object id: " << VFOName(m_id) << endl;
             #endif
             return false;
         }
 
-        if(stationary) {
-            //add post to stationaryFieldObjects
-            fieldobjects->stationaryFieldObjects[stat_id].UpdateVisualObject(m_transformed_spherical_pos,
-                                                                            m_spherical_error,
-                                                                            m_location_angular,
-                                                                            m_location_pixels,
-                                                                            m_size_on_screen,
-                                                                            timestamp);
-        }
-        else {
-            //update ambiguous goal post and add it to ambiguousFieldObjects
-            newAmbObj.UpdateVisualObject(m_transformed_spherical_pos,
-                                         m_spherical_error,
-                                         m_location_angular,
-                                         m_location_pixels,
-                                         m_size_on_screen,
-                                         timestamp);
-            fieldobjects->ambiguousFieldObjects.push_back(newAmbObj);
-        }
-
+        //update ambiguous goal post and add it to ambiguousFieldObjects
+        newAmbObj.UpdateVisualObject(Vector3<float>(m_location.relativeRadial.x, m_location.relativeRadial.y, m_location.relativeRadial.z),
+                                     Vector3<float>(m_spherical_error.x, m_spherical_error.y, m_spherical_error.z),
+                                     Vector2<float>(m_location.angular.x, m_location.angular.y),
+                                     Vector2<int>(m_location.screen.x,m_location.screen.y),
+                                     Vector2<int>(m_size_on_screen.x,m_size_on_screen.y),
+                                     timestamp);
+        fieldobjects->ambiguousFieldObjects.push_back(newAmbObj);
         return true;
     }
     else {
-        #if VISION_FIELDOBJECT_VERBOSITY > 1
+        #if VISION_GOAL_VERBOSITY > 1
             debug << "Goal::addToExternalFieldObjects - invalid" << endl;
         #endif
         return false;
@@ -139,15 +142,15 @@ bool Goal::check() const
     //various throwouts here
 
 //    if(!distance_valid) {
-//        #if VISION_FIELDOBJECT_VERBOSITY > 1
+//        #if VISION_GOAL_VERBOSITY > 1
 //            debug << "Goal::check - Goal thrown out: distance invalid" << endl;
 //        #endif
 //        return false;
 //    }
 
     if(VisionConstants::THROWOUT_SHORT_GOALS) {
-        if(m_corners.getHeight() <= VisionConstants::MIN_GOAL_HEIGHT) {
-            #if VISION_FIELDOBJECT_VERBOSITY > 1
+        if(m_corners.getAverageHeight() <= VisionConstants::MIN_GOAL_HEIGHT) {
+            #if VISION_GOAL_VERBOSITY > 1
                 debug << "Goal::check - Goal thrown out: less than 20pix high" << endl;
             #endif
             return false;
@@ -155,8 +158,8 @@ bool Goal::check() const
     }
     
     if(VisionConstants::THROWOUT_NARROW_GOALS) {
-        if(m_corners.getWidth() <= VisionConstants::MIN_GOAL_WIDTH) {
-            #if VISION_FIELDOBJECT_VERBOSITY > 1
+        if(m_corners.getAverageWidth() <= VisionConstants::MIN_GOAL_WIDTH) {
+            #if VISION_GOAL_VERBOSITY > 1
                 debug << "Goal::check - Goal thrown out: less than " << VisionConstants::MIN_GOAL_WIDTH << "pix high" << endl;
             #endif
             return false;
@@ -165,8 +168,8 @@ bool Goal::check() const
 
     //throwout for base below horizon
     if(VisionConstants::THROWOUT_ON_ABOVE_KIN_HOR_GOALS and
-       not VisionBlackboard::getInstance()->getKinematicsHorizon().IsBelowHorizon(m_location_pixels.x, m_location_pixels.y)) {
-        #if VISION_FIELDOBJECT_VERBOSITY > 1
+       not VisionBlackboard::getInstance()->getKinematicsHorizon().IsBelowHorizon(m_location.screen.x, m_location.screen.y)) {
+        #if VISION_GOAL_VERBOSITY > 1
             debug << "Goal::check - Goal thrown out: base above kinematics horizon" << endl;
         #endif
         return false;
@@ -175,7 +178,7 @@ bool Goal::check() const
     //Distance discrepency throwout - if width method says goal is a lot closer than d2p (by specified value) then discard
     if(VisionConstants::THROWOUT_ON_DISTANCE_METHOD_DISCREPENCY_GOALS and
             width_dist + VisionConstants::MAX_DISTANCE_METHOD_DISCREPENCY_GOALS < d2p) {
-        #if VISION_FIELDOBJECT_VERBOSITY > 1
+        #if VISION_GOAL_VERBOSITY > 1
         debug << "Goal::check - Goal thrown out: width distance too much smaller than d2p" << endl;
             debug << "\td2p: " << d2p << " width_dist: " << width_dist << " MAX_DISTANCE_METHOD_DISCREPENCY_GOALS: " << VisionConstants::MAX_DISTANCE_METHOD_DISCREPENCY_GOALS << endl;
         #endif
@@ -184,10 +187,10 @@ bool Goal::check() const
     
     //throw out if goal is too far away
     if(VisionConstants::THROWOUT_DISTANT_GOALS and 
-        m_transformed_spherical_pos.x > VisionConstants::MAX_GOAL_DISTANCE) {
-        #if VISION_FIELDOBJECT_VERBOSITY > 1
+        m_location.relativeRadial.x > VisionConstants::MAX_GOAL_DISTANCE) {
+        #if VISION_GOAL_VERBOSITY > 1
             debug << "Goal::check - Goal thrown out: too far away" << endl;
-            debug << "\td2p: " << m_transformed_spherical_pos.x << " MAX_GOAL_DISTANCE: " << VisionConstants::MAX_GOAL_DISTANCE << endl;
+            debug << "\td2p: " << m_location.relativeRadial.x << " MAX_GOAL_DISTANCE: " << VisionConstants::MAX_GOAL_DISTANCE << endl;
         #endif
         return false;
     }
@@ -196,6 +199,17 @@ bool Goal::check() const
     return true;
 }
 
+double Goal::findScreenError(VisionFieldObject* other) const
+{
+    Goal* g = dynamic_cast<Goal*>(other);
+    return ( m_location.screen - g->m_location.screen ).abs() + ( m_size_on_screen - g->m_size_on_screen ).abs();
+}
+
+double Goal::findGroundError(VisionFieldObject* other) const
+{
+    Goal* g = dynamic_cast<Goal*>(other);
+    return ( m_location.ground - g->m_location.ground ).abs();
+}
 /*!
 *   @brief Updates the spherical position, angular location and transformed spherical position.
 *   
@@ -204,58 +218,20 @@ bool Goal::check() const
 */
 bool Goal::calculatePositions()
 {
-    VisionBlackboard* vbb = VisionBlackboard::getInstance();
+    const Transformer& tran = VisionBlackboard::getInstance()->getTransformer();
     //To the bottom of the Goal Post.
-    bool transform_valid;
-    float bearing = (float)vbb->calculateBearing(m_location_pixels.x);
-    float elevation = (float)vbb->calculateElevation(m_location_pixels.y);
-    
-    float distance = distanceToGoal(bearing, elevation);
+    tran.screenToRadial2D(m_location);
+    double dist = distanceToGoal(m_location.angular.x, m_location.angular.y);
 
-    if(distance <= 0) {
-        //object behind us - ignore it
-        m_spherical_position = Vector3<float>(0,0,0);//distance
-        m_location_angular = Vector2<float>(0,0);
-        m_transformed_spherical_pos = Vector3<float>(0,0,0);
-        #if VISION_FIELDOBJECT_VERBOSITY > 1
-            debug << "Goal::calculateDistances - Goal thrown out: negative distance" << endl;
-            debug << "\td2p: " << distance << endl;
-        #endif
-        return false;
-    }
-
-    //debug << "Goal::calculatePositions() distance: " << distance << endl;
-    
-    m_spherical_position[0] = distance;//distance
-    m_spherical_position[1] = bearing;
-    m_spherical_position[2] = elevation;
-    
-    m_location_angular = Vector2<float>(bearing, elevation);
+    tran.screenToRadial3D(m_location, dist);
     //m_spherical_error - not calculated
-        
-//    if(vbb->isCameraTransformValid()) {        
-//        Matrix cameraTransform = Matrix4x4fromVector(vbb->getCameraTransformVector());
-//        m_transformed_spherical_pos = Kinematics::TransformPosition(cameraTransform,m_spherical_position);
-//    }
-    if(vbb->isCameraToGroundValid()) {        
-        Matrix cameraToGroundTransform = Matrix4x4fromVector(vbb->getCameraToGroundVector());
-        m_transformed_spherical_pos = Kinematics::TransformPosition(cameraToGroundTransform,m_spherical_position);
-        transform_valid = true;
-    }
-    else {
-        transform_valid = false;
-        m_transformed_spherical_pos = Vector3<float>(0,0,0);
-        #if VISION_FIELDOBJECT_VERBOSITY > 1
-            debug << "Goal::calculatePositions: Kinematics CTG transform invalid - will not push goal" << endl;
-        #endif
-    }
-    
-    #if VISION_FIELDOBJECT_VERBOSITY > 2
+
+    #if VISION_GOAL_VERBOSITY > 2
         debug << "Goal::calculatePositions: ";
-        debug << d2p << " " << width_dist << " " << distance << " " << m_transformed_spherical_pos.x << endl;
+        debug << d2p << " " << width_dist << " " << m_location.relativeRadial.x << endl;
     #endif
 
-    return transform_valid;
+    return distance_valid && dist > 0;
 }
 
 /*!
@@ -263,12 +239,12 @@ bool Goal::calculatePositions()
 *   @param bearing The angle about the z axis.
 *   @param elevation The angle about the y axis.
 */
-float Goal::distanceToGoal(float bearing, float elevation) {
-    VisionBlackboard* vbb = VisionBlackboard::getInstance();
+double Goal::distanceToGoal(double bearing, double elevation)
+{
+    const Transformer& tran = VisionBlackboard::getInstance()->getTransformer();
     //reset distance values
     bool d2pvalid = false;
-    d2p = 0,
-    width_dist = 0;
+    double result = d2p = width_dist = 0;
     //get distance to point from base
 //    if(vbb->isCameraToGroundValid())
 //    {
@@ -277,73 +253,66 @@ float Goal::distanceToGoal(float bearing, float elevation) {
 //        Vector3<float> result = Kinematics::DistanceToPoint(camera2groundTransform, bearing, elevation);
 //        d2p = result[0];
 //    }
-    d2pvalid = vbb->distanceToPoint(bearing, elevation, d2p);
+    d2pvalid = tran.isDistanceToPointValid();
+    if(d2pvalid)
+        d2p = tran.distanceToPoint(bearing, elevation);
 
-    #if VISION_FIELDOBJECT_VERBOSITY > 1
+    #if VISION_GOAL_VERBOSITY > 1
         if(!d2pvalid)
             debug << "Goal::distanceToGoal: d2p invalid - combination methods will only return width_dist" << endl;
     #endif
     //get distance from width
-    width_dist = VisionConstants::GOAL_WIDTH*vbb->getCameraDistanceInPixels()/m_size_on_screen.x;
+    width_dist = VisionConstants::GOAL_WIDTH*tran.getCameraDistanceInPixels()/m_size_on_screen.x;
 
     float HACKWIDTH = 50;
     float HACKPIXELS = 3;
     //HACK FOR GOALS AT BASE OF IMAGE
-    if(m_size_on_screen.x > HACKWIDTH and (vbb->getImageHeight() - m_location_pixels.y) < HACKPIXELS) {
-        #if VISION_FIELDOBJECT_VERBOSITY > 1
+    if(m_size_on_screen.x > HACKWIDTH and (VisionBlackboard::getInstance()->getImageHeight() - m_location.screen.y) < HACKPIXELS) {
+        #if VISION_GOAL_VERBOSITY > 1
             debug << "Goal::distanceToGoal: Goal wide and cutoff at bottom so used width_dist" << endl;
         #endif
         return width_dist;
     }
 
-    #if VISION_FIELDOBJECT_VERBOSITY > 1
+    #if VISION_GOAL_VERBOSITY > 1
         debug << "Goal::distanceToGoal: bearing: " << bearing << " elevation: " << elevation << endl;
         debug << "Goal::distanceToGoal: d2p: " << d2p << endl;
         debug << "Goal::distanceToGoal: m_size_on_screen.x: " << m_size_on_screen.x << endl;
         debug << "Goal::distanceToGoal: width_dist: " << width_dist << endl;
     #endif
     switch(VisionConstants::GOAL_DISTANCE_METHOD) {
-    case VisionConstants::D2P:
-        #if VISION_FIELDOBJECT_VERBOSITY > 1
+    case D2P:
+        #if VISION_GOAL_VERBOSITY > 1
             debug << "Goal::distanceToGoal: Method: D2P" << endl;
         #endif
-        distance_valid = d2pvalid;
-        return d2p;
-    case VisionConstants::Width:
-        #if VISION_FIELDOBJECT_VERBOSITY > 1
+        distance_valid = d2pvalid && d2p > 0;
+        result = d2p;
+        break;
+    case Width:
+        #if VISION_GOAL_VERBOSITY > 1
             debug << "Goal::distanceToGoal: Method: Width" << endl;
         #endif
         distance_valid = true;
-        return width_dist;
-    case VisionConstants::Average:
-        #if VISION_FIELDOBJECT_VERBOSITY > 1
+        result = width_dist;
+        break;
+    case Average:
+        #if VISION_GOAL_VERBOSITY > 1
             debug << "Goal::distanceToGoal: Method: Average" << endl;
         #endif
         //average distances
-        distance_valid = true;
-        if(d2pvalid)
-            return (d2p + width_dist) * 0.5;
-        else
-            return width_dist;
-    case VisionConstants::Least:
-        #if VISION_FIELDOBJECT_VERBOSITY > 1
+        distance_valid = d2pvalid && d2p > 0;
+        result = (d2p + width_dist) * 0.5;
+        break;
+    case Least:
+        #if VISION_GOAL_VERBOSITY > 1
             debug << "Goal::distanceToGoal: Method: Least" << endl;
         #endif
-        distance_valid = true;
-        if(d2pvalid)
-            return min(d2p, width_dist);
-        else
-            return width_dist;
+        distance_valid = d2pvalid && d2p > 0;
+        result = (distance_valid ? min(d2p, width_dist) : width_dist);
+        break;
     }
-}
 
-void Goal::render(cv::Mat &mat) const
-{
-    cv::Rect r(m_location_pixels.x - 0.5*m_size_on_screen.x, m_location_pixels.y-m_size_on_screen.y, m_size_on_screen.x, m_size_on_screen.y);
-    if(m_id <= GOAL_Y_U)
-        cv::rectangle(mat, r, cv::Scalar(0, 255, 255), -1);
-    else
-        cv::rectangle(mat, r, cv::Scalar(255, 0, 0), -1);
+    return result;
 }
 
 /*! @brief Stream insertion operator for a single ColourSegment.
@@ -351,13 +320,12 @@ void Goal::render(cv::Mat &mat) const
  */
 ostream& operator<< (ostream& output, const Goal& g)
 {
-    output << "Goal - " << VisionFieldObject::getVFOName(g.m_id) << endl;
-    output << "\tpixelloc: [" << g.m_location_pixels.x << ", " << g.m_location_pixels.y << "]" << endl;
-    output << " angularloc: [" << g.m_location_angular.x << ", " << g.m_location_angular.y << "]" << endl;
-    output << "\trelative field coords: [" << g.m_spherical_position.x << ", " << g.m_spherical_position.y << ", " << g.m_spherical_position.z << "]" << endl;
-    output << "\ttransformed field coords: [" << g.m_transformed_spherical_pos.x << ", " << g.m_transformed_spherical_pos.y << ", " << g.m_transformed_spherical_pos.z << "]" << endl;
-    output << "\tspherical error: [" << g.m_spherical_error.x << ", " << g.m_spherical_error.y << "]" << endl;
-    output << "\tsize on screen: [" << g.m_size_on_screen.x << ", " << g.m_size_on_screen.y << "]";
+    output << "Goal - " << VFOName(g.m_id) << endl;
+    output << "\tpixelloc: " << g.m_location.screen << endl;
+    output << "\tangularloc: " << g.m_location.angular << endl;
+    output << "\trelative field coords: " << g.m_location.relativeRadial << endl;
+    output << "\tspherical error: " << g.m_spherical_error << endl;
+    output << "\tsize on screen: " << g.m_size_on_screen;
     return output;
 }
 

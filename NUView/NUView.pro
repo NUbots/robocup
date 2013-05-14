@@ -1,5 +1,8 @@
 QT += network \
-    opengl
+      opengl
+
+CONFIG += qwt
+
 macx { 
     # Mac Specific Includes
     QMAKE_LFLAGS += -F/System/Library/Frameworks/CoreFoundation.framework/
@@ -8,10 +11,9 @@ macx {
     OBJECTS_DIR = "../Build/NUView/.obj"
     MOC_DIR = "../Build/NUView/.moc"
     RCC_DIR = "../Build/NUView/.rcc"
-    UI_DIR = "../Build/NUView/.ui"
+    UI_DIR = "../Build/NUView/.ui"con
     #Macports include directory
     INCLUDEPATH += '/opt/local/include'
-    LIBS +=  -lopencv_core -lopencv_highgui -lopencv_imgproc
 }
 win32 { 
     INCLUDEPATH += 'C:/Program Files (x86)/boost/'
@@ -20,6 +22,7 @@ win32 {
     INCLUDEPATH += 'C:/Program Files (x86)/boost/boost_1_44'
     INCLUDEPATH += 'C:/Qt/2010.05/qt/src/3rdparty/zlib'
     INCLUDEPATH += 'C:/Program Files/boost/boost_1_44'
+    INCLUDEPATH += 'C:\Program Files\Boost\boost_1_52_0'
     INCLUDEPATH += 'C:/Program Files/boost/'
     INCLUDEPATH += 'C:/Program Files/Bonjour SDK/Include/'
     LIBS += -lwsock32
@@ -28,10 +31,7 @@ win32 {
 }
 !macx{
     !win32{
-        INCLUDEPATH += /usr/local/include/opencv2/
         INCLUDEPATH += /usr/include/boost/
-
-        LIBS += -lopencv_core -lopencv_highgui -lopencv_imgproc
         LIBS += -ldns_sd -lGLU
     }
 }
@@ -51,7 +51,6 @@ HEADERS += ui_mainwindow.h \
     connectionwidget.h \
     ColorModelConversions.h \
     classificationwidget.h \
-    ../VisionOld/ClassificationColours.h \
     ../Tools/FileFormats/NUbotImage.h \
     #../VisionOld/Vision.h \
     ../Tools/FileFormats/LUTTools.h \
@@ -59,6 +58,7 @@ HEADERS += ui_mainwindow.h \
     ../Infrastructure/NUImage/BresenhamLine.h \
     ../Tools/Math/Vector2.h \
     ../Tools/Math/Line.h \
+    ../Tools/Math/Circle.h \
     ../Kinematics/Horizon.h \
     openglmanager.h \
     GLDisplay.h \
@@ -204,7 +204,16 @@ HEADERS += ui_mainwindow.h \
     ../Localisation/Models/WeightedModel.h \
     ../Tools/Math/depUKF.h \
     ../Localisation/iotests.h \
-    NUViewConfig/*.h
+    NUViewConfig/*.h \
+    plotdisplay.h \
+    plotselectionwidget.h \
+    createqwtsymboldialog.h \
+    ../ConfigSystem/ConfigManager.h \
+    ../ConfigSystem/ConfigParameter.h \
+    ../ConfigSystem/ConfigRange.h \
+    ../ConfigSystem/ConfigStorageManager.h \
+    ../ConfigSystem/ConfigTree.h \
+    ../ConfigSystem/Configurable.h
 
 !win32 {
     HEADERS +=     ConnectionManager/ConnectionManager.h \
@@ -225,6 +234,7 @@ SOURCES += mainwindow.cpp \
     virtualnubot.cpp \
     ../Infrastructure/NUImage/BresenhamLine.cpp \
     ../Tools/Math/Line.cpp \
+    ../Tools/Math/Circle.cpp \
     ../Kinematics/Horizon.cpp \
     openglmanager.cpp \
     GLDisplay.cpp \
@@ -343,7 +353,15 @@ SOURCES += mainwindow.cpp \
     ../Tools/Math/Filters/MobileObjectUKF.cpp \
     ../Localisation/Models/WeightedModel.cpp \
     ../Tools/Math/depUKF.cpp \
-    ../Localisation/iotests.cpp
+    ../Localisation/iotests.cpp \
+    plotdisplay.cpp \
+    plotselectionwidget.cpp \
+    createqwtsymboldialog.cpp \
+    ../ConfigSystem/ConfigManager.cpp \
+    ../ConfigSystem/ConfigParameter.cpp \
+    ../ConfigSystem/ConfigStorageManager.cpp \
+    ../ConfigSystem/ConfigTree.cpp \
+    ../ConfigSystem/Configurable.cpp
 
 !win32{
     SOURCES+= ConnectionManager/ConnectionManager.cpp \
@@ -355,31 +373,41 @@ SOURCES += mainwindow.cpp \
     
 HEADERS += \
     ../Vision/VisionTypes/*.h \
+    ../Vision/VisionTypes/RANSACTypes/*.h \
     ../Vision/VisionTypes/VisionFieldObjects/*.h \
     ../Vision/VisionWrapper/datawrappercurrent.h \
     ../Vision/VisionWrapper/visioncontrolwrappernuview.h \
     ../Vision/VisionWrapper/datawrappernuview.h \
     ../Vision/VisionTools/pccamera.h \
     ../Vision/VisionTools/lookuptable.h \
+    ../Vision/VisionTools/classificationcolours.h \
+    ../Vision/VisionTools/transformer.h \
     ../Vision/Modules/*.h \
     ../Vision/Modules/LineDetectionAlgorithms/*.h \
+    ../Vision/Modules/GoalDetectionAlgorithms/*.h \
     ../Vision/*.h \
 
 SOURCES += \
     ../Vision/VisionTypes/*.cpp \
+    ../Vision/VisionTypes/RANSACTypes/*.cpp \
     ../Vision/VisionTypes/VisionFieldObjects/*.cpp \
     ../Vision/VisionTools/pccamera.cpp \
     ../Vision/VisionTools/lookuptable.cpp \
+    ../Vision/VisionTools/classificationcolours.cpp \
+    ../Vision/VisionTools/transformer.cpp \
     ../Vision/Modules/*.cpp \
     ../Vision/Modules/LineDetectionAlgorithms/*.cpp \
+    ../Vision/Modules/GoalDetectionAlgorithms/*.cpp \
     ../Vision/visionblackboard.cpp \
     ../Vision/visioncontroller.cpp \
     ../Vision/visionconstants.cpp \
+    ../Vision/basicvisiontypes.cpp \
     ../Vision/VisionWrapper/visioncontrolwrappernuview.cpp \
     ../Vision/VisionWrapper/datawrappernuview.cpp \
 
 RESOURCES = Resources/textures.qrc Resources/icons.qrc Resources/styles.qrc
 FORMS += \
-    OfflineLocalisationSettingsDialog.ui
+    OfflineLocalisationSettingsDialog.ui \
+    createqwtsymboldialog.ui
 
 

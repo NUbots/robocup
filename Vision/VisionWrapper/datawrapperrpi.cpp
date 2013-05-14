@@ -30,8 +30,8 @@ string DataWrapper::getIDName(DEBUG_ID id) {
         return "DBID_GREENHORIZON_SCANS";
     case DBID_GREENHORIZON_FINAL:
         return "DBID_GREENHORIZON_FINAL";
-    case DBID_OBJECT_POINTS:
-        return "DBID_OBJECT_POINTS";
+    case DBID_OBSTACLE_POINTS:
+        return "DBID_OBSTACLE_POINTS";
     case DBID_FILTERED_SEGMENTS:
         return "DBID_FILTERED_SEGMENTS";
     case DBID_GOALS:
@@ -47,13 +47,13 @@ string DataWrapper::getIDName(DEBUG_ID id) {
     }
 }
 
-void getPointsAndColoursFromSegments(const vector< vector<ColourSegment> >& segments, vector<cv::Scalar>& colours, vector<PointType>& pts)
+void getPointsAndColoursFromSegments(const vector< vector<ColourSegment> >& segments, vector<cv::Scalar>& colours, vector<Point>& pts)
 {
     unsigned char r, g, b;
 
     BOOST_FOREACH(const vector<ColourSegment>& line, segments) {
         BOOST_FOREACH(const ColourSegment& seg, line) {
-            ClassIndex::getColourAsRGB(seg.getColour(), r, g, b);
+            getColourAsRGB(seg.getColour(), r, g, b);
             pts.push_back(seg.getStart());
             pts.push_back(seg.getEnd());
             colours.push_back(cv::Scalar(b,g,r));
@@ -103,6 +103,8 @@ DataWrapper::DataWrapper(bool disp_on, bool cam)
 
     //set up fake horizon
     kinematics_horizon.setLine(0, 1, 50);
+
+    VisionConstants::loadFromFile(configname);
 
     if(!loadLUTFromFile(LUTname)){
         errorlog << "DataWrapper::DataWrapper() - failed to load LUT: " << LUTname << endl;
@@ -196,6 +198,13 @@ bool DataWrapper::getCameraHeight(float& height)
 
 //! @brief Generates spoofed camera pitch.
 bool DataWrapper::getCameraPitch(float& pitch)
+{
+    pitch = 0;
+    return false;
+}
+
+//! @brief Generates spoofed camera yaw.
+bool DataWrapper::getCameraYaw(float& yaw)
 {
     pitch = 0;
     return false;
@@ -361,12 +370,10 @@ bool DataWrapper::debugPublish(const vector<Goal>& data) {
     digitalWrite(GPIO_YGOAL, 0);
     if(m_gpio && !data.empty()) {
         BOOST_FOREACH(Goal post, data) {
-            if(VisionFieldObject::isBlueGoal(post.getID())) {
+            if(isBlueGoal(post.getID()))
                 digitalWrite(GPIO_BGOAL, 1);
-            }
-            else {
+            else
                 digitalWrite(GPIO_YGOAL, 1);
-            }
         }
     }
 
@@ -438,9 +445,9 @@ bool DataWrapper::debugPublish(const vector<FieldLine> &data)
     return false;
 }
 
-bool DataWrapper::debugPublish(DEBUG_ID id, const vector<PointType>& data_points)
+bool DataWrapper::debugPublish(DEBUG_ID id, const vector<Vector2<double> >& data_points)
 {
-    vector<PointType>::const_iterator it;
+    vector<Point>::const_iterator it;
 
 #if VISION_WRAPPER_VERBOSITY > 1
     if(data_points.empty()) {
@@ -462,17 +469,17 @@ bool DataWrapper::debugPublish(DEBUG_ID id, const vector<PointType>& data_points
 
         switch(id) {
         case DBID_H_SCANS:
-            BOOST_FOREACH(const PointType& pt, data_points) {
+            BOOST_FOREACH(const Point& pt, data_points) {
                 cv::line(img, cv::Point2i(0, pt.y), cv::Point2i(img.cols, pt.y), cv::Scalar(127,127,127), 1);
             }
             break;
         case DBID_V_SCANS:
-            BOOST_FOREACH(const PointType& pt, data_points) {
+            BOOST_FOREACH(const Point& pt, data_points) {
                 cv::line(img, cv::Point2i(pt.x, pt.y), cv::Point2i(pt.x, img.rows), cv::Scalar(127,127,127), 1);
             }
             break;
         case DBID_MATCHED_SEGMENTS:
-            BOOST_FOREACH(const PointType& pt, data_points) {
+            BOOST_FOREACH(const Point& pt, data_points) {
                 cv::circle(img, cv::Point2i(pt.x, pt.y), 1, cv::Scalar(255,255,0), 4);
             }
             break;
@@ -480,7 +487,7 @@ bool DataWrapper::debugPublish(DEBUG_ID id, const vector<PointType>& data_points
             line(img, cv::Point2i(data_points.front().x, data_points.front().y), cv::Point2i(data_points.back().x, data_points.back().y), cv::Scalar(255,255,0), 1);
             break;
         case DBID_GREENHORIZON_SCANS:
-            BOOST_FOREACH(const PointType& pt, data_points) {
+            BOOST_FOREACH(const Point& pt, data_points) {
                 line(img, cv::Point2i(pt.x, kinematics_horizon.findYFromX(pt.x)), cv::Point2i(pt.x, img.rows), cv::Scalar(127,127,127), 1);
                 //cv::circle(img, cv::Point2i(pt.x, pt.y), 1, cv::Scalar(127,127,127), 2);
                 cv::circle(img, cv::Point2i(pt.x, pt.y), 1, cv::Scalar(255,0,255), 2);
@@ -494,8 +501,8 @@ bool DataWrapper::debugPublish(DEBUG_ID id, const vector<PointType>& data_points
                 //cv::circle(img, cv::Point2i(it->x, it->y), 1, cv::Scalar(255,0,255), 2);
             }
             break;
-        case DBID_OBJECT_POINTS:
-            BOOST_FOREACH(const PointType& pt, data_points) {
+        case DBID_OBSTACLE_POINTS:
+            BOOST_FOREACH(const Point& pt, data_points) {
                 cv::circle(img, cv::Point2i(pt.x, pt.y), 1, cv::Scalar(0,0,255), 4);
             }
             break;
@@ -515,9 +522,9 @@ bool DataWrapper::debugPublish(DEBUG_ID id, const vector<PointType>& data_points
 bool DataWrapper::debugPublish(DEBUG_ID id, const SegmentedRegion& region)
 {
     if(m_display_on && false) {
-        vector<PointType> data_points;
+        vector<Point> data_points;
         vector<cv::Scalar> colours;
-        vector<PointType>::const_iterator it;
+        vector<Point>::const_iterator it;
         vector<cv::Scalar>::const_iterator c_it;
 
         getPointsAndColoursFromSegments(region.getSegments(), colours, data_points);

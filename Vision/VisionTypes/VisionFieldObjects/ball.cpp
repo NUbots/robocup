@@ -13,24 +13,21 @@ Ball::Ball()
 {
     m_id = BALL;
     m_diameter = 0;
-    m_location_pixels.x = 0;
-    m_location_pixels.y = 0;
     valid = calculatePositions();
     valid = valid && check();
 }
 
-Ball::Ball(PointType centre, int diameter)
+Ball::Ball(Point centre, double diameter)
 {
     m_id = BALL;
-    int top = centre.y - diameter*0.5,
-        bottom = centre.y + diameter*0.5,
-        left = centre.x - diameter*0.5,
-        right = centre.x + diameter*0.5;
-    Vector2<float> top_pt = Vector2<float>((right-left)*0.5, top);
-    Vector2<float> bottom_pt = Vector2<float>((right-left)*0.5, bottom);
-    Vector2<float> right_pt = Vector2<float>(right, (bottom-top)*0.5);
-    Vector2<float> left_pt = Vector2<float>(left, (bottom-top)*0.5);
-    Vector2<float> centre_pt = Vector2<float>(centre.x, centre.y);
+    double top = centre.y - diameter*0.5,
+           bottom = centre.y + diameter*0.5,
+           left = centre.x - diameter*0.5,
+           right = centre.x + diameter*0.5;
+    Point top_pt = Point((right-left)*0.5, top);
+    Point bottom_pt = Point((right-left)*0.5, bottom);
+    Point right_pt = Point(right, (bottom-top)*0.5);
+    Point left_pt = Point(left, (bottom-top)*0.5);
 
     //    if(VisionConstants::DO_RADIAL_CORRECTION) {
     //        VisionBlackboard* vbb = VisionBlackboard::getInstance();
@@ -41,10 +38,9 @@ Ball::Ball(PointType centre, int diameter)
     //        centre_pt = vbb->correctDistortion(centre_pt);
     //    }
         
-    m_diameter = mathGeneral::roundNumberToInt(max(bottom_pt.y - top_pt.y, right_pt.x - left_pt.x));
-    m_location_pixels.x = mathGeneral::roundNumberToInt(centre_pt.x);
-    m_location_pixels.y = mathGeneral::roundNumberToInt(centre_pt.y);
-    m_size_on_screen = Vector2<int>(m_diameter, m_diameter);
+    m_diameter = max(bottom_pt.y - top_pt.y, right_pt.x - left_pt.x);
+    m_location.screen = centre;
+    m_size_on_screen = Vector2<double>(m_diameter, m_diameter);
     valid = calculatePositions();
     //valid = valid && check();
     valid = check();
@@ -55,33 +51,28 @@ float Ball::getRadius() const
     return m_diameter*0.5;
 }
 
-Vector3<float> Ball::getRelativeFieldCoords() const
-{
-    return m_spherical_position;
-}
-
 bool Ball::addToExternalFieldObjects(FieldObjects *fieldobjects, float timestamp) const
 {
-    #if VISION_FIELDOBJECT_VERBOSITY > 1
+    #if VISION_BALL_VERBOSITY > 1
         debug << "Ball::addToExternalFieldObjects:" << endl;
         debug << *this << endl;
     #endif
     if(valid) {
         //add ball to mobileFieldObjects
         //cout << m_transformed_spherical_pos.x << " " << m_transformed_spherical_pos.y << " " << m_transformed_spherical_pos.z << endl;
-        fieldobjects->mobileFieldObjects[FieldObjects::FO_BALL].UpdateVisualObject(m_transformed_spherical_pos,
-                                                                        m_spherical_error,
-                                                                        m_location_angular,
-                                                                        m_location_pixels,
-                                                                        m_size_on_screen,
-                                                                        timestamp);
-        #if VISION_FIELDOBJECT_VERBOSITY > 1
+        fieldobjects->mobileFieldObjects[FieldObjects::FO_BALL].UpdateVisualObject(Vector3<float>(m_location.relativeRadial.x, m_location.relativeRadial.y, m_location.relativeRadial.z),
+                                                                                   Vector3<float>(m_spherical_error.x, m_spherical_error.y, m_spherical_error.z),
+                                                                                   Vector2<float>(m_location.angular.x, m_location.angular.y),
+                                                                                   Vector2<int>(m_location.screen.x,m_location.screen.y),
+                                                                                   Vector2<int>(m_size_on_screen.x,m_size_on_screen.y),
+                                                                                   timestamp);
+        #if VISION_BALL_VERBOSITY > 1
             debug << "Ball::addToExternalFieldObjects: valid" << endl;
         #endif
         return true;
     }
     else {
-        #if VISION_FIELDOBJECT_VERBOSITY > 1
+        #if VISION_BALL_VERBOSITY > 1
             debug << "Ball::addToExternalFieldObjects: invalid" << endl;
         #endif
         return false;
@@ -93,7 +84,7 @@ bool Ball::check() const
     //various throwouts here
 
     if(!distance_valid) {
-        #if VISION_FIELDOBJECT_VERBOSITY > 1
+        #if VISION_BALL_VERBOSITY > 1
             debug << "Ball::check - Ball thrown out: distance invalid" << endl;
         #endif
         return false;
@@ -101,9 +92,9 @@ bool Ball::check() const
 
     //throwout for below horizon
     if(VisionConstants::THROWOUT_ON_ABOVE_KIN_HOR_BALL and
-       not VisionBlackboard::getInstance()->getKinematicsHorizon().IsBelowHorizon(m_location_pixels.x, m_location_pixels.y)) {
+       not VisionBlackboard::getInstance()->getKinematicsHorizon().IsBelowHorizon(m_location.screen.x, m_location.screen.y)) {
         errorlog << "Ball::check() - Ball above horizon: should not occur" << endl;
-        #if VISION_FIELDOBJECT_VERBOSITY > 1
+        #if VISION_BALL_VERBOSITY > 1
             debug << "Ball::check - Ball thrown out: above kinematics horizon" << endl;
         #endif
         return false;
@@ -112,7 +103,7 @@ bool Ball::check() const
     //Distance discrepency throwout - if width method says ball is a lot closer than d2p (by specified value) then discard
     if(VisionConstants::THROWOUT_ON_DISTANCE_METHOD_DISCREPENCY_BALL and
             abs(width_dist - d2p) > VisionConstants::MAX_DISTANCE_METHOD_DISCREPENCY_BALL) {
-        #if VISION_FIELDOBJECT_VERBOSITY > 1
+        #if VISION_BALL_VERBOSITY > 1
         debug << "Ball::check - Ball thrown out: width distance too much smaller than d2p" << endl;
             debug << "\td2p: " << d2p << " width_dist: " << width_dist << " MAX_DISTANCE_METHOD_DISCREPENCY_BALL: " << VisionConstants::MAX_DISTANCE_METHOD_DISCREPENCY_BALL << endl;
         #endif
@@ -122,7 +113,7 @@ bool Ball::check() const
     //throw out if ball is too small
     if(VisionConstants::THROWOUT_SMALL_BALLS and 
         m_diameter < VisionConstants::MIN_BALL_DIAMETER_PIXELS) {
-        #if VISION_FIELDOBJECT_VERBOSITY > 1
+        #if VISION_BALL_VERBOSITY > 1
             debug << "Ball::check - Ball thrown out: too small" << endl;
             debug << "\tdiameter: " << m_diameter << " MIN_BALL_DIAMETER_PIXELS: " << VisionConstants::MIN_BALL_DIAMETER_PIXELS << endl;
         #endif
@@ -131,10 +122,10 @@ bool Ball::check() const
     
     //throw out if ball is too far away
     if(VisionConstants::THROWOUT_DISTANT_BALLS and 
-        m_transformed_spherical_pos.x > VisionConstants::MAX_BALL_DISTANCE) {
-        #if VISION_FIELDOBJECT_VERBOSITY > 1
+        m_location.relativeRadial.x > VisionConstants::MAX_BALL_DISTANCE) {
+        #if VISION_BALL_VERBOSITY > 1
             debug << "Ball::check - Ball thrown out: too far away" << endl;
-            debug << "\td2p: " << m_transformed_spherical_pos.x << " MAX_BALL_DISTANCE: " << VisionConstants::MAX_BALL_DISTANCE << endl;
+            debug << "\td2p: " << m_location.relativeRadial.x << " MAX_BALL_DISTANCE: " << VisionConstants::MAX_BALL_DISTANCE << endl;
         #endif
         return false;
     }
@@ -143,58 +134,36 @@ bool Ball::check() const
     return true;
 }
 
+double Ball::findScreenError(VisionFieldObject *other) const
+{
+    Ball* b = dynamic_cast<Ball*>(other);
+    return ( m_location.screen - b->m_location.screen ).abs() + ( m_size_on_screen - b->m_size_on_screen ).abs();
+}
+
+double Ball::findGroundError(VisionFieldObject *other) const
+{
+    Ball* b = dynamic_cast<Ball*>(other);
+    return ( m_location.ground - b->m_location.ground ).abs();
+}
+
 bool Ball::calculatePositions()
 {
-    VisionBlackboard* vbb = VisionBlackboard::getInstance();
+    const Transformer& tran = VisionBlackboard::getInstance()->getTransformer();
     //To the bottom of the Goal Post.
-    bool transform_valid;
-    float elevation;
-    float bearing = (float)vbb->calculateBearing(m_location_pixels.x);
-    if(VisionConstants::BALL_DISTANCE_POSITION_BOTTOM) {
-        elevation = (float)vbb->calculateElevation(m_location_pixels.y + m_diameter*0.5);
-    }
-    else {
-        elevation = (float)vbb->calculateElevation(m_location_pixels.y);
-    }
-    
-    float distance = distanceToBall(bearing, elevation);
-    
-    if(distance <= 0) {
-        //object behind us - ignore it
-        m_spherical_position = Vector3<float>(0,0,0);//distance
-        m_location_angular = Vector2<float>(0,0);
-        m_transformed_spherical_pos = Vector3<float>(0,0,0);
-        return false;
-    }
+    tran.screenToRadial2D(m_location);
+    double dist = distanceToBall(m_location.angular.x, m_location.angular.y);
 
-    #if VISION_FIELDOBJECT_VERBOSITY > 1
-        debug << "Ball::calculatePositions() distance: " << distance << endl;
-    #endif
-    //! @todo implement 
-    m_spherical_position[0] = distance; //distance calculated in distanceToBall() by given METHOD
-    m_spherical_position[1] = bearing; //bearing
-    m_spherical_position[2] = elevation; //elevation
-    
-    m_location_angular = Vector2<float>(bearing, elevation);
+    m_location.relativeRadial.x = dist;
+    m_location.relativeRadial.y = m_location.angular.x;
+    m_location.relativeRadial.z = m_location.angular.y;
+    //m_spherical_error - not calculated
 
-    if(vbb->isCameraToGroundValid()) {
-        transform_valid = true;
-        Matrix cameraToGroundTransform = Matrix4x4fromVector(vbb->getCameraToGroundVector());
-        m_transformed_spherical_pos = Kinematics::TransformPosition(cameraToGroundTransform,m_spherical_position);
-    }
-    else {
-        transform_valid = false;
-        m_transformed_spherical_pos = Vector3<float>(0,0,0);
-        #if VISION_FIELDOBJECT_VERBOSITY > 1
-            debug << "Ball::calculatePositions: Kinematics CTG transform invalid - will not push ball" << endl;
-        #endif
-    }
-    #if VISION_FIELDOBJECT_VERBOSITY > 2
+    #if VISION_BALL_VERBOSITY > 2
         debug << "Ball::calculatePositions: ";
-        debug << d2p << " " << width_dist << " " << distance << " " << m_transformed_spherical_pos.x << endl;
+        debug << d2p << " " << width_dist << " " << m_location.relativeRadial.x << endl;
     #endif
 
-    return transform_valid;
+    return distance_valid && dist > 0;
 }
 
 
@@ -203,86 +172,62 @@ bool Ball::calculatePositions()
 *   @param bearing The angle about the z axis.
 *   @param elevation The angle about the y axis.
 */
-float Ball::distanceToBall(float bearing, float elevation) {
-    VisionBlackboard* vbb = VisionBlackboard::getInstance();
+double Ball::distanceToBall(double bearing, double elevation) {
+    const Transformer& tran = VisionBlackboard::getInstance()->getTransformer();
     //reset distance values
     bool d2pvalid = false;
     d2p = 0;
     width_dist = 0;
+    double result = 0;
     //get distance to point from base
-//    if(vbb->isCameraToGroundValid())
-//    {
-//        Matrix camera2groundTransform = Matrix4x4fromVector(vbb->getCameraToGroundVector());
-//        Vector3<float> result = Kinematics::DistanceToPoint(camera2groundTransform, bearing, elevation);
-//        d2p = result[0];
-//    }
-    d2pvalid = vbb->distanceToPoint(bearing, elevation, d2p);
-    
-    #if VISION_FIELDOBJECT_VERBOSITY > 1
-        if(!d2pvalid)
-            debug << "Ball::distanceToBall: d2p invalid - combination methods will only return width_dist" << endl;
-    #endif
-        
-    //get distance from width
-    width_dist = VisionConstants::BALL_WIDTH*vbb->getCameraDistanceInPixels()/(m_size_on_screen.x);
 
-    #if VISION_FIELDOBJECT_VERBOSITY > 1
-        debug << "Ball::distanceToBall: bearing: " << bearing << " elevation: " << elevation << endl;
-        debug << "Ball::distanceToBall: d2p: " << d2p << endl;
-        debug << "Ball::distanceToBall: m_size_on_screen.x: " << m_size_on_screen.x << endl;
-        debug << "Ball::distanceToBall: width_dist: " << width_dist << endl;
+    d2pvalid = tran.isDistanceToPointValid();
+    if(d2pvalid)
+        d2p = tran.distanceToPoint(bearing, elevation);
+
+    #if VISION_BALL_VERBOSITY > 1
+        if(!d2pvalid)
+            debug << "Ball::distanceToGoal: d2p invalid - combination methods will only return width_dist" << endl;
+    #endif
+    //get distance from width
+    width_dist = VisionConstants::BALL_WIDTH*tran.getCameraDistanceInPixels()/m_size_on_screen.x;
+
+    #if VISION_BALL_VERBOSITY > 1
+        debug << "Ball::distanceToGoal: bearing: " << bearing << " elevation: " << elevation << endl;
+        debug << "Ball::distanceToGoal: d2p: " << d2p << endl;
+        debug << "Ball::distanceToGoal: m_size_on_screen.x: " << m_size_on_screen.x << endl;
+        debug << "Ball::distanceToGoal: width_dist: " << width_dist << endl;
+        debug << "Ball::distanceToGoal: Method: " << getDistanceMethodName(VisionConstants::BALL_DISTANCE_METHOD) << endl;
     #endif
     switch(VisionConstants::BALL_DISTANCE_METHOD) {
-    case VisionConstants::D2P:
-        #if VISION_FIELDOBJECT_VERBOSITY > 1
-            debug << "Ball::distanceToBall: Method: D2P" << endl;
-        #endif
-        distance_valid = d2pvalid;
-        return d2p;
-    case VisionConstants::Width:
-        #if VISION_FIELDOBJECT_VERBOSITY > 1
-            debug << "Ball::distanceToBall: Method: Width" << endl;
-        #endif
+    case D2P:
+        distance_valid = d2pvalid && d2p > 0;
+        result = d2p;
+        break;
+    case Width:
         distance_valid = true;
-        return width_dist;
-    case VisionConstants::Average:
-        #if VISION_FIELDOBJECT_VERBOSITY > 1
-            debug << "Ball::distanceToBall: Method: Average" << endl;
-        #endif
+        result = width_dist;
+        break;
+    case Average:
         //average distances
-        distance_valid = true;
-        if(d2pvalid) {
-            return (d2p + width_dist) * 0.5;
-        }
-        else {
-            return width_dist;
-        }
-    case VisionConstants::Least:
-        #if VISION_FIELDOBJECT_VERBOSITY > 1
-            debug << "Ball::distanceToBall: Method: Least" << endl;
-        #endif
-        distance_valid = true;
-        if(d2pvalid) {
-            return min(d2p, width_dist);
-        }
-        else {
-            return width_dist;
-        }
+        distance_valid = d2pvalid && d2p > 0;
+        result = (d2p + width_dist) * 0.5;
+        break;
+    case Least:
+        distance_valid = d2pvalid && d2p > 0;
+        result = (distance_valid ? min(d2p, width_dist) : width_dist);
+        break;
     }
-}
 
-void Ball::render(cv::Mat &mat) const
-{
-    cv::circle(mat, cv::Point2i(m_location_pixels.x, m_location_pixels.y), m_diameter*0.5, cv::Scalar(0, 125, 255), 2);
+    return result;
 }
 
 ostream& operator<< (ostream& output, const Ball& b)
 {
     output << "Ball " << endl;
-    output << "\tpixelloc: [" << b.m_location_pixels.x << ", " << b.m_location_pixels.y << "]" << endl;
-    output << " angularloc: [" << b.m_location_angular.x << ", " << b.m_location_angular.y << "]" << endl;
-    output << "\trelative field coords: [" << b.m_spherical_position.x << ", " << b.m_spherical_position.y << ", " << b.m_spherical_position.z << "]" << endl;
-    output << "\ttransformed field coords: [" << b.m_transformed_spherical_pos.x << ", " << b.m_transformed_spherical_pos.y << ", " << b.m_transformed_spherical_pos.z << "]" << endl;
+    output << "\tpixelloc: [" << b.m_location.screen.x << ", " << b.m_location.screen.y << "]" << endl;
+    output << " angularloc: [" << b.m_location.angular.x << ", " << b.m_location.angular.y << "]" << endl;
+    output << "\trelative field coords: [" << b.m_location.relativeRadial.x << ", " << b.m_location.relativeRadial.y << ", " << b.m_location.relativeRadial.z << "]" << endl;
     output << "\tspherical error: [" << b.m_spherical_error.x << ", " << b.m_spherical_error.y << "]" << endl;
     output << "\tsize on screen: [" << b.m_size_on_screen.x << ", " << b.m_size_on_screen.y << "]";
     return output;

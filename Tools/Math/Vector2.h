@@ -12,7 +12,7 @@
 #define __Vector2_h__
 
 #include <math.h>
-#include <fstream>
+#include <iostream>
 
 /** This class represents a 2-vector */
 template <class V = float> class Vector2{
@@ -124,7 +124,7 @@ template <class V = float> class Vector2{
   *\return A new object that contains the result of the calculation.
   */
   Vector2<V> operator*(const V& factor) const
-    {return Vector2<V>(*this) *= factor;}
+    {return Vector2<V>(*this) *= (double)factor;}
 
   /** Division of this vector by a factor.
   *
@@ -232,12 +232,27 @@ template <class V = float> class Vector2{
   {
     return  (&x)[i];
   }
+
+  const V& operator[](int i) const
+  {
+    return  (&x)[i];
+  }
   
   /** Calculation of the angle of this vector */
   double angle() const
   {return atan2((double)y,(double)x);}
 
   //! MODIFIED BEYOND THIS POINT BY SHANNON FENN 10/06/12
+
+  Vector2<V> elemMult(Vector2<V> other)
+  {
+      return Vector2<V>(x*other.x, y*other.y);
+  }
+
+  Vector2<V> elemDiv(Vector2<V> other)
+  {
+      return Vector2<V>(x/other.x, y/other.y);
+  }
 
   /**
   * @brief output stream operator result of the form (x,y)

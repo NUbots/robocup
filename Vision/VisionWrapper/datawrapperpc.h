@@ -18,12 +18,15 @@
 #include "Vision/VisionTypes/VisionFieldObjects/goal.h"
 #include "Vision/VisionTypes/VisionFieldObjects/obstacle.h"
 #include "Vision/VisionTypes/VisionFieldObjects/fieldline.h"
+#include "Tools/Math/LSFittedLine.h"
+
+#include "Infrastructure/NUSensorsData/NUSensorsData.h"
 
 #define GROUP_NAME "/home/shannon/Images/paper"
 #define GROUP_EXT ".png"
 
-using namespace std;
-//using namespace cv;
+using std::vector;
+using std::string;
 using cv::Mat;
 using cv::VideoCapture;
 using cv::Scalar;
@@ -36,7 +39,7 @@ class DataWrapper
     friend class VisionControlWrapper;
 
 public:
-    
+
     enum DEBUG_ID {
         DBID_IMAGE              = 0,
         DBID_CLASSED_IMAGE       = 1,
@@ -54,7 +57,9 @@ public:
         DBID_BALLS              = 13,
         DBID_OBSTACLES          = 14,
         DBID_LINES              = 15,
-        NUMBER_OF_IDS           = 16
+        DBID_GOAL_LINES_START   = 16,
+        DBID_GOAL_LINES_END     = 17,
+        NUMBER_OF_IDS           = 18
     };
 
     static string getIDName(DEBUG_ID id);
@@ -83,27 +88,27 @@ public:
 
     void debugRefresh();
     bool debugPublish(const vector<Ball>& data);
-    bool debugPublish(const vector<Beacon>& data);
+//    bool debugPublish(const vector<Beacon>& data);
     bool debugPublish(const vector<Goal>& data);
     bool debugPublish(const vector<Obstacle>& data);
     bool debugPublish(const vector<FieldLine>& data);
-    bool debugPublish(DEBUG_ID id, const vector<PointType>& data_points);
+    bool debugPublish(DEBUG_ID id, const vector<Point>& data_points);
     bool debugPublish(DEBUG_ID id, const SegmentedRegion& region);
     bool debugPublish(DEBUG_ID id);
     bool debugPublish(DEBUG_ID id, const NUImage *const img);
+    bool debugPublish(DEBUG_ID id, const vector<LSFittedLine> &data);
     
     
 private:
     DataWrapper();
     ~DataWrapper();
-    //void startImageFileGroup(string filename);
     bool updateFrame();
     bool loadLUTFromFile(const string& fileName);
     int getNumFramesDropped() const {return numFramesDropped;}      //! @brief Returns the number of dropped frames since start.
     int getNumFramesProcessed() const {return numFramesProcessed;}  //! @brief Returns the number of processed frames since start.
     
     void ycrcb2ycbcr(Mat* img_ycrcb);
-    void generateImageFromMat(Mat& frame);
+    //void generateImageFromMat(Mat& frame);
 
 private:
     enum INPUT_METHOD {
@@ -112,11 +117,12 @@ private:
     };
     
 private:
-    static const INPUT_METHOD METHOD = STREAM;  //CAMERA, STREAM, FILE
-
     static DataWrapper* instance;
 
-    NUImage* m_current_image;
+    INPUT_METHOD m_method;  //CAMERA, STREAM
+
+    NUImage m_current_image;
+    NUSensorsData m_sensor_data;
 
     string configname;
 
@@ -130,22 +136,14 @@ private:
     //! Used when reading from strm
     string streamname;
     ifstream imagestrm;
-
-    //! Used when reading from file
-    unsigned char* m_yuyv_buffer;
-    VideoCapture* capture;
-    Mat m_current_image_cv;
-    int num_images, cur_image;
+    bool using_sensors;
+    string sensorstreamname;
+    ifstream sensorstrm;
 
     //! Used for debugging
     int debug_window_num;
     map<DEBUG_ID, vector<pair<string, Mat>* > > debug_map;
     pair<string, Mat>* debug_windows;
-
-//    int id_window_map[NUMBER_OF_IDS];
-//
-//    string* debug_window_name;  //for array
-//    Mat* debug_img;             //for array
 
     //! Used for displaying results
     string results_window_name;
@@ -155,9 +153,6 @@ private:
     double m_timestamp;
     int numFramesDropped;
     int numFramesProcessed;
-
-    
-    //NUSensorsData* m_sensor_data;
 
 //! ONLY FOR DEBUGGING - DO NOT RELY ON THE FOLLOWING METHODS OR VARIABLES BEING PRESENT
 public:

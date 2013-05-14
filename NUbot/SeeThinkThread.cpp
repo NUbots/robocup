@@ -19,6 +19,7 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "ConfigSystem/Module.h" // CONFIG_SYSTEM_TEST
 
 #include "NUPlatform/NUPlatform.h"
 #include "Infrastructure/NUBlackboard.h"
@@ -124,6 +125,19 @@ void SeeThinkThread::run()
                 wait();
             #endif
             
+            // ---- Update the configuration system ----
+            // // Note: should add a define instead of just 
+            // //       commenting/uncommenting this all the time.
+            // // #ifdef SOME_CONFIG_TESTING_DEFINE
+            // if(Module::autoUpdateTest()) // CONFIG_SYSTEM_TEST
+            //     std::cout << "SeeThinkThread::run(): autoUpdateTest Success!" << std::endl;
+            // else 
+            //     std::cout << "SeeThinkThread::run(): autoUpdateTest FAIL!" << std::endl;
+            // // #endif
+            
+            Blackboard->Config->updateConfiguration();
+            // -----------------------------------------
+
             #ifdef THREAD_SEETHINK_PROFILE
                 prof.start();
             #endif
@@ -147,6 +161,10 @@ void SeeThinkThread::run()
             Blackboard->TeamInfo->UpdateTime(current_time);
             Blackboard->GameInfo->UpdateTime(current_time);
             m_logrecorder->WriteData(Blackboard);
+
+            #ifdef THREAD_SEETHINK_PROFILE
+                prof.split("time update");
+            #endif
 
             #ifdef USE_LOCALISATION
                 m_nubot->m_localisation->process(Blackboard->Sensors, Blackboard->Objects, Blackboard->GameInfo, Blackboard->TeamInfo);
@@ -183,6 +201,11 @@ void SeeThinkThread::run()
                     prof.split("motion_jobs");
                 #endif
             #endif
+
+					
+			//std::cout << m_nubot->m_platform->getRealTime() << std::endl << Blackboard->Image->GetTimestamp() << std::endl << std::endl;
+            m_nubot->m_api->sendAll();
+			
 #ifdef LOGGING_ENABLED
             locfile << *m_nubot->m_localisation;
 #endif

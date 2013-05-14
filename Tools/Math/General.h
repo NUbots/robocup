@@ -11,6 +11,7 @@
 #include <vector>
 #include <iostream>
 #include "Matrix.h"
+#include "Vector3.h"
 using namespace std;
 
 namespace mathGeneral
@@ -80,16 +81,47 @@ inline std::vector<float> Spherical2Cartesian(const std::vector<float>& spherica
     return result;
 }
 
-inline std::vector<float> Cartesian2Spherical(const std::vector<float>& cartesianCoordinates)
+template<typename T>
+inline std::vector<T> Cartesian2Spherical(const std::vector<T>& cartesianCoordinates)
 {
-    const float x = cartesianCoordinates[0];
-    const float y = cartesianCoordinates[1];
-    const float z = cartesianCoordinates[2];
-    std::vector<float> result(3,0.0f);
+    const T x = cartesianCoordinates[0];
+    const T y = cartesianCoordinates[1];
+    const T z = cartesianCoordinates[2];
+    std::vector<T> result(3,0.0f);
 
     result[0] = sqrt(x*x + y*y + z*z);
     result[1] = atan2(y,x);
     result[2] = asin(z/(result[0]));
+    return result;
+}
+
+template<typename T>
+inline Vector3<T> Spherical2Cartesian(const Vector3<T>& sphericalCoordinates)
+{
+    const T distance = sphericalCoordinates.x;
+    const T bearingcos = cos(sphericalCoordinates.y);
+    const T bearingsin = sin(sphericalCoordinates.y);
+    const T elevationcos = cos(sphericalCoordinates.z);
+    const T elevationsin = sin(sphericalCoordinates.z);
+
+    Vector3<T> result;
+    result.x = distance * bearingcos * elevationcos;
+    result.y = distance * bearingsin * elevationcos;
+    result.z = distance * elevationsin;
+    return result;
+}
+
+template<typename T>
+inline Vector3<T> Cartesian2Spherical(const Vector3<T>& cartesianCoordinates)
+{
+    const T x = cartesianCoordinates.x;
+    const T y = cartesianCoordinates.y;
+    const T z = cartesianCoordinates.z;
+    Vector3<T> result;
+
+    result.x = sqrt(x*x + y*y + z*z);
+    result.y = atan2(y,x);
+    result.z = asin(z/(result.x));
     return result;
 }
 
@@ -207,6 +239,58 @@ inline void ProjectFromAtoB(float* A, float* B, float distancePast, float* C) {
     C[0] = A[0]+dist*xdiff;
     C[1] = A[1]+dist*ydiff;
 }
+
+
+//fast (approximate) inverse square root. Quite accurate.
+inline double invSqrt( const double& x )
+{
+    double y = x;
+    double xhalf = ( double )0.5 * y;
+    long long i = *( long long* )( &y );
+    i = 0x5fe6ec85e7de30daLL - ( i >> 1 );//LL suffix for (long long) type for GCC
+    y = *( double* )( &i );
+    y = y * ( ( double )1.5 - xhalf * y * y );
+    
+    return y;
+}
+
+//fast (approximate) inverse square root. Quite accurate.
+inline float invSqrt( const float& number )
+{
+       long i;
+       float x2, y;
+       const float threehalfs = 1.5f;
+
+       x2 = number * 0.5f;
+       y = number;
+       i = * ( long * ) &y; // evil floating point bit level hacking
+       i = 0x5f3759df - ( i >> 1 ); // what the fuck?
+       y = * ( float * ) &i;
+       y = y * ( threehalfs - ( x2 * y * y ) ); // 1st iteration
+       // y = y * ( threehalfs - ( x2 * y * y ) ); // 2nd iteration, this can be removed
+
+       return y;
+} 
+
+//fast (approximate) inverse square root. Up to 6% error.
+inline double fSqrt(const double& x) {
+   unsigned long long i = *(unsigned long long*) &x; 
+   // adjust bias
+   i  += (( long long)1023) << ((long long)52);
+   // approximation of square root
+   i >>= 1; 
+   return *(double*) &i;
+ }
+
+//fast (approximate) inverse square root. Up to 6% error.
+inline float fSqrt(const float& x) {
+   unsigned int i = *(unsigned int*) &x; 
+   // adjust bias
+   i  += 127 << 23;
+   // approximation of square root
+   i >>= 1; 
+   return *(float*) &i;
+ }
 
 } // End namespace
 

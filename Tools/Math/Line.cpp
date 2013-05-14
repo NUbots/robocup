@@ -2,9 +2,11 @@
 #include <cmath>
 #include <cstdlib>
 #include "Tools/Math/General.h"
+#include "Tools/Math/Vector2.h"
 
+#include <boost/foreach.hpp>
 
-bool operator < (const Point& point1, const Point& point2) {
+bool operator < (const Vector2<double>& point1, const Vector2<double>& point2) {
     if(point1.x < point2.x) {
         return true;
     }
@@ -18,7 +20,7 @@ bool operator < (const Point& point1, const Point& point2) {
 
 
 // Constructor
-Line::Line(){
+Line::Line() : v(0,0), a(0,0){
   // General Line Equation: A*x + B*y = C
   m_A = 0.0;
   m_B = 0.0;
@@ -29,7 +31,7 @@ Line::Line(){
 }
 
 // Constructor
-Line::Line(Point p1, Point p2){
+Line::Line(Vector2<double> p1, Vector2<double> p2){
   // General Line Equation: A*x + B*y = C
   setLineFromPoints(p1,p2);
 }
@@ -57,6 +59,7 @@ bool Line::setLine(double A, double B, double C)
       m_normaliser = sqrt(m_A*m_A + m_B*m_B);
       m_phi = acos(m_A/m_normaliser);
       m_rho = m_C/m_normaliser;
+      a = Vector2<double>(0, m_C);
   }
   else {
       //B==0 means vertical
@@ -66,7 +69,10 @@ bool Line::setLine(double A, double B, double C)
       m_phi = 0.0;
       m_rho = m_C;
       m_normaliser = m_A;
+      a = Vector2<double>(m_C, 0);
   }
+
+  v = Vector2<double>(m_B, -m_A).normalize();
 
   normaliseRhoPhi();
 
@@ -81,28 +87,22 @@ bool Line::setLine(double rho, double phi)
     m_B = sin(phi);
     m_C = rho;
     m_normaliser = sqrt(m_A*m_A + m_B*m_B);
+    if(m_B == 0)
+        a = Vector2<double>(m_C, 0);
+    else
+        a = Vector2<double>(0, m_C);
+    v = Vector2<double>(m_B, -m_A).normalize();
     normaliseRhoPhi();
     return true; // lines in this form are always valid.
 }
 
 void Line::normaliseRhoPhi()
 {
-    //force rho into [0, inf)
-//    if(m_rho < 0) {
-//        m_rho = -m_rho;
-//        m_phi = m_phi + mathGeneral::PI;   //compensate angle
-//    }
-
-    //force phi into [0, 2*pi)
     m_phi = m_phi - 2*mathGeneral::PI * floor( m_phi / (2*mathGeneral::PI) );
-//    while(m_phi < 0)
-//        m_phi -= 2*mathGeneral::PI;
-//    while(m_phi > 2*mathGeneral::PI)
-//        m_phi -= 2*mathGeneral::PI;
 }
 
-// setLineFromPoints(Point p1, Point p2): Generate the line that passes through the two given points.
-bool Line::setLineFromPoints(Point p1, Point p2)
+// setLineFromPoints(Vector2<double> p1, Vector2<double> p2): Generate the line that passes through the two given points.
+bool Line::setLineFromPoints(Vector2<double> p1, Vector2<double> p2)
 {
   // Using method found at: http://www.uwm.edu/~ericskey/TANOTES/Ageometry/node4.html
   double A,B,C;
@@ -187,15 +187,14 @@ double Line::findYFromX(double x) const
 double Line::getGradient() const
 {
   double gradient;
-  if(isValid() == false) return 0.0;
-  if(isVertical() == true)
-  {
-    gradient = 1e9; // Big number to represent infinity.
-  }
+
+  if( !isValid() )
+      gradient = 0.0;
+  else if( isVertical() )
+      gradient = 1e9; // Big number to represent infinity.
   else
-  {
-    gradient = -(m_A / m_B); // rearrange equation --> y = C/B - A/B*x
-  }
+      gradient = -(m_A / m_B); // rearrange equation --> y = C/B - A/B*x
+
   return gradient;
 }
 
@@ -214,17 +213,13 @@ double Line::getYIntercept() const
   return findYFromX(0);
 }
 
-double Line::getLinePointDistance(Point point) const
+double Line::getLinePointDistance(Vector2<double> point) const
 {
   if(!isValid()) return 0.0;
-  return fabs(m_A * point.x + m_B * point.y - m_C) / m_normaliser;
+  return abs(m_A * point.x + m_B * point.y - m_C) / m_normaliser;
 }
 
-double Line::getNormaliser() const
-{
-    return m_normaliser;
-}
-double Line::getSignedLinePointDistance(Point point) const
+double Line::getSignedLinePointDistance(Vector2<double> point) const
 {
   double distance;
   if(isValid() == false) return 0.0;
@@ -232,17 +227,19 @@ double Line::getSignedLinePointDistance(Point point) const
   return distance;
 }
 
+double Line::getNormaliser() const
+{
+    return m_normaliser;
+}
+
 double Line::getAngleBetween(Line other) const
 {
-    double d_phi = abs(m_phi - other.m_phi);
+    double angle = abs(getAngle() - other.getAngle());
 
-    //force d_phi into [0, 2*pi)
-    d_phi = d_phi - 2*mathGeneral::PI * floor( d_phi / (2*mathGeneral::PI) );
+    if(angle > mathGeneral::PI*0.5)
+        angle = mathGeneral::PI - angle;
 
-    if(d_phi > mathGeneral::PI*0.5)
-        d_phi = mathGeneral::PI - d_phi;
-
-    return d_phi;
+    return angle;
 }
 
 double Line::getRho() const
@@ -255,19 +252,26 @@ double Line::getPhi() const
     return m_phi;
 }
 
-Point Line::projectOnto(Point pt) const
+double Line::scalarProjection(Vector2<double> pt) const
 {
-    if(isVertical()) {
-        return Point(-m_C/m_A, 0);
-    }
-    else {
-        Point shifted(pt.x, pt.y - m_C);
-        double norm = shifted.dot(Point(m_A,-m_B))/(m_A*m_A+m_B*m_B);
-        return Point(m_A*norm, m_C - m_B*norm);
-    }
+    return abs((pt-a)*v);
 }
 
-bool Line::getIntersection(const Line &other, Point &pt) const
+Vector2<double> Line::projectOnto(Vector2<double> pt) const
+{
+    return v*((pt-a)*v) + a;
+}
+
+vector< Vector2<double> > Line::projectOnto(const vector< Vector2<double> >& pts) const
+{
+    vector< Vector2<double> > result;
+    BOOST_FOREACH(const Vector2<double>& pt, pts) {
+        result.push_back(v*((pt-a)*v) + a);
+    }
+    return result;
+}
+
+bool Line::getIntersection(const Line &other, Vector2<double> &pt) const
 {
     double norm = m_A*other.m_B - m_B*other.m_A;
     if(norm != 0) {
@@ -299,10 +303,11 @@ bool operator >(const Line& line1, const Line& line2)
 std::ostream& operator<< (std::ostream& output, const Line& l)
 {
     output << l.m_A << "x + " << l.m_B << "y = " << l.m_C;
+    return output;
 }
 
 // isValid(float A, float B, float C): Check if the given values create a valid line.
 bool Line::isValid(double A, double B, double C) const
 {
-  return !((A == 0.0) && (B == 0.0)); // If A = 0.0 and B = 0.0 line is not valid, as equation becomes 0.0 = C
+  return (A != 0.0) || (B != 0.0); // If A = 0.0 and B = 0.0 line is not valid, as equation becomes 0.0 = C
 }

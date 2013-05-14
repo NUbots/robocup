@@ -1,27 +1,18 @@
 #include "coloursegment.h"
 
-unsigned int dist(const PointType &x1, const PointType &x2)
-{
-    if(x1.x == x2.x)
-        return std::abs(x1.y - x2.y);
-    else if(x1.y == x2.y)
-        return std::abs(x1.x - x2.x);
-    else
-        return (x1 - x2).abs();
-}
-
-void ColourSegment::set(const PointType &start, const PointType &end, ClassIndex::Colour colour)
+void ColourSegment::set(const Point &start, const Point &end, Colour colour)
 {
     m_colour = colour;
+
     m_start = start;
     m_end = end;
-    m_length_pixels = dist(start, end);
-    m_centre.x = 0.5*(m_start.x + m_end.x);
-    m_centre.y = 0.5*(m_start.y + m_end.y);
 
+    m_length_pixels = (start - end).abs();
+
+    m_centre = (m_start + m_end)*0.5;
 }
 
-void ColourSegment::setColour(ClassIndex::Colour colour)
+void ColourSegment::setColour(Colour colour)
 {
     m_colour = colour;
 }
@@ -30,6 +21,8 @@ bool ColourSegment::join(const ColourSegment &other)
 {
     if(m_colour != other.m_colour)
         return false;   //colours don't match - segments cannot be joined
+
+
     if(m_start == other.m_end) {
         m_start = other.m_start;
     }
@@ -39,7 +32,8 @@ bool ColourSegment::join(const ColourSegment &other)
     else {
         return false;   //there are no matching endpoints
     }
-    m_length_pixels = dist(m_start, m_end);
+    m_length_pixels = (m_start - m_end).abs();
+    m_centre = (m_start + m_end)*0.5;
 
     return true;
 }
@@ -49,7 +43,7 @@ bool ColourSegment::join(const ColourSegment &other)
  */
 ostream& operator<< (ostream& output, const ColourSegment& c)
 {
-    output << c.m_start << " - " << c.m_end << " length(pixels): " << c.m_length_pixels << " colour: " << ClassIndex::getColourName(c.m_colour) << endl;
+    output << c.m_start << " - " << c.m_end << " length(pixels): " << c.m_length_pixels << " colour: " << getColourName(c.m_colour) << std::endl;
     return output;
 }
 
@@ -63,17 +57,3 @@ ostream& operator<< (ostream& output, const vector<ColourSegment>& c)
         output << c[i];
     return output;
 }
-
-///*! @brief Assignment operator for a ColourSegment.
-// */
-//ColourSegment& ColourSegment::operator= (const ColourSegment& rhs)
-//{    
-//    // Check for self-assignment!
-//    if (this != &rhs) {
-//        m_colour = rhs.m_colour;
-//        m_start = this->m_start;
-//        m_end = this->m_end;
-//        m_length_pixels = this->m_length_pixels;
-//    }
-//    return *this;
-//}

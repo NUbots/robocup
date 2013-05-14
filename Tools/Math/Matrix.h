@@ -24,23 +24,22 @@ public:
 	~Matrix();
 	Matrix(const Matrix& a);
 	
-        Matrix transp() const; // Matrix Transpose
-        Matrix getRow(int index) const; // Get Row
-        Matrix getCol(int index) const; // Get Column
+    Matrix transp() const; // Matrix Transpose
+    Matrix getRow(int index) const; // Get Row
+    Matrix getCol(int index) const; // Get Column
 	void setRow(int index, Matrix in); // Set Row
 	void setCol(int index, Matrix in); // Set Column
 
     void swapRows(unsigned int index1, unsigned int index2);
 	Matrix&	operator =  (const Matrix& a); // Overloaded Operator
-	inline double* operator []	(int i)	const {return &X[i*N];};
-	inline double& operator() (int i, int j){return X[i*N+j];};
+    inline double* operator []	(int i)	const {return &X[i*N];};
+    inline double& operator() (int i, int j){return X[i*N+j];};
 	
 	void print(); // print values
-        std::vector<float> asVector();
-        bool isValid() const;
-        bool operator ==(const Matrix& b) const;
-        bool operator !=(const Matrix& b) const
-        {return (!((*this) == b));}
+    std::vector<float> asVector();
+    bool isValid() const;
+    bool operator ==(const Matrix& b) const;
+    bool operator !=(const Matrix& b) const {return (!((*this) == b));}
 };
 
 // Overloaded Operators
