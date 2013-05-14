@@ -378,20 +378,13 @@ bool DataWrapper::updateFrame()
     m_timestamp = current_frame->GetTimestamp();
     //succesful
     field_objects->preProcess(m_timestamp);
-<<<<<<< HEAD
+
     #if VISION_WRAPPER_VERBOSITY > 1
-        debug << "DataWrapper::updateFrame(): null reference from BB" << endl;
         debug << "Frames dropped: " << numFramesDropped << endl;
     #endif
-    return true;
-=======
-#if VISION_WRAPPER_VERBOSITY > 1
-    debug << "Frames dropped: " << numFramesDropped << endl;
-#endif
-
 
     return current_frame->getWidth() > 0 && current_frame->getHeight() > 0;
->>>>>>> 5acc54f492a2165e51196a2636dcb4a311d070f7
+
 }
 
 /**

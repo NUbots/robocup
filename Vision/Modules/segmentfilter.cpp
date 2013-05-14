@@ -131,12 +131,11 @@ void SegmentFilter::preFilter(const SegmentedRegion &scans, SegmentedRegion &res
 void SegmentFilter::filter(const SegmentedRegion &scans, map<COLOUR_CLASS, vector<ColourSegment> > &result) const
 {
     switch(scans.getDirection()) {
-<<<<<<< HEAD
 
-    case VisionID::VERTICAL:
-=======
+
+
+
     case VERTICAL:
->>>>>>> 5acc54f492a2165e51196a2636dcb4a311d070f7
         BOOST_FOREACH(const ColourTransitionRule& rule, rules_v) {
             vector<ColourSegment>& segments = result[rule.getColourClass()];
             checkRuleAgainstRegion(scans, rule, segments);
@@ -146,10 +145,7 @@ void SegmentFilter::filter(const SegmentedRegion &scans, map<COLOUR_CLASS, vecto
         BOOST_FOREACH(const ColourTransitionRule& rule, rules_h) {
             vector<ColourSegment>& segments = result[rule.getColourClass()];
             checkRuleAgainstRegion(scans, rule, segments);
-<<<<<<< HEAD
 
-=======
->>>>>>> 5acc54f492a2165e51196a2636dcb4a311d070f7
         }
         break;
     default:
@@ -294,22 +290,13 @@ void SegmentFilter::loadTransitionRules(string filename)
              <<"_v.txt or _h.txt empty!\n \n" << "The robot may exhibit blindness."
              <<"=========================WARNING=========================\n" << endl;
     }
-<<<<<<< HEAD
-        //DEBUG
+
     #if VISION_FILTER_VERBOSITY > 0
         debug << "SegmentFilter::loadTransitionRules()" << endl;
         debug << "rules_h (" << rules_h.size() << ")\n" << rules_h;
         debug << "rules_v (" << rules_v.size() << ")\n" << rules_v;
     #endif
 
-=======
-    //DEBUG
-#if VISION_FILTER_VERBOSITY > 0
-    debug << "SegmentFilter::loadTransitionRules()" << endl;
-    debug << "rules_h (" << rules_h.size() << ")\n" << rules_h;
-    debug << "rules_v (" << rules_v.size() << ")\n" << rules_v;
-#endif
->>>>>>> 5acc54f492a2165e51196a2636dcb4a311d070f7
 }
 
 void SegmentFilter::loadReplacementRules(string filename)

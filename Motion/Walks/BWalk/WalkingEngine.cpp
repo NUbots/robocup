@@ -383,6 +383,7 @@ void WalkingEngine::writeParameters()
 
 void WalkingEngine::doWalk()
 {
+
     #if DEBUG_NUMOTION_VERBOSITY > 2
         debug << "WalkingEngine::doWalk()"<<endl;
     #endif
@@ -890,6 +891,10 @@ void WalkingEngine::updateKickPlayer()
 
         float length = kickPlayer.getLength();
         if(length < 0.f){cout<< "WARNING: kickPlayer.length is negative!"<< endl;}
+
+
+        cout<<"void WalkingEngine::doWalk() - p.te = "<< p.te<<endl;
+        cout<<"void WalkingEngine::doWalk() - pendulumPlayer.te = "<< pendulumPlayer.tb<<" "<<pendulumPlayer.te<<" "<<pendulumPlayer.t<<" "<<endl;
 
 
         float pos = length * (pendulumPlayer.t - pendulumPlayer.tb) / (pendulumPlayer.te - pendulumPlayer.tb);

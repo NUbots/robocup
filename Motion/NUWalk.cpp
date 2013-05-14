@@ -335,6 +335,7 @@ void NUWalk::process(WalkKickJob* job)
         debug << "NUWalk::process WalkKickJob from BWalk engine "<<endl;
        // job->summaryTo(debug);
     #endif
+
     m_ball_position = job->getBallPosition();
     m_ball_target = job->getTargetPosition();
     m_recalculate_kick_type = true;
