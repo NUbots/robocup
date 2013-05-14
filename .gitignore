@@ -1,5 +1,9 @@
 # .gitignore for NUbot
 
+# Ignore ide project files
+*.sublime-project
+*.sublime-workspace
+
 # We don't want build files in the repo
 /Build/*
 *.xcodeproj
