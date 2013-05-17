@@ -336,6 +336,22 @@ bool WalkingEngineKick::load(const char* filePath)
     }
 
     file.close();
+    cout<<"WalkingEngineKick::load(const char* filePath)"<< endl;
+    cout<<" bool initialized; "<< initialized<<endl;
+    cout<<" Value*  firstValue; "<< firstValue->evaluate()<<endl;
+    cout<<" bool  standKick; "<< standKick<<endl;
+    cout<<" Value*  preStepSizeRValue; "<< preStepSizeRValue->evaluate()<<endl;
+    cout<<" Value*  preStepSizeXValue; "<< preStepSizeXValue->evaluate()<<endl;
+    cout<<"Value*   preStepSizeYValue; "<< preStepSizeYValue->evaluate()<<endl;
+    cout<<" Value*  preStepSizeZValue; "<< preStepSizeZValue->evaluate()<<endl;
+    cout<<"Value*  stepSizeRValue; "<< stepSizeRValue->evaluate()<<endl;
+    cout<<" Value*  stepSizeXValue; "<< stepSizeXValue->evaluate()<<endl;
+    cout<<"  Value* stepSizeYValue; "<< stepSizeYValue->evaluate()<<endl;
+    cout<<" Value*  stepSizeZValue; "<< stepSizeZValue->evaluate()<<endl;
+    cout<<"  Value* durationValue; "<< durationValue->evaluate()<<endl;
+    cout<<" Value*  refXValue; "<< refXValue->evaluate()<<endl;
+    cout<<" float currentPosition; "<< currentPosition<<endl;
+    cout<<" float length; "<< length<<endl;
 
     return success;
 }
@@ -382,6 +398,7 @@ void WalkingEngineKick::init()
       }
       if(pos > length)
         length = pos;
+      cout<<" WalkingEngineKick::init() - length updated to be "<< length <<endl;
     }
   }
   currentPosition = 0.f;

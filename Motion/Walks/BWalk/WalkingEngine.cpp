@@ -75,7 +75,8 @@ template<typename T> ostream& operator<<(ostream& output, const Vector2<T>& v)
     return output;
 }
 
-WalkingEngine::WalkingEngine(NUSensorsData* data, NUActionatorsData* actions, NUInverseKinematics* ik) : NUWalk(data,actions), emergencyShutOff(false), currentMotionType(stand),  m_ik(ik), instable(true), beginOfStable(0), m_kick_type(KickPlayer::none),kickPlayer()
+WalkingEngine::WalkingEngine(NUSensorsData* data, NUActionatorsData* actions, NUInverseKinematics* ik) : NUWalk(data,actions), emergencyShutOff(false), currentMotionType(stand),
+    m_ik(ik), instable(true), beginOfStable(0), m_kick_type(KickPlayer::none),kickPlayer()
 {
   observedPendulumPlayer.walkingEngine = this;
 
@@ -836,7 +837,8 @@ void WalkingEngine::updatePendulumPlayer()
   {
     if(p.balance)
       observedPendulumPlayer.applyCorrection(leftError, rightError, m_cycle_time);
-
+    cout<<"void WalkingEngine::updatePendulumPlayer() - beg p.te = "<< p.te<<endl;
+    cout<<"void WalkingEngine::updatePendulumPlayer() - beg pendulumPlayer.te = "<< pendulumPlayer.tb<<" "<<pendulumPlayer.te<<" "<<pendulumPlayer.t<<" "<<endl;
     pendulumPlayer = observedPendulumPlayer;
     pendulumPlayer.seek(p.observerMeasurementDelay * 0.001f);
 
@@ -859,6 +861,8 @@ void WalkingEngine::updatePendulumPlayer()
       }
     }
   }
+  //cout<<"void WalkingEngine::updatePendulumPlayer() -end p.te = "<< p.te<<endl;
+  //cout<<"void WalkingEngine::updatePendulumPlayer() -end pendulumPlayer.te = "<< pendulumPlayer.tb<<" "<<pendulumPlayer.te<<" "<<pendulumPlayer.t<<" "<<endl;
 }
 
 void WalkingEngine::updateKickPlayer()
@@ -868,20 +872,20 @@ void WalkingEngine::updateKickPlayer()
     #endif
   if(currentMotionType == stepping)
     {
-    if(!kickPlayer.isActive() && /*pendulumPlayer.kickType*/getKickType( m_ball_position, m_ball_target)!= KickPlayer::none)
+    if(!kickPlayer.isActive() && pendulumPlayer.kickType!= KickPlayer::none)
     {
         #if DEBUG_NUMOTION_VERBOSITY > 2
             debug << "WalkingEngine::updateKickPlayer() (!kickPlayer.isActive() && pendulumPlayer.kickType != KickPlayer::none) so init kickPlayer"<<endl;
         #endif
-        kickPlayer.init(/*pendulumPlayer.kickType*/getKickType( m_ball_position, m_ball_target), m_ball_position, m_ball_target);
+        kickPlayer.init(pendulumPlayer.kickType, m_ball_position, m_ball_target);
     }
     if(kickPlayer.isActive())
     {
-      if(kickPlayer.getType() != /*pendulumPlayer.kickType*/getKickType( m_ball_position, m_ball_target)){
+      if(kickPlayer.getType() != pendulumPlayer.kickType){
         #if DEBUG_NUMOTION_VERBOSITY > 2
             debug << "WalkingEngine::updateKickPlayer() kickPlayer.isActive() and (kickPlayer.getType() != pendulumPlayer.kickType) so stop kickPlayer"<<endl;
         #endif
-        //kickPlayer.stop();
+        kickPlayer.stop();
       }
       else
       {
@@ -893,11 +897,11 @@ void WalkingEngine::updateKickPlayer()
         if(length < 0.f){cout<< "WARNING: kickPlayer.length is negative!"<< endl;}
 
 
-        cout<<"void WalkingEngine::doWalk() - p.te = "<< p.te<<endl;
-        cout<<"void WalkingEngine::doWalk() - pendulumPlayer.te = "<< pendulumPlayer.tb<<" "<<pendulumPlayer.te<<" "<<pendulumPlayer.t<<" "<<endl;
+        //cout<<"void WalkingEngine::doWalk() - p.te = "<< p.te<<endl;
+        //cout<<"void WalkingEngine::doWalk() - pendulumPlayer.te = "<< pendulumPlayer.tb<<" "<<pendulumPlayer.te<<" "<<pendulumPlayer.t<<" "<<endl;
 
 
-        float pos = length * (pendulumPlayer.t - pendulumPlayer.tb) / (pendulumPlayer.te - pendulumPlayer.tb);
+        float pos = length* (pendulumPlayer.t - pendulumPlayer.tb) / (pendulumPlayer.te - pendulumPlayer.tb);
     #if DEBUG_NUMOTION_VERBOSITY > 2
         debug << "WalkingEngine::updateKickPlayer() !kickPlayer.isActive() calculate pos = "<< pos <<endl;
     #endif
@@ -1289,7 +1293,7 @@ void WalkingEngine::generateDummyOutput(/*WalkingEngineOutput& walkingEngineOutp
   // leaving joint data untouched
 }
 
-void WalkingEngine::generateNextStepSize(SupportLeg nextSupportLeg, StepType lastStepType, /*KickPlayer::KickType lastKickType,*/ PendulumParameters& next)
+void WalkingEngine::generateNextStepSize(SupportLeg nextSupportLeg, StepType lastStepType, KickPlayer::KickType last_kick_type, PendulumParameters& next)
 {
   if(nextSupportLeg == lastNextSupportLeg)
     next = nextPendulumParameters;
@@ -1386,15 +1390,15 @@ void WalkingEngine::generateNextStepSize(SupportLeg nextSupportLeg, StepType las
           }
         }
 
-        else if(m_kick_type != KickPlayer::none)
+        else if( last_kick_type != KickPlayer::none)
         {
-          kickPlayer.getKickStepSize(m_kick_type, next.s.rotation, next.s.translation);
-          next.r.x = kickPlayer.getKickRefX(m_kick_type, next.r.x);
+          kickPlayer.getKickStepSize(last_kick_type, next.s.rotation, next.s.translation);
+          next.r.x = kickPlayer.getKickRefX(last_kick_type, next.r.x);
           next.rXLimit.max = next.r.x + p.walkRefXSoftLimit.max;
           next.rXLimit.min = next.r.x + p.walkRefXSoftLimit.min;
           next.rYLimit.max = p.walkRefY + p.walkRefYLimitAtFullSpeedX.max;
           next.rYLimit.min = p.walkRefY + p.walkRefYLimitAtFullSpeedX.min;
-          float duration = kickPlayer.getKickDuration(m_kick_type);
+          float duration = kickPlayer.getKickDuration(last_kick_type);
           if(duration != 0.f)
           {
             next.te = duration * 0.25f;
@@ -1817,7 +1821,7 @@ void WalkingEngine::ObservedPendulumPlayer::applyCorrection(const Vector3<>& lef
 
 void WalkingEngine::PendulumPlayer::generateNextStepSize()
 {
-  walkingEngine->generateNextStepSize(supportLeg == right ? left : right, type, next);
+  walkingEngine->generateNextStepSize(supportLeg == right ? left : right , type, kickType, next);
 }
 
 
