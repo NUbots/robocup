@@ -324,10 +324,10 @@ private:
   {
   public:
     enum KickType{
-        none =0, /**< do not kick */
-        left =1, /**< kick using the left foot */
+        none  = 0, /**< do not kick */
+        left  = 1, /**< kick using the left foot */
         right = 2, /**< kick using the right foot */
-        sidewardsLeft = 3,
+        sidewardsLeft  = 3,
         sidewardsRight = 4
     };
     const static int numOfKickTypes = 5;
@@ -341,7 +341,7 @@ private:
     float getLength() const;
     float getCurrentPosition() const;
     void apply(Stance& stance);
-    void stop() {kick = 0;}
+    void stop() { kick = 0; }
     inline bool isActive() const {return kick ? true : false;}
     inline KickType getType() const {return type;}
     void setParameters(const Vector2<>& ballPosition, const Vector2<>& target);
@@ -354,6 +354,7 @@ private:
     float getKickDuration(KickType type) const;
     float getKickRefX(KickType type, float defaultValue) const;
     string getName(KickType t);
+
   private:
     WalkingEngineKick* kick;
     bool mirrored;

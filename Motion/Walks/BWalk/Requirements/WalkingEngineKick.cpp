@@ -355,11 +355,11 @@ WalkingEngineKick::~WalkingEngineKick()
 
 void WalkingEngineKick::addPhase(Track track, Value* value)
 {
-    #if DEBUG_NUMOTION_VERBOSITY > 2
+#if DEBUG_NUMOTION_VERBOSITY > 2
         debug << "WalkingEngineKick::addPhase Track"<<endl;
         debug << "WalkingEngineKick::addPhase Track"<<(int)track <<endl;
         debug << "WalkingEngineKick::addPhase value"<<value->evaluate() <<endl;
-    #endif
+#endif
   tracks[track].push_back(Phase(value));
 }
 
@@ -367,6 +367,12 @@ void WalkingEngineKick::init()
 {
   const bool precomputeLength = !standKick;
   length = -1.f;
+
+  debug <<__PRETTY_FUNCTION__ 
+            << ": numOfTracks: " << numOfTracks
+            << ", precomputeLength: " << precomputeLength
+            << std::endl;
+
   for(int i = 0; i < numOfTracks; ++i)
   {
     currentPhases[i] = -1;
@@ -374,16 +380,28 @@ void WalkingEngineKick::init()
     {
       std::vector<Phase>& phases = tracks[i];
       float pos = 0.f;
+
+#error The phases appear to be incorrect (should check them before this method call). -MM
       for(int i = 0, end = phases.size(); i < end; ++i)
       {
         Phase& phase = phases[i];
         phase.evaluateLength(pos);
         pos = phase.end;
       }
+// #if DEBUG_NUMOTION_VERBOSITY > 2
+      debug <<__PRETTY_FUNCTION__ 
+            << ": i: " << i
+            << ": pos: " << pos
+            << ", length: " << length
+            << std::endl;
+// #endif
       if(pos > length)
         length = pos;
     }
   }
+// #if DEBUG_NUMOTION_VERBOSITY > 2
+  debug <<__PRETTY_FUNCTION__ << ", length: " << length << std::endl;
+// #endif
   currentPosition = 0.f;
   initialized = true;
 }
@@ -423,25 +441,25 @@ void WalkingEngineKick::setParameters(const Vector2<>& ballPosition, const Vecto
 
 bool WalkingEngineKick::seek(float s)
 {
-    #if DEBUG_NUMOTION_VERBOSITY > 2
-        debug << "WalkingEngineKick::seek - start "<<endl;
-    #endif
+#if DEBUG_NUMOTION_VERBOSITY > 2
+      debug << "WalkingEngineKick::seek - start "<<endl;
+#endif
   if(!initialized)
     return false;
-    #if DEBUG_NUMOTION_VERBOSITY > 2
-        debug << "WalkingEngineKick::seek - add to current position"<<endl;
-    #endif
+#if DEBUG_NUMOTION_VERBOSITY > 2
+      debug << "WalkingEngineKick::seek - add to current position"<<endl;
+#endif
   currentPosition += s * 1000.f;
 
-    #if DEBUG_NUMOTION_VERBOSITY > 2
-        debug << "WalkingEngineKick::seek - initialise phases"<<endl;
-    #endif
+#if DEBUG_NUMOTION_VERBOSITY > 2
+      debug << "WalkingEngineKick::seek - initialise phases"<<endl;
+#endif
   std::vector<Phase>& phases = tracks[0];
 
   int preLastPhase = phases.size() - 2;
-    #if DEBUG_NUMOTION_VERBOSITY > 2
-        debug << "WalkingEngineKick::seek - return current phases"<<endl;
-    #endif
+#if DEBUG_NUMOTION_VERBOSITY > 2
+      debug << "WalkingEngineKick::seek - return current phases"<<endl;
+#endif
   return currentPhases[0] < preLastPhase || currentPosition < phases.back().start;
 }
 
@@ -458,7 +476,7 @@ float WalkingEngineKick::getValue(Track track, float externValue) //where called
     currentPhase = currentPhases[track] = 0;
   //WARNING the following boolean was conjugated in the original code
   if(currentPhase > phasesSize - 1){
-      std::cout<< "WalkingEngineKick::getValue(Track track, float externValue) asserted the following false: currentPhase > phasesSize - 1"<<endl;
+      std::cout << "WalkingEngineKick::getValue(Track track, float externValue) asserted the following false: currentPhase > phasesSize - 1"<<endl;
   }
   Phase* phase = &phases[currentPhase];
   Phase* nextPhase = &phases[currentPhase + 1];
