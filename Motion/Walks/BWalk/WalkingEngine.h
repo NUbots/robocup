@@ -505,7 +505,7 @@ private:
   void generateDummyOutput();
 
   //void generateNextStepSize(SupportLeg nextSupportLeg, StepType lastStepType, WalkRequest::KickType lastKickType, PendulumParameters& next);
-  void generateNextStepSize(SupportLeg nextSupportLeg, StepType lastStepType, PendulumParameters& next);
+  void generateNextStepSize(SupportLeg nextSupportLeg, StepType lastStepType, KickPlayer::KickType last_kick_type, PendulumParameters& next);
   SupportLeg lastNextSupportLeg;
   PendulumParameters nextPendulumParameters;
   Pose2D lastSelectedSpeed;

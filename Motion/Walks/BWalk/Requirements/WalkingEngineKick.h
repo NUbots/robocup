@@ -152,6 +152,8 @@ private:
     const char* message;
   };
 
+  /*! @brief A phase of the motion
+    */
   class Phase
   {
   public:
@@ -180,7 +182,6 @@ private:
 
   bool initialized;
   Value* firstValue;
-
   bool standKick;
   Value* preStepSizeRValue;
   Value* preStepSizeXValue;
