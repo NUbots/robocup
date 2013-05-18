@@ -179,7 +179,6 @@ WalkingEngine::WalkingEngine(NUSensorsData* data, NUActionatorsData* actions, NU
   m_walk_parameters.load("BWalk");
   writeParameters();
   
-#error Check that phases are correctly initialised at this point. -MM
   init();
 }
 
@@ -594,8 +593,8 @@ void WalkingEngine::updateObservedPendulumPlayer()
   case stand:
   case standLeft:
   case standRight:
-      if(kickPlayer.isActive())
-         break;
+    if(kickPlayer.isActive())
+      break;
 #if DEBUG_NUMOTION_VERBOSITY > 2
     debug<<"WalkingEngine::updateObservedPendulumPlayer() - 1st swritch current motion standRight case"<<endl;
 #endif
@@ -655,29 +654,29 @@ void WalkingEngine::updateObservedPendulumPlayer()
         assert(false);
         break;
       }
-#if DEBUG_NUMOTION_VERBOSITY > 2
-       debug<<"WalkingEngine::updateObservedPendulumPlayer() - 1"<<endl;
-#endif
+// #if DEBUG_NUMOTION_VERBOSITY > 2
+//        debug<<"WalkingEngine::updateObservedPendulumPlayer() - 1"<<endl;
+// #endif
       lastNextSupportLeg = supportLeg;
-#if DEBUG_NUMOTION_VERBOSITY > 2
-      debug<<"WalkingEngine::updateObservedPendulumPlayer() - 2"<<endl;
-#endif
+// #if DEBUG_NUMOTION_VERBOSITY > 2
+//       debug<<"WalkingEngine::updateObservedPendulumPlayer() - 2"<<endl;
+// #endif
       lastSelectedSpeed = Pose2D();
-#if DEBUG_NUMOTION_VERBOSITY > 2
-      debug<<"WalkingEngine::updateObservedPendulumPlayer() - 3"<<endl;
-#endif
+// #if DEBUG_NUMOTION_VERBOSITY > 2
+//       debug<<"WalkingEngine::updateObservedPendulumPlayer() - 3"<<endl;
+// #endif
       nextPendulumParameters.s = StepSize();
-#if DEBUG_NUMOTION_VERBOSITY > 2
-      debug<<"WalkingEngine::updateObservedPendulumPlayer() - 4"<<endl;
-#endif
+// #if DEBUG_NUMOTION_VERBOSITY > 2
+//       debug<<"WalkingEngine::updateObservedPendulumPlayer() - 4"<<endl;
+// #endif
       observedPendulumPlayer.init(stepType, p.observerMeasurementDelay * -0.001f, supportLeg, r, x0, k, m_cycle_time);
-#if DEBUG_NUMOTION_VERBOSITY > 2
-      debug<<"WalkingEngine::updateObservedPendulumPlayer() - 5"<<endl;
-#endif
+// #if DEBUG_NUMOTION_VERBOSITY > 2
+//       debug<<"WalkingEngine::updateObservedPendulumPlayer() - 5"<<endl;
+// #endif
       currentMotionType = stepping;
-#if DEBUG_NUMOTION_VERBOSITY > 2
-      debug<<"WalkingEngine::updateObservedPendulumPlayer() - 6"<<endl;
-#endif
+// #if DEBUG_NUMOTION_VERBOSITY > 2
+//       debug<<"WalkingEngine::updateObservedPendulumPlayer() - 6"<<endl;
+// #endif
     }
     break;
   default:
@@ -868,37 +867,48 @@ void WalkingEngine::updatePendulumPlayer()
 
 void WalkingEngine::updateKickPlayer()
 {
-#if DEBUG_NUMOTION_VERBOSITY > 2
-        debug << "WalkingEngine::updateKickPlayer() start"<<endl;
-#endif
+// #if DEBUG_NUMOTION_VERBOSITY > 2
+  debug << __PRETTY_FUNCTION__ << ": start" << endl;
+// #endif
+
+  // If the robot is stepping (instead of stand, standLeft, or standRight)
   if(currentMotionType == stepping)
+  {
+    // If not currently kicking, but a kick is planned
+    if(!kickPlayer.isActive() && pendulumPlayer.kickType != KickPlayer::none)
     {
-    if(!kickPlayer.isActive() && pendulumPlayer.kickType!= KickPlayer::none)
-    {
-#if DEBUG_NUMOTION_VERBOSITY > 2
-            debug << "WalkingEngine::updateKickPlayer() (!kickPlayer.isActive() && pendulumPlayer.kickType != KickPlayer::none) so init kickPlayer"<<endl;
-#endif
-        kickPlayer.init(pendulumPlayer.kickType, m_ball_position, m_ball_target);
+      // initialize the kick
+// #if DEBUG_NUMOTION_VERBOSITY > 2
+      debug << __PRETTY_FUNCTION__ << ": (!kickPlayer.isActive() && pendulumPlayer.kickType != KickPlayer::none) so init kickPlayer"<<endl;
+// #endif
+      kickPlayer.init(pendulumPlayer.kickType, m_ball_position, m_ball_target);
     }
+
+    // If the robot is kicking/ready to kick
     if(kickPlayer.isActive())
     {
-      if(kickPlayer.getType() != pendulumPlayer.kickType){
-#if DEBUG_NUMOTION_VERBOSITY > 2
-        debug << "WalkingEngine::updateKickPlayer() kickPlayer.isActive() and (kickPlayer.getType() != pendulumPlayer.kickType) so stop kickPlayer"<<endl;
-#endif
+      if(kickPlayer.getType() != pendulumPlayer.kickType)
+      {
+        // Stop the kickplayer's kick (i.e. go with the pendulum player's choice)
+// #if DEBUG_NUMOTION_VERBOSITY > 2
+        debug << __PRETTY_FUNCTION__ << ": kickPlayer.isActive() and (kickPlayer.getType() != pendulumPlayer.kickType) so stop kickPlayer"<<endl;
+// #endif
         kickPlayer.stop();
       }
-      else
+      else // If the kickPlayer and pendulumPlayer agree
       {
-#if DEBUG_NUMOTION_VERBOSITY > 2
-            debug << "WalkingEngine::updateKickPlayer() !kickPlayer.isActive() so getLength"<<endl;
-#endif
+// #if DEBUG_NUMOTION_VERBOSITY > 2
+        debug << __PRETTY_FUNCTION__ << ": !kickPlayer.isActive() so getLength"<<endl;
+// #endif
 
+        // Get the length of the kick 'motion'?
         float length = kickPlayer.getLength();
-        if(length < 0.f) { cout<< "WARNING: kickPlayer.length is negative!"<< endl; }
+
+        if(length < 0.f) 
+          cout<< "WARNING: kickPlayer.length is negative!"<< endl;
 
         // std::cout <<__PRETTY_FUNCTION__ << ": " << "p.te = " << p.te << endl;
-        std::cout <<__PRETTY_FUNCTION__ << ": "
+        std::cout << __PRETTY_FUNCTION__ << ": "
                   << std::endl << "    "
                   << "length: " << length
                   << std::endl << "    "
@@ -909,11 +919,13 @@ void WalkingEngine::updateKickPlayer()
                   << " }"
                   << std::endl;
 
-
+        // Use the length and elapsed time to calculate at which position 
+        // in the kick motion the robot should be.
+        // (Note: A position here is a pose?)
         float pos = length * (pendulumPlayer.t - pendulumPlayer.tb) / (pendulumPlayer.te - pendulumPlayer.tb);
 
 
-#if DEBUG_NUMOTION_VERBOSITY > 2
+// #if DEBUG_NUMOTION_VERBOSITY > 2
         debug     <<__PRETTY_FUNCTION__ << ": "
                   << std::endl << "    "
                   << "length: " << length
@@ -926,34 +938,42 @@ void WalkingEngine::updateKickPlayer()
                   << std::endl;
         debug << __PRETTY_FUNCTION__ << ": !kickPlayer.isActive() calculate pos = "<< pos <<endl;
 
-        debug << "WalkingEngine::updateKickPlayer() !kickPlayer.isActive() seek"<<endl;
-#endif
+        debug << __PRETTY_FUNCTION__ << ": !kickPlayer.isActive() seek"<<endl;
+// #endif
 
+        // Move the robot's pose forward in time to the appropriate position
+        // in the kick script.
         kickPlayer.seek(std::max(pos - kickPlayer.getCurrentPosition(), 0.f));
 
-#if DEBUG_NUMOTION_VERBOSITY > 2
-        debug << "WalkingEngine::updateKickPlayer() !kickPlayer.isActive() end seek"<<endl;
-#endif
+// #if DEBUG_NUMOTION_VERBOSITY > 2
+        debug << __PRETTY_FUNCTION__ << ": !kickPlayer.isActive() end seek"<<endl;
+// #endif
       }
     }
   }
-  else
+  else // If the robot is not currently stepping
   {
-    if(kickPlayer.isActive()){
-#if DEBUG_NUMOTION_VERBOSITY > 2
-            debug << "WalkingEngine::updateKickPlayer() kickplayer.seek"<<endl;
-#endif
-        kickPlayer.seek(m_cycle_time);
-    }   else if(KickPlayer::KickType(getKickType( m_ball_position, m_ball_target)) != KickPlayer::none && currentMotionType == requestedMotionType && (requestedMotionType == standLeft || requestedMotionType == standRight)){
-#if DEBUG_NUMOTION_VERBOSITY > 2
-            debug << "WalkingEngine::updateKickPlayer() kickplayer.init"<<endl;
-#endif
-        kickPlayer.init( getKickType( m_ball_position, m_ball_target),  m_ball_position, m_ball_target);
+    // If the robot is kicking/ready to kick
+    if(kickPlayer.isActive())
+    {
+// #if DEBUG_NUMOTION_VERBOSITY > 2
+      debug << __PRETTY_FUNCTION__ << ": kickplayer.seek"<<endl;
+// #endif
+      kickPlayer.seek(m_cycle_time);
+    } 
+    else if(KickPlayer::KickType(getKickType( m_ball_position, m_ball_target)) != KickPlayer::none 
+            && currentMotionType == requestedMotionType 
+            && (requestedMotionType == standLeft || requestedMotionType == standRight))
+    {
+// #if DEBUG_NUMOTION_VERBOSITY > 2
+      debug << __PRETTY_FUNCTION__ << ": kickplayer.init"<<endl;
+// #endif
+      kickPlayer.init( getKickType( m_ball_position, m_ball_target),  m_ball_position, m_ball_target);
     }
   }
-#if DEBUG_NUMOTION_VERBOSITY > 2
-        debug << "WalkingEngine::updateKickPlayer() finish"<<endl;
-#endif
+// #if DEBUG_NUMOTION_VERBOSITY > 2
+  debug << __PRETTY_FUNCTION__ << ": finish"<<endl;
+// #endif
 }
 
 WalkingEngine::KickPlayer::KickType WalkingEngine::getKickType( Vector2<> position, Vector2<> target){
@@ -2231,13 +2251,12 @@ WalkingEngine::KickPlayer::KickPlayer() : kick(NULL)
     sprintf(filePath, config_filepath.c_str(), getName(KickType(i * 2 + 1)).c_str());
     string s(filePath);
 #if DEBUG_NUMOTION_VERBOSITY > 2
-        debug << "WalkingEngine::KickPlayer::KickPlayer() loading walk-kick from file"<<s<<endl;
+        debug << __PRETTY_FUNCTION__ << ": loading walk-kick from file"<<s<<endl;
 #endif
     kicks.push_back(WalkingEngineKick());
-    cout << "WalkingEngineKick load success: " << kicks.back().load(filePath) << endl;
-    //kicks[i].load(filePath);
+    bool success = kicks.back().load(filePath);
+    cout << __PRETTY_FUNCTION__ << ": load success: " << success << endl;
   }
-
 }
 
 string  WalkingEngine::KickPlayer::getName(KickType t)
@@ -2305,10 +2324,10 @@ float WalkingEngine::KickPlayer::getKickRefX(KickType type, float defaultValue) 
 void WalkingEngine::KickPlayer::init(KickType type, const Vector2<>& ballPosition, const Vector2<>& target)
 {
 #if DEBUG_NUMOTION_VERBOSITY > 2
-        debug << " WalkingEngine::KickPlayer::init "<<endl;
+  debug << " WalkingEngine::KickPlayer::init "<<endl;
 #endif
   assert(!kick);    
-  mirrored = (type - 1) % 2 != 0;//If even
+  mirrored = (type - 1) % 2 != 0; //If even
   this->type = type;
   kick = &kicks[mirrored ? (type - 2) / 2 : (type - 1) / 2];   
   setParameters(ballPosition, target);    
@@ -2319,10 +2338,12 @@ void WalkingEngine::KickPlayer::seek(float deltaT)
 {
    if(kick)
     if(!kick->seek(deltaT))
+    {
 #if DEBUG_NUMOTION_VERBOSITY > 2
       debug << " WalkingEngine::KickPlayer::seek():: seek failed -  - setting kick to none "<<endl;
 #endif
       kick = 0;
+    }
 }
 
 float WalkingEngine::KickPlayer::getLength() const

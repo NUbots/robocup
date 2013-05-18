@@ -5,11 +5,12 @@
 */
 
 #include <cstring>
+#include <iomanip>
+#include <ctime>
 
 #include "WalkingEngineKick.h"
 #include "File.h"
 #include "debug.h"
-#include <ctime>
 
 bool WalkingEngineKick::String::operator==(const WalkingEngineKick::String& other) const
 {
@@ -397,27 +398,28 @@ void WalkingEngineKick::init()
       std::vector<Phase>& phases = tracks[i];
       float pos = 0.f;
 
-#error The phases appear to be incorrect (should check them before this method call). -MM
-      for(int i = 0, end = phases.size(); i < end; ++i)
+// #error The phases appear to be incorrect (should check them before this method call). -MM
+      for(int j = 0, end = phases.size(); j < end; ++j)
       {
-        Phase& phase = phases[i];
+        Phase& phase = phases[j];
         phase.evaluateLength(pos);
         pos = phase.end;
       }
 // #if DEBUG_NUMOTION_VERBOSITY > 2
       debug <<__PRETTY_FUNCTION__ 
-            << ": i: " << i
-            << ": pos: " << pos
-            << ", length: " << length
+            << ": i: "      << std::setw( 2) << i
+            << ", pos: "    << std::setw(12) << pos
+            << ", length: " << std::setw(12) << length
             << std::endl;
 // #endif
       if(pos > length)
         length = pos;
-      cout<<" WalkingEngineKick::init() - length updated to be "<< length <<endl;
+
+      cout << " WalkingEngineKick::init() - length updated to be "<< length <<endl;
     }
   }
 // #if DEBUG_NUMOTION_VERBOSITY > 2
-  debug <<__PRETTY_FUNCTION__ << ", length: " << length << std::endl;
+  debug <<__PRETTY_FUNCTION__ << ": Resulting length: " << length << std::endl;
 // #endif
   currentPosition = 0.f;
   initialized = true;
@@ -454,29 +456,36 @@ void WalkingEngineKick::setParameters(const Vector2<>& ballPosition, const Vecto
 {
   this->ballPosition = ballPosition;
   this->target = target;
+
+// #if DEBUG_NUMOTION_VERBOSITY > 2
+  debug << __PRETTY_FUNCTION__
+        << ": ballPosition = " << ballPosition
+        << ", target = "       << target
+        << endl;
+// #endif 
 }
 
 bool WalkingEngineKick::seek(float s)
 {
-#if DEBUG_NUMOTION_VERBOSITY > 2
-      debug << "WalkingEngineKick::seek - start "<<endl;
-#endif
+// #if DEBUG_NUMOTION_VERBOSITY > 2
+//       debug << "WalkingEngineKick::seek - start "<<endl;
+// #endif
   if(!initialized)
     return false;
-#if DEBUG_NUMOTION_VERBOSITY > 2
-      debug << "WalkingEngineKick::seek - add to current position"<<endl;
-#endif
+// #if DEBUG_NUMOTION_VERBOSITY > 2
+//       debug << "WalkingEngineKick::seek - add to current position"<<endl;
+// #endif
   currentPosition += s * 1000.f;
 
-#if DEBUG_NUMOTION_VERBOSITY > 2
-      debug << "WalkingEngineKick::seek - initialise phases"<<endl;
-#endif
+// #if DEBUG_NUMOTION_VERBOSITY > 2
+//       debug << "WalkingEngineKick::seek - initialise phases"<<endl;
+// #endif
   std::vector<Phase>& phases = tracks[0];
 
   int preLastPhase = phases.size() - 2;
-#if DEBUG_NUMOTION_VERBOSITY > 2
-      debug << "WalkingEngineKick::seek - return current phases"<<endl;
-#endif
+// #if DEBUG_NUMOTION_VERBOSITY > 2
+//       debug << "WalkingEngineKick::seek - return current phases"<<endl;
+// #endif
   return currentPhases[0] < preLastPhase || currentPosition < phases.back().start;
 }
 
