@@ -83,10 +83,10 @@ public:
     void load(const string& name);
     
     size_t size() const;
+    
 private:
     void setGains(vector<vector<float> >& gains, unsigned int& numgains, const vector<vector<float> >& newgains);
-public:
-private:
+
     string m_name;                             //!< the name of the walk parameter set
     vector<float> m_max_speeds;                //!< stores the maximum speeds (x,y,theta) allowed by the walk engine
     vector<float> m_max_accelerations;         //!< stores the maximum accelerations (x,y,theta) allowed by the walk engine

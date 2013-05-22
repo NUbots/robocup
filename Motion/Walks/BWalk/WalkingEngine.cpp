@@ -454,6 +454,7 @@ void WalkingEngine::update(/*WalkingEngineOutput& walkingEngineOutput*/)
             step.y = -maxStep.y;
         
         balanceStepSize += step;
+
 #if DEBUG_NUMOTION_VERBOSITY > 2
             debug << "WalkingEngine::update() doing updateMotionRequest()"<<endl;
 #endif
@@ -983,9 +984,9 @@ WalkingEngine::KickPlayer::KickType WalkingEngine::getKickType( Vector2<> positi
         return m_kick_type;
     }
 
-    if(m_recalculate_kick_type){
+    if(m_recalculate_kick_type) {
 #if DEBUG_NUMOTION_VERBOSITY > 2
-            debug << "WalkingEngine::getKickType(...)"<<endl;
+            debug << __PRETTY_FUNCTION__ << ": m_recalculate_kick_type == true;" << endl;
 #endif
 
         float ball_x = position.x;//Relative coords
@@ -995,7 +996,7 @@ WalkingEngine::KickPlayer::KickType WalkingEngine::getKickType( Vector2<> positi
         float target_y = target.y;
         //Check for division by zero or zero vectors:
         if (target_x - ball_x == 0 and target_y == ball_y) {
-            cout<<"WalkingEngine::KickPlayer::KickType WalkingEngine::getKickType -  ball postition and target position identical" <<endl;
+            cout << __PRETTY_FUNCTION__ << ": ball postition and target position identical" << endl;
             m_recalculate_kick_type = false;
             m_kick_type = KickPlayer::none;
             return m_kick_type;
@@ -1014,31 +1015,34 @@ WalkingEngine::KickPlayer::KickType WalkingEngine::getKickType( Vector2<> positi
             }
         }
 
-        float angle_margin = mathGeneral::PI /2.0f; //triggers sidekick too often with -45 deg to 45 deg front kick zone
+        // triggers sidekick too often with -45 deg to 45 deg front kick zone
+        float angle_margin = mathGeneral::PI / 2.0f;
 
         if(theta > angle_margin)
         {
             m_kick_type = KickPlayer::sidewardsRight;
-            cout<<"WalkingEngine::KickPlayer::KickType WalkingEngine::getKickType - kick type set to sidewardsLeft"<< endl;
+            cout << __PRETTY_FUNCTION__ << ": kick type set to sidewardsLeft"<< endl;
         }
-        else if(theta <= angle_margin and theta >= -angle_margin and ball_y>=0)
+        else if(theta <= angle_margin and theta >= -angle_margin and ball_y >= 0)
         {
             m_kick_type = KickPlayer::left;
-            cout<<"WalkingEngine::KickPlayer::KickType WalkingEngine::getKickType - kick type set to left"<< endl;
+            cout << __PRETTY_FUNCTION__ << ": kick type set to left"<< endl;
         }
         else if(theta < -angle_margin)
         {
             m_kick_type = KickPlayer::sidewardsLeft;
-            cout<<"WalkingEngine::KickPlayer::KickType WalkingEngine::getKickType - kick type set to sidewardsRight"<< endl;
+            cout << __PRETTY_FUNCTION__ << ": kick type set to sidewardsRight"<< endl;
         }
-        else if(theta >= -angle_margin and theta <= angle_margin and ball_y<0)
+        else if(theta >= -angle_margin and theta <= angle_margin and ball_y < 0)
         {
             m_kick_type = KickPlayer::right;
-            cout<<"WalkingEngine::KickPlayer::KickType WalkingEngine::getKickType - kick type set to right"<< endl;
+            cout << __PRETTY_FUNCTION__ << ": kick type set to right"<< endl;
         }
         else
         {
-            std::cout << "No kick available for position: (" << ball_x << ", " << ball_y << ")" << std::endl;
+            std::cout << __PRETTY_FUNCTION__ 
+                      << ": No kick available for position: (" 
+                      << ball_x << ", " << ball_y << ")" << std::endl;
             m_kick_type = KickPlayer::none;
         }
         m_recalculate_kick_type = false;
@@ -2239,7 +2243,9 @@ float WalkingEngine::PendulumPlayer::smoothShape(float r) const
   }
 }
 
-/*! @brief Loads the kick config files from the config directory. The number of kicks loaded is 2 (==kicks.size()), the other two kicks are derived by reflecting the left kicks.
+/*! @brief Loads the kick config files from the config directory.
+           The number of kicks loaded is 2 (==kicks.size()), the other two
+           kicks are derived by reflecting the left kicks.
 */
 WalkingEngine::KickPlayer::KickPlayer() : kick(NULL)
 {

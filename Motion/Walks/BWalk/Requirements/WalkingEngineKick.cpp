@@ -274,7 +274,7 @@ bool WalkingEngineKick::load(const char* filePath, char* buf)
     }
     catch(ParseException e)
     {
-      std::cout<< "WalkingEngineKick::load(const char* filePath, char* buf) -"<< filePath << ":" << lineNumber << ": " << e.message<<endl;
+      std::cout<< "WalkingEngineKick::load(const char* filePath, char* buf) -"<< filePath << ":" << lineNumber << ": " << e.message << endl;
       (void)e;
       error = true;
     }

@@ -357,6 +357,7 @@ void SensorReadManager::GetFilteredLikelySensorFailures(
         };
     // Note: These vectors should be initialised using initialiser lists
     //       once we start using c++11.
+    // (preferably, they would be accessed from a global, well-known location)
     static std::vector<int> sensors_right_arm(arr_sensors_right_arm, arr_sensors_right_arm + sizeof(arr_sensors_right_arm) / sizeof(arr_sensors_right_arm[0]));
     static std::vector<int> sensors_left_arm (arr_sensors_left_arm , arr_sensors_left_arm  + sizeof(arr_sensors_left_arm ) / sizeof(arr_sensors_left_arm [0]));
     static std::vector<int> sensors_right_leg(arr_sensors_right_leg, arr_sensors_right_leg + sizeof(arr_sensors_right_leg) / sizeof(arr_sensors_right_leg[0]));
@@ -380,7 +381,7 @@ void SensorReadManager::GetFilteredLikelySensorFailures(
     FilterLimbSensorFailures(sensors_left_arm , *failing_sensors);
     FilterLimbSensorFailures(sensors_right_leg, *failing_sensors);
     FilterLimbSensorFailures(sensors_left_leg , *failing_sensors);
-    FilterLimbSensorFailures(sensors_head     , *failing_sensors);                
+    FilterLimbSensorFailures(sensors_head     , *failing_sensors);
 }
 
 bool SensorReadManager::CheckForCM730ResetState()
@@ -395,11 +396,11 @@ bool SensorReadManager::CheckForCM730ResetState()
 
         if(sensor_read->consecutive_errors() == 0)
         {
-            std::cout   << "CheckForCM730ResetState sensor: "
-                        << sensor_read->sensor_id()
-                        << ", errors: " 
-                        << sensor_read->consecutive_errors()
-                        << std::endl;
+            // std::cout   << "CheckForCM730ResetState sensor: "
+            //             << sensor_read->sensor_id()
+            //             << ", errors: " 
+            //             << sensor_read->consecutive_errors()
+            //             << std::endl;
             return false;
         }
     }
