@@ -7,6 +7,7 @@
 #include <cstring>
 #include <iomanip>
 #include <ctime>
+#include <iomanip>
 
 #include "WalkingEngineKick.h"
 #include "File.h"
@@ -304,57 +305,140 @@ bool WalkingEngineKick::load(const char* filePath, char* buf)
   return true;
 }
 
-bool WalkingEngineKick::load(const char* filePath)
+void WalkingEngineKick::printKick()
 {
-    cout << string(filePath) << endl;
+  cout << " WalkingEngineKick::load(const char* filePath)" << endl;
+  cout << std::setw(27) << " bool initialized: "           << std::setw(10) << initialized                   << endl;
+  cout << std::setw(27) << " Value* firstValue: "          << std::setw(10) << firstValue->evaluate()        << endl;
+  cout << std::setw(27) << " bool standKick: "             << std::setw(10) << standKick                     << endl;
+  cout << std::setw(27) << " Value* preStepSizeRValue: "   << std::setw(10) << preStepSizeRValue->evaluate() << endl;
+  cout << std::setw(27) << " Value* preStepSizeXValue: "   << std::setw(10) << preStepSizeXValue->evaluate() << endl;
+  cout << std::setw(27) << " Value* preStepSizeYValue: "   << std::setw(10) << preStepSizeYValue->evaluate() << endl;
+  cout << std::setw(27) << " Value* preStepSizeZValue: "   << std::setw(10) << preStepSizeZValue->evaluate() << endl;
+  cout << std::setw(27) << " Value* stepSizeRValue: "      << std::setw(10) << stepSizeRValue->evaluate()    << endl;
+  cout << std::setw(27) << " Value* stepSizeXValue: "      << std::setw(10) << stepSizeXValue->evaluate()    << endl;
+  cout << std::setw(27) << " Value* stepSizeYValue: "      << std::setw(10) << stepSizeYValue->evaluate()    << endl;
+  cout << std::setw(27) << " Value* stepSizeZValue: "      << std::setw(10) << stepSizeZValue->evaluate()    << endl;
+  cout << std::setw(27) << " Value* durationValue: "       << std::setw(10) << durationValue->evaluate()     << endl;
+  cout << std::setw(27) << " Value* refXValue: "           << std::setw(10) << refXValue->evaluate()         << endl;
+  cout << std::setw(27) << " float currentPosition: "      << std::setw(10) << currentPosition               << endl;
+  cout << std::setw(27) << " float length: "               << std::setw(10) << length                        << endl;
 
-    ifstream file(filePath, std::ios::binary);
-    //File file(filePath, "rb");
-    //bool success = file.exists();
-    bool success = file.is_open();
+  for (int i = 0; i < numOfTracks; ++i)
+  {
+    std::vector<Phase>& track = tracks[i];
 
+    std::cout << "Track " << i << ": " << std::endl;
 
-    cout << "WalkingEngineKick::load file exists: " << success << endl;
+    const int numRows = 7;
+    const int numPhases = track.size();
+    float* print_table = new float[numPhases * numRows];
 
-    if(success)
+    // Make a table of values so that we can print phases for each track
+    // more easily.
+    int phaseNum = 0;
+    for (std::vector<Phase>::iterator it = track.begin(); it != track.end(); ++it)
     {
-        std::streampos fsize = 0;
-        fsize = file.tellg();
-        file.seekg( 0, std::ios::end );
-        fsize = file.tellg() - fsize;
-        file.seekg (0, ios::beg);
+      Phase& phase = *it;
 
-        cout << "file size: " << fsize << endl;
+      // Note: calling these here might be questionable?
+#warning Not sure if calling evaluate here is a bad thing?
+      phase.evaluateLength(0);
+      phase.evaluatePos(-77);
 
-        char* buffer = new char[(int)fsize + 1];
-        file.read(buffer, fsize);
-        buffer[fsize] = '\0';
-        success = load(filePath, buffer);
+      // // The old verbose way of printing things
+      // std::cout << "Track " << i << ", phase" << phaseNum << ":" 
+      //           << std::endl << "  {"
+      //           << std::endl << "    posValue: "    << (phase.posValue    ? phase.posValue->evaluate() : -77) << ","
+      //           << std::endl << "    lengthValue: " << (phase.lengthValue ? phase.lengthValue->evaluate() : -77) << ","
+      //           << std::endl << "    pos: "         << phase.pos          << ","
+      //           << std::endl << "    velocity: "    << phase.velocity     << ","
+      //           << std::endl << "    start: "       << phase.start        << ","
+      //           << std::endl << "    end: "         << phase.end          << ","
+      //           << std::endl << "    length: "      << phase.length
+      //           << std::endl << "  }"
+      //           << std::endl;
 
-        cout << "WalkingEngineKick::load second: " << success << endl;
+      int index = phaseNum * numRows;
 
-        delete[] buffer;
+      print_table[  index] = float(phaseNum);
+      print_table[++index] = float((phase.posValue    ? phase.posValue->evaluate() : -77));
+      print_table[++index] = float((phase.lengthValue ? phase.lengthValue->evaluate() : -77));
+      print_table[++index] = float(phase.pos);
+      print_table[++index] = float(phase.velocity);
+      print_table[++index] = float(phase.start);
+      print_table[++index] = float(phase.end);
+      print_table[++index] = float(phase.length);
+
+      phaseNum++;
     }
 
-    file.close();
-    cout<<"WalkingEngineKick::load(const char* filePath)"<< endl;
-    cout<<" bool initialized; "<< initialized<<endl;
-    cout<<" Value*  firstValue; "<< firstValue->evaluate()<<endl;
-    cout<<" bool  standKick; "<< standKick<<endl;
-    cout<<" Value*  preStepSizeRValue; "<< preStepSizeRValue->evaluate()<<endl;
-    cout<<" Value*  preStepSizeXValue; "<< preStepSizeXValue->evaluate()<<endl;
-    cout<<"Value*   preStepSizeYValue; "<< preStepSizeYValue->evaluate()<<endl;
-    cout<<" Value*  preStepSizeZValue; "<< preStepSizeZValue->evaluate()<<endl;
-    cout<<"Value*  stepSizeRValue; "<< stepSizeRValue->evaluate()<<endl;
-    cout<<" Value*  stepSizeXValue; "<< stepSizeXValue->evaluate()<<endl;
-    cout<<"  Value* stepSizeYValue; "<< stepSizeYValue->evaluate()<<endl;
-    cout<<" Value*  stepSizeZValue; "<< stepSizeZValue->evaluate()<<endl;
-    cout<<"  Value* durationValue; "<< durationValue->evaluate()<<endl;
-    cout<<" Value*  refXValue; "<< refXValue->evaluate()<<endl;
-    cout<<" float currentPosition; "<< currentPosition<<endl;
-    cout<<" float length; "<< length<<endl;
+    static const std::string rowNames[] = {
+        "Phase: ",
+        "posValue: ",
+        "lengthValue: ",
+        "pos: ",
+        "velocity: ",
+        "start: ",
+        "end: ",
+        "length: ",
+      };
 
-    return success;
+    // Print the table with nice formatting
+    for(int i = 0; i < numRows; i++)
+    {
+      std::cout << std::setw(13) << rowNames[i];
+
+      for(int j = 0; j < numPhases; j++)
+      {
+        std::cout << std::setw(12) << print_table[i + j * numRows] << ",";
+      }
+
+      std::cout << std::endl;
+    }
+
+    // clean up
+    delete[] print_table;
+  }
+}
+
+bool WalkingEngineKick::load(const char* filePath)
+{
+  cout << string(filePath) << endl;
+
+  ifstream file(filePath, std::ios::binary);
+  //File file(filePath, "rb");
+  //bool success = file.exists();
+  bool success = file.is_open();
+
+
+  cout << "WalkingEngineKick::load file exists: " << success << endl;
+
+  if(success)
+  {
+    std::streampos fsize = 0;
+    fsize = file.tellg();
+    file.seekg( 0, std::ios::end );
+    fsize = file.tellg() - fsize;
+    file.seekg (0, ios::beg);
+
+    cout << "file size: " << fsize << endl;
+
+    char* buffer = new char[(int)fsize + 1];
+    file.read(buffer, fsize);
+    buffer[fsize] = '\0';
+    success = load(filePath, buffer);
+
+    cout << "WalkingEngineKick::load second: " << success << endl;
+
+    delete[] buffer;
+  }
+
+  file.close();
+
+  printKick();
+
+  return success;
 }
 
 WalkingEngineKick::WalkingEngineKick() : initialized(false), firstValue(0), standKick(false),

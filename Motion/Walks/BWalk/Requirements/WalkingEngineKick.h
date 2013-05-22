@@ -54,6 +54,8 @@ public:
   float getCurrentPosition() const {return currentPosition /* 0.001f*/;}
   bool isStandKick() const {return standKick;}
 
+  void printKick();
+
 private:
   class String
   {

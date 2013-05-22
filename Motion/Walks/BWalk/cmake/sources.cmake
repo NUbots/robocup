@@ -22,6 +22,9 @@ ENDIF()
 ########## List your source files here! ############################################
 SET (YOUR_SRCS
 WalkingEngine.h WalkingEngine.cpp
+WalkingEngine-KickPlayer.cpp
+WalkingEngine-PendulumPlayer.cpp
+WalkingEngine-ObservedPendulumPlayer.cpp
 )
 ####################################################################################
 ########## List your subdirectories here! ##########################################
