@@ -72,9 +72,11 @@ private:
   class Value
   {
   public:
-    Value(WalkingEngineKick& kick) : next(kick.firstValue) {kick.firstValue = this;}
+    Value(WalkingEngineKick& kick) : next(kick.firstValue)/*, value(0)*/ {
+      kick.firstValue = this; 
+    }
 
-    float evaluate() const {return value;}
+    float evaluate() const { return value; }
 
     float value;
     Value* next;
@@ -85,8 +87,11 @@ private:
   class ConstantValue : public Value
   {
   public:
-    ConstantValue(float value, WalkingEngineKick& kick) : Value(kick) {this->value = value;}
-    /*virtual*/ float evaluate() const {return value;}
+    ConstantValue(float value, WalkingEngineKick& kick) : Value(kick) {
+      this->value = value;
+    }
+
+    /*virtual*/ float evaluate() const { return value; }
   };
 
   class BinaryExpression : public Value
@@ -138,7 +143,7 @@ private:
   class ParameterValue : public Value
   {
   public:
-    ParameterValue(unsigned int index, WalkingEngineKick& kick) : Value(kick), index(index), kick(kick) {}
+    ParameterValue(unsigned int index, WalkingEngineKick& kick) : Value(kick), index(index), kick(kick) { }
 
 
     unsigned int index;

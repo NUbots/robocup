@@ -343,8 +343,8 @@ void WalkingEngineKick::printKick()
 
       // Note: calling these here might be questionable?
 #warning Not sure if calling evaluate here is a bad thing?
-      phase.evaluateLength(0);
-      phase.evaluatePos(-77);
+      // phase.evaluateLength(0);
+      // phase.evaluatePos(-77);
 
       // // The old verbose way of printing things
       // std::cout << "Track " << i << ", phase" << phaseNum << ":" 
