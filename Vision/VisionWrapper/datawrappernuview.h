@@ -29,7 +29,7 @@
 //for virtualNUbot/Qt
 #include "GLDisplay.h"
 #include <QObject>
-#include <qwt/qwt_plot_curve.h>
+#include <qwt_plot_curve.h>
 
 using namespace std;
 //using namespace cv;
