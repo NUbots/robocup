@@ -78,174 +78,180 @@ std::string controlName(unsigned int id)
 PCCamera::PCCamera() :
 currentBuf(0)
 {
-//    #if DEBUG_NUCAMERA_VERBOSITY > 4
-//        debug << "PCCamera::PCCamera()" << endl;
-//    #endif
+    #if DEBUG_NUCAMERA_VERBOSITY > 4
+        debug << "PCCamera::PCCamera()" << endl;
+    #endif
 
-//    //Read camera settings from file.
-//    CameraSettings fileSettings;
-//    fileSettings.LoadFromFile(CONFIG_DIR + string("Camera.cfg"));
-//    #if DEBUG_NUCAMERA_VERBOSITY > 4
-//        debug << "Loading settings from " << CONFIG_DIR + string("Camera.cfg") << endl;
-//    #endif
+    //Read camera settings from file.
+    CameraSettings fileSettings;
+    fileSettings.LoadFromFile(CONFIG_DIR + string("Camera.cfg"));
+    #if DEBUG_NUCAMERA_VERBOSITY > 4
+        debug << "Loading settings from " << CONFIG_DIR + string("Camera.cfg") << endl;
+    #endif
 
-//    // Open device
-//    openCameraDevice(CAMERA_DIR);
+    // Open device
+    openCameraDevice(CAMERA_DIR);
 
-//    //Initialise
-//    initialiseCamera();
-//    //readCameraSettings();
-//    forceApplySettings(fileSettings);
+    //Initialise
+    initialiseCamera();
+    //readCameraSettings();
+    forceApplySettings(fileSettings);
 
-//    readCameraSettings();
+    readCameraSettings();
 
-//    // enable streaming
-//    setStreaming(true);
+    // enable streaming
+    setStreaming(true);
 }
 
 PCCamera::~PCCamera()
 {
-//#if DEBUG_NUCAMERA_VERBOSITY > 4
-//    debug << "PCCamera::~PCCamera()" << endl;
-//#endif
-//  // disable streaming
-//  setStreaming(false);
+#if DEBUG_NUCAMERA_VERBOSITY > 4
+    debug << "PCCamera::~PCCamera()" << endl;
+#endif
+  // disable streaming
+  setStreaming(false);
 
-//  // unmap buffers
-//  for(int i = 0; i < frameBufferCount; ++i)
-//    munmap(mem[i], memLength[i]);
+  // unmap buffers
+  for(int i = 0; i < frameBufferCount; ++i)
+    munmap(mem[i], memLength[i]);
 
-//  // close the device
-//  close(fd);
-//  free(buf);
+  // close the device
+  close(fd);
+  free(buf);
 }
 
 void PCCamera::openCameraDevice(std::string device_name)
 {
-//    // open device
-//    fd = open(device_name.c_str(), O_RDWR);
-//    #if DEBUG_NUCAMERA_VERBOSITY > 4
-//    if(fd != -1)
-//    {
-//        debug << "PCCamera::PCCamera(): " << device_name << " Opened Successfully." << endl;
-//    }
-//    else {
-//        debug << "PCCamera::PCCamera(): " << device_name << " Could Not Be Opened: " << strerror(errno) << endl;
-//    }
-//    #endif
-//    if(fd == -1)
-//        errorlog << "PCCamera::PCCamera(): " << device_name << " Could Not Be Opened: " << strerror(errno) << endl;
-//    ASSERT(fd >= 0);
+    fd = open(device_name.c_str(), O_RDWR);
+
+    #if DEBUG_NUCAMERA_VERBOSITY > 4
+    if(fd != -1)
+    {
+        debug << "PCCamera::PCCamera(): " << device_name << " Opened Successfully." << endl;
+    }
+    else {
+        debug << "PCCamera::PCCamera(): " << device_name << " Could Not Be Opened: " << strerror(errno) << endl;
+    }
+    #endif
+
+    if(fd == -1)
+        errorlog << "PCCamera::PCCamera(): " << device_name << " Could Not Be Opened: " << strerror(errno) << endl;
+    ASSERT(fd >= 0);
+
 }
 
 void PCCamera::setStreaming(bool streaming_on)
 {
-//    int type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-//    int instruction = streaming_on ? VIDIOC_STREAMON: VIDIOC_STREAMOFF;
-//    VERIFY(ioctl(fd, instruction, &type) != -1);
-//#if DEBUG_NUCAMERA_VERBOSITY > 1
-//    debug << "PCCamera: streaming - " << streaming_on << endl;
-//#endif
+    int type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    int instruction = streaming_on ? VIDIOC_STREAMON: VIDIOC_STREAMOFF;
+    VERIFY(xioctl(fd, instruction, &type) != -1);
+#if DEBUG_NUCAMERA_VERBOSITY > 1
+    debug << "PCCamera: streaming - " << streaming_on << endl;
+#endif
 }
 
 void PCCamera::initialiseCamera()
 {
+    int index;
+
+    index = 0;
+
+    if (-1 == xioctl (fd, VIDIOC_S_INPUT, &index)) {
+        printf("VIDIOC_S_INPUT");
+        exit (EXIT_FAILURE);
+    }
 
     // set format
-//    struct v4l2_format fmt;
-//    memset(&fmt, 0, sizeof(struct v4l2_format));
-//    fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-//    fmt.fmt.pix.width = WIDTH;
-//    fmt.fmt.pix.height = HEIGHT;
-//    fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
-//    fmt.fmt.pix.field = V4L2_FIELD_NONE;
+    struct v4l2_format fmt;
+    memset(&fmt, 0, sizeof(struct v4l2_format));
+    fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    fmt.fmt.pix.width = WIDTH;
+    fmt.fmt.pix.height = HEIGHT;
+    fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
+    fmt.fmt.pix.field = V4L2_FIELD_NONE;
 
-//    //returnValue = ioctl(fd, VIDIOC_S_FMT, &fmt);
-//    ioctl(fd, VIDIOC_S_FMT, &fmt);
-//    #if DEBUG_NUCAMERA_VERBOSITY > 4
-//    if(returnValue)
-//    {
-//        debug << "PCCamera::PCCamera(): Error Setting Format: " << strerror(errno) << endl;
-//    }
-//    else
-//    {
-//        debug << "PCCamera::PCCamera(): Format set" << endl;
-//    }
-//    #else
-//    //VERIFY(!returnValue);
-//    #endif
+    xioctl(fd, VIDIOC_S_FMT, &fmt);
+    #if DEBUG_NUCAMERA_VERBOSITY > 4
+    if(returnValue)
+    {
+        debug << "PCCamera::PCCamera(): Error Setting Format: " << strerror(errno) << endl;
+    }
+    else
+    {
+        debug << "PCCamera::PCCamera(): Format set" << endl;
+    }
+    #else
+    //VERIFY(!returnValue);
+    #endif
 
-//    ASSERT(fmt.fmt.pix.sizeimage == SIZE);
+    ASSERT(fmt.fmt.pix.sizeimage == SIZE);
 
-//    // set frame rate
-//    struct v4l2_streamparm fps;
-//    memset(&fps, 0, sizeof(struct v4l2_streamparm));
-//    fps.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-//    VERIFY(!ioctl(fd, VIDIOC_G_PARM, &fps));
-//    fps.parm.capture.timeperframe.numerator = 1;
-//    fps.parm.capture.timeperframe.denominator = 30;
-//    VERIFY(ioctl(fd, VIDIOC_S_PARM, &fps) != -1);
+    // set frame rate
+    struct v4l2_streamparm fps;
+    memset(&fps, 0, sizeof(struct v4l2_streamparm));
+    fps.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    VERIFY(!xioctl(fd, VIDIOC_G_PARM, &fps));
+    fps.parm.capture.timeperframe.numerator = 1;
+    fps.parm.capture.timeperframe.denominator = 30;
+    VERIFY(xioctl(fd, VIDIOC_S_PARM, &fps) != -1);
 
-//    // request buffers
-//    struct v4l2_requestbuffers rb;
-//    memset(&rb, 0, sizeof(struct v4l2_requestbuffers));
-//    rb.count = frameBufferCount;
-//    rb.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-//    rb.memory = V4L2_MEMORY_MMAP;
-//    VERIFY(ioctl(fd, VIDIOC_REQBUFS, &rb) != -1);
+    // request buffers
+    struct v4l2_requestbuffers rb;
+    memset(&rb, 0, sizeof(struct v4l2_requestbuffers));
+    rb.count = frameBufferCount;
+    rb.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    rb.memory = V4L2_MEMORY_MMAP;
+    VERIFY(xioctl(fd, VIDIOC_REQBUFS, &rb) != -1);
 
-//    // map the buffers
-//    buf = static_cast<struct v4l2_buffer*>(calloc(1, sizeof(struct v4l2_buffer)));
-//    for(int i = 0; i < frameBufferCount; ++i)
-//    {
-//        buf->index = i;
-//        buf->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-//        buf->memory = V4L2_MEMORY_MMAP;
-//        VERIFY(ioctl(fd, VIDIOC_QUERYBUF, buf) != -1);
-//        memLength[i] = buf->length;
-//        mem[i] = mmap(0, buf->length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, buf->m.offset);
-//        ASSERT(mem[i] != MAP_FAILED);
-//    }
+    // map the buffers
+    buf = static_cast<struct v4l2_buffer*>(calloc(1, sizeof(struct v4l2_buffer)));
+    for(int i = 0; i < frameBufferCount; ++i)
+    {
+        buf->index = i;
+        buf->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        buf->memory = V4L2_MEMORY_MMAP;
+        VERIFY(xioctl(fd, VIDIOC_QUERYBUF, buf) != -1);
+        memLength[i] = buf->length;
+        mem[i] = mmap(0, buf->length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, buf->m.offset);
+        ASSERT(mem[i] != MAP_FAILED);
+    }
 
-//    // queue the buffers
-//    for(int i = 0; i < frameBufferCount; ++i)
-//    {
-//        buf->index = i;
-//        buf->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-//        buf->memory = V4L2_MEMORY_MMAP;
-//        VERIFY(ioctl(fd, VIDIOC_QBUF, buf) != -1);
-//    }
+    // queue the buffers
+    for(int i = 0; i < frameBufferCount; ++i)
+    {
+        buf->index = i;
+        buf->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        buf->memory = V4L2_MEMORY_MMAP;
+        VERIFY(ioctl(fd, VIDIOC_QBUF, buf) != -1);
+    }
 }
 
 bool PCCamera::capturedNew()
 {
   // requeue the buffer of the last captured image which is obselete now
-//  if(currentBuf)
-//    VERIFY(ioctl(fd, VIDIOC_QBUF, currentBuf) != -1);
+  if(currentBuf)
+    VERIFY(ioctl(fd, VIDIOC_QBUF, currentBuf) != -1);
 
-//  // dequeue a frame buffer (this call blocks when there is no new image available) */
-//  VERIFY(ioctl(fd, VIDIOC_DQBUF, buf) != -1);
+  // dequeue a frame buffer (this call blocks when there is no new image available) */
+  VERIFY(ioctl(fd, VIDIOC_DQBUF, buf) != -1);
 
-//  ASSERT(buf->bytesused == SIZE);
-//  currentBuf = buf;
-// return true;
-    return false;
+  ASSERT(buf->bytesused == SIZE);
+  currentBuf = buf;
+ return true;
 }
 
 unsigned char* PCCamera::getImage() const
 {
-//  ASSERT(currentBuf);
-//  return static_cast<unsigned char*>(mem[currentBuf->index]);
-    return 0;
+  ASSERT(currentBuf);
+  return static_cast<unsigned char*>(mem[currentBuf->index]);
 }
 
 NUImage* PCCamera::grabNewImage()
 {
-//    while(!capturedNew());
-//    currentBufferedImage.MapYUV422BufferToImage(getImage(), WIDTH, HEIGHT, false);
-//    currentBufferedImage.setCameraSettings(m_settings);
- //   return &currentBufferedImage;
-    return NULL;
+    while(!capturedNew());
+    currentBufferedImage.MapYUV422BufferToImage(getImage(), WIDTH, HEIGHT, false);
+    currentBufferedImage.setCameraSettings(m_settings);
+    return &currentBufferedImage;
 }
 
 unsigned char* PCCamera::grabNewImageBuffer()
@@ -316,95 +322,34 @@ int PCCamera::readSetting(unsigned int id)
 
 bool PCCamera::applySetting(unsigned int id, int value)
 {
-//#if DEBUG_NUCAMERA_VERBOSITY > 1
-//    debug << "PCCamera: Trying: " << controlName(id) << " -> " << value << std::endl;
-//#endif
 //    struct v4l2_queryctrl queryctrl;
-//    queryctrl.id = id;
-//    if(ioctl(fd, VIDIOC_QUERYCTRL, &queryctrl) < 0)
-//        return false;
-//    if(queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
-//        return false; // not available
-//    if(queryctrl.type != V4L2_CTRL_TYPE_BOOLEAN && queryctrl.type != V4L2_CTRL_TYPE_INTEGER && queryctrl.type != V4L2_CTRL_TYPE_MENU)
-//        return false; // not supported
-//    // clip value
-//    if(value < queryctrl.minimum)
-//        value = queryctrl.minimum;
-//    if(value > queryctrl.maximum)
-//        value = queryctrl.maximum;
+//    struct v4l2_control control;
 
-//    struct v4l2_control control_s;
-//    control_s.id = id;
-//    control_s.value = value;
-//    if(ioctl(fd, VIDIOC_S_CTRL, &control_s) < 0)
-//        return false;
-//#if DEBUG_NUCAMERA_VERBOSITY > 1
-//    debug << "PCCamera: Apply: " << controlName(id) << " -> " << value << " (" << queryctrl.minimum << "," << queryctrl.maximum << "," << queryctrl.default_value << ")" << std::endl;
-//#endif
+//    memset (&queryctrl, 0, sizeof (queryctrl));
+//    queryctrl.id = V4L2_CID_BRIGHTNESS;
+
+//    if (-1 == ioctl (fd, VIDIOC_QUERYCTRL, &queryctrl)) {
+//        if (errno != EINVAL) {
+//            perror ("VIDIOC_QUERYCTRL");
+//            exit (EXIT_FAILURE);
+//        } else {
+//            printf ("V4L2_CID_BRIGHTNESS is not supported\n");
+//        }
+//    } else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED) {
+//        printf ("V4L2_CID_BRIGHTNESS is not supported\n");
+//    } else {
+//        memset (&control, 0, sizeof (control));
+//        control.id = id;
+//        control.value = value;
+
+//        if (-1 == xioctl (fd, VIDIOC_S_CTRL, &control)) {
+//            perror ("VIDIOC_S_CTRL");
+//            exit (EXIT_FAILURE);
+//        }
+//    }
 //    return true;
-    return false;
 }
 
-void PCCamera::applySettings(const CameraSettings& newset)
-{
-    // AutoSettings
-//    if(newset.p_exposureAuto.get() != m_settings.p_exposureAuto.get())
-//    {
-//        m_settings.p_exposureAuto.set(newset.p_exposureAuto.get());
-//        applySetting(V4L2_CID_EXPOSURE_AUTO, (m_settings.p_exposureAuto.get()));
-//    }
-//    if(newset.p_autoWhiteBalance.get() != m_settings.p_autoWhiteBalance.get())
-//    {
-//        m_settings.p_autoWhiteBalance.set(newset.p_autoWhiteBalance.get());
-//        applySetting(V4L2_CID_AUTO_WHITE_BALANCE, (m_settings.p_autoWhiteBalance.get()));
-//    }
-//    if(newset.p_exposureAutoPriority.get() != m_settings.p_exposureAutoPriority.get())
-//    {
-//        m_settings.p_exposureAutoPriority.set(newset.p_exposureAutoPriority.get());
-//        applySetting(V4L2_CID_EXPOSURE_AUTO_PRIORITY, (m_settings.p_exposureAutoPriority.get()));
-//    }
-
-//    //Other controls
-//    if(newset.p_brightness.get() != m_settings.p_brightness.get())
-//    {
-//        m_settings.p_brightness.set(newset.p_brightness.get());
-//        applySetting(V4L2_CID_BRIGHTNESS, (m_settings.p_brightness.get()));
-//    }
-//    if(newset.p_contrast.get() != m_settings.p_contrast.get())
-//    {
-//        m_settings.p_contrast.set(newset.p_contrast.get());
-//        applySetting(V4L2_CID_CONTRAST, (m_settings.p_contrast.get()));
-//    }
-//    if(newset.p_saturation.get() != m_settings.p_saturation.get())
-//    {
-//        m_settings.p_saturation.set(newset.p_saturation.get());
-//        applySetting(V4L2_CID_SATURATION, (m_settings.p_saturation.get()));
-//    }
-//    if(newset.p_gain.get() != m_settings.p_gain.get())
-//    {
-//        m_settings.p_gain.set(newset.p_gain.get());
-//        applySetting(V4L2_CID_GAIN, (m_settings.p_gain.get()));
-//    }
-//    if(newset.p_exposureAbsolute.get() != m_settings.p_exposureAbsolute.get())
-//    {
-//        m_settings.p_exposureAbsolute.set(newset.p_exposureAbsolute.get());
-//        applySetting(V4L2_CID_EXPOSURE_ABSOLUTE, (m_settings.p_exposureAbsolute.get()));
-//    }
-
-//    if(newset.p_powerLineFrequency.get() != m_settings.p_powerLineFrequency.get())
-//    {
-//        m_settings.p_powerLineFrequency.set(newset.p_powerLineFrequency.get());
-//        applySetting(V4L2_CID_POWER_LINE_FREQUENCY, (m_settings.p_powerLineFrequency.get()));
-//    }
-//    if(newset.p_sharpness.get() != m_settings.p_sharpness.get())
-//    {
-//        m_settings.p_sharpness.set(newset.p_sharpness.get());
-//        applySetting(V4L2_CID_SHARPNESS, (m_settings.p_sharpness.get()));
-//    }
-
-//    //COPIES INTO OLD FORMAT:
-//    m_settings.copyParams();
-}
 
 void PCCamera::forceApplySettings(const CameraSettings& newset)
 {
@@ -422,7 +367,7 @@ void PCCamera::forceApplySettings(const CameraSettings& newset)
 //    debug << "p_sharpness" << newset.p_sharpness.get() << endl;
 //#endif
 //    //Copying the new Paramters into m_settings
-//    m_settings = newset;
+    m_settings = newset;
 
 //    // Auto Controls
 //    applySetting(V4L2_CID_EXPOSURE_AUTO, (m_settings.p_exposureAuto.get()));
@@ -439,4 +384,27 @@ void PCCamera::forceApplySettings(const CameraSettings& newset)
 
 //    //COPIES INTO OLD FORMAT:
 //    m_settings.copyParams();
+}
+
+/* ioctl with a number of retries in the case of failure
+* args:
+* fd - device descriptor
+* IOCTL_X - ioctl reference
+* arg - pointer to ioctl data
+* returns - ioctl result
+*/
+int xioctl(int fd, int IOCTL_X, void *arg)
+{
+    int ret = 0;
+    int tries= IOCTL_RETRY;
+    do
+    {
+        ret = v4l2_ioctl(fd, IOCTL_X, arg);
+    }
+    while (ret && tries-- &&
+            ((errno == EINTR) || (errno == EAGAIN) || (errno == ETIMEDOUT)));
+
+    if (ret && (tries <= 0)) g_printerr("ioctl (%i) retried %i times - giving up: %s)\n", IOCTL_X, IOCTL_RETRY, strerror(errno));
+
+    return (ret);
 }
