@@ -212,9 +212,11 @@ vector<float> Navigation::goToBall(Object* kickTarget) {
     navCircleCentre[1] = -targetVector[0]/targetDistance*m_close_approach_distance;
     
     //if the robot is the other side of the target vector, put the target circle on the other side of the ball
+    float sign = -1.0;
     if (navCircleCentre[0]*posDifference[0]+navCircleCentre[1]*posDifference[1]<0.f) {
         navCircleCentre[0] = -navCircleCentre[0];
         navCircleCentre[1] = -navCircleCentre[1];
+        sign = 1.0; //this is the sign for hte curvature of the circle
     }
 
     //now we have the right side, get a position ready to do some trig with
@@ -245,7 +247,7 @@ vector<float> Navigation::goToBall(Object* kickTarget) {
         
     } else if (ballDistance > m_close_approach_distance or true) { //else follow the circle
         float curvature = (2*3.14159/m_close_approach_distance)*20.; //XXX: (radians/radius) * walkspeed (estimated)
-        float angle = curvature + (circleCentreDistance-m_close_approach_distance)/m_close_approach_distance; //we add a correction to turning to account for error in line following
+        float angle = sign*(curvature + (circleCentreDistance-m_close_approach_distance)/m_close_approach_distance); //we add a correction to turning to account for error in line following
         move[0] = 1./(1.+std::exp(angle));
         move[2] = angle*m_mid_approach_speed;
     
