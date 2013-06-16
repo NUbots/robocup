@@ -152,7 +152,7 @@ void DarwinWebotsSensors::copyFromJoints()
 	#if DEBUG_NUSENSORS_VERBOSITY > 4
         debug << "DarwinWebotsSensors::copyFromJoints()" << std::endl;
     #endif
-    static float NaN = numeric_limits<float>::quiet_NaN();
+    static float NaN = std::numeric_limits<float>::quiet_NaN();
 
     std::vector<float> joint(NUSensorsData::NumJointSensorIndices, NaN);
     float delta_t = (m_current_time - m_previous_time)/1000;  

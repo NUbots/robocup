@@ -32,23 +32,23 @@ using namespace webots;
 #include <string.h>
 
 // init m_servo_names:
-static string temp_servo_names[] = {string("HeadPitch"), string("HeadYaw"), \
-                                    string("LShoulderRoll"), string("LShoulderPitch"), string("LElbowPitch"), \
-                                    string("RShoulderRoll"), string("RShoulderPitch"), string("RElbowPitch"), \
-                                    string("LHipRoll"),  string("LHipPitch"), string("LHipYaw"), \
-									string("LKneePitch"), string("LAnkleRoll"), string("LAnklePitch"), \
-                                    string("RHipRoll"),  string("RHipPitch"), string("RHipYaw"), \
-									string("RKneePitch"), string("RAnkleRoll"), string("RAnklePitch")};
+static std::string temp_servo_names[] = {std::string("HeadPitch"), std::string("HeadYaw"), \
+                                    std::string("LShoulderRoll"), std::string("LShoulderPitch"), std::string("LElbowPitch"), \
+                                    std::string("RShoulderRoll"), std::string("RShoulderPitch"), std::string("RElbowPitch"), \
+                                    std::string("LHipRoll"),  std::string("LHipPitch"), std::string("LHipYaw"), \
+                                    std::string("LKneePitch"), std::string("LAnkleRoll"), std::string("LAnklePitch"), \
+                                    std::string("RHipRoll"),  std::string("RHipPitch"), std::string("RHipYaw"), \
+                                    std::string("RKneePitch"), std::string("RAnkleRoll"), std::string("RAnklePitch")};
 
-vector<string> DarwinWebotsActionators::m_servo_names(temp_servo_names, temp_servo_names + sizeof(temp_servo_names)/sizeof(*temp_servo_names));
+std::vector<std::string> DarwinWebotsActionators::m_servo_names(temp_servo_names, temp_servo_names + sizeof(temp_servo_names)/sizeof(*temp_servo_names));
 
 // init m_led_names:
-static string temp_led_names[] = {string("HeadLed"), string("LEyeLed"), string("REyeLed")};
-vector<string> DarwinWebotsActionators::m_led_names(temp_led_names, temp_led_names + sizeof(temp_led_names)/sizeof(*temp_led_names));
+static std::string temp_led_names[] = {std::string("HeadLed"), std::string("LEyeLed"), std::string("REyeLed")};
+std::vector<std::string> DarwinWebotsActionators::m_led_names(temp_led_names, temp_led_names + sizeof(temp_led_names)/sizeof(*temp_led_names));
 
 // init m_other_names:
-static string temp_other_names[] = {/*string("Teleporter"),*/ string("Sound")};
-vector<string> DarwinWebotsActionators::m_other_names(temp_other_names, temp_other_names + sizeof(temp_other_names)/sizeof(*temp_other_names));
+static std::string temp_other_names[] = {/*string("Teleporter"),*/ std::string("Sound")};
+std::vector<std::string> DarwinWebotsActionators::m_other_names(temp_other_names, temp_other_names + sizeof(temp_other_names)/sizeof(*temp_other_names));
 
 /*! @brief Constructs a nubot actionator class with a Webots backend
  
@@ -64,7 +64,7 @@ DarwinWebotsActionators::DarwinWebotsActionators(DarwinWebotsPlatform* platform)
     getActionatorsFromWebots(platform);
     enableActionatorsInWebots();
     
-    vector<string> names;
+    std::vector<std::string> names;
     names.insert(names.end(), m_servo_names.begin(), m_servo_names.end());
     names.insert(names.end(), m_led_names.begin(), m_led_names.end());
     names.insert(names.end(), m_other_names.begin(), m_other_names.end());
@@ -132,8 +132,8 @@ void DarwinWebotsActionators::copyToHardwareCommunications()
  */
 void DarwinWebotsActionators::copyToServos()
 {
-    static vector<float> positions;
-    static vector<float> gains;
+    static std::vector<float> positions;
+    static std::vector<float> gains;
     m_data->getNextServos(positions, gains);   
 	for (size_t i=0; i<m_servos.size(); i++)
     {
@@ -148,7 +148,7 @@ void DarwinWebotsActionators::copyToServos()
  */
 void DarwinWebotsActionators::copyToLeds()
 {
-    static vector<vector<vector<float> > > ledvalues;
+    static std::vector<std::vector<std::vector<float> > > ledvalues;
     
 #if DEBUG_NUACTIONATORS_VERBOSITY > 4
     debug << "DarwinWebotsActionators::copyToLeds()" << std::endl;
@@ -180,7 +180,7 @@ void DarwinWebotsActionators::copyToTeleporter()
 {
     static bool l_isvalid;
     static double l_time;
-    static vector<float> l_position(3, 0);
+    static std::vector<float> l_position(3, 0);
 #if DEBUG_NUACTIONATORS_VERBOSITY > 4
     debug << "DarwinWebotsActionators::copyToTeleporter()" << std::endl;
 #endif 
