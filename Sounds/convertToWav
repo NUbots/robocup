@@ -1,0 +1,7 @@
+echo Starting conversion
+mkdir -p ./wav
+for file in *.raw
+do
+echo $file to ${file%.*}.wav
+sox -r 11025 -c 2 -b 16 -s $file ./wav/${file%.*}.wav
+done
