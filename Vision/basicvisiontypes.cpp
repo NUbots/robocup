@@ -48,15 +48,12 @@ namespace Vision {
                 (*this)[GOAL_L]         = std::pair<int, std::string>(5, "GOAL_L");
                 (*this)[GOAL_R]         = std::pair<int, std::string>(6, "GOAL_R");
                 (*this)[GOAL_U]         = std::pair<int, std::string>(7, "GOAL_U");
-                //        GOAL_Y_L=1,
-                //        GOAL_Y_R=2,
-                //        GOAL_Y_U=3,
-                //        GOAL_B_L=4,
-                //        GOAL_B_R=5,
-                //        GOAL_B_U=6,
-                //        BEACON_Y=7,
-                //        BEACON_B=8,
-                //        BEACON_U=9,
+                (*this)[GOAL_Y_L]       = std::pair<int, std::string>(5, "GOAL_Y_L");
+                (*this)[GOAL_Y_R]       = std::pair<int, std::string>(6, "GOAL_Y_R");
+                (*this)[GOAL_Y_U]       = std::pair<int, std::string>(7, "GOAL_Y_U");
+                (*this)[GOAL_B_L]       = std::pair<int, std::string>(5, "GOAL_B_L");
+                (*this)[GOAL_B_R]       = std::pair<int, std::string>(6, "GOAL_B_R");
+                (*this)[GOAL_B_U]       = std::pair<int, std::string>(7, "GOAL_B_U");
             }
         };
 
@@ -169,6 +166,8 @@ namespace Vision {
     //    case GOAL_Y_COLOUR:        return "GOAL_Y_COLOUR";
     //    case GOAL_B_COLOUR:        return "GOAL_B_COLOUR";
         case LINE_COLOUR:          return "LINE_COLOUR";
+        case TEAM_CYAN_COLOUR:     return "TEAM_CYAN_COLOUR";
+        case TEAM_MAGENTA_COLOUR:  return "TEAM_MAGENTA_COLOUR";
         default:                   return "UNKNOWN_COLOUR";
         }
     }
@@ -185,6 +184,10 @@ namespace Vision {
     //        return GOAL_B_COLOUR;
         else if(name.compare("LINE_COLOUR") == 0)
             return LINE_COLOUR;
+        else if(name.compare("TEAM_CYAN_COLOUR") == 0)
+            return TEAM_CYAN_COLOUR;
+        else if(name.compare("TEAM_MAGENTA_COLOUR") == 0)
+            return TEAM_MAGENTA_COLOUR;
         else
             return UNKNOWN_COLOUR;
     }

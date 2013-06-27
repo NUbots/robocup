@@ -47,11 +47,22 @@ bool HeadBehaviour::ObjectNotSeen() {
 /*! @brief Constructor initialises all parameters and initialises head behaviour (motivated) reinforcement learning agent.
   */
 HeadBehaviour::HeadBehaviour():Mrlagent(){
+    head_logic = HeadLogic::getInstance();
+    int number_of_interesting_objects = head_logic->relevantObjects[0].size()+head_logic->relevantObjects[1].size()+head_logic->relevantObjects[2].size();
+    
+    for(int action = 0; action<number_of_interesting_objects; action++){        
+        m_objects_to_view.push_back(head_logic->getObject(action));
+    }
+    m_current_action = 4;
+
+
+    time_last_quick_panned=0;
+    time_last_tracked=0;
+    last_job_was_trackjob=false;
     MAX_PERCEPT_RANGESIZE = 10;
     NUCameraData cameraSpecs(std::string(CONFIG_DIR) + "CameraSpecs.cfg");
     m_CAMERA_FOV_X = cameraSpecs.m_horizontalFov;
     m_CAMERA_FOV_Y = cameraSpecs.m_verticalFov;
-    head_logic = HeadLogic::getInstance();
     landmarkSeenFrequency = 1200;
     ballSeenFrequency = 800;
     lastVisionPolicy = -1;
@@ -64,7 +75,7 @@ HeadBehaviour::HeadBehaviour():Mrlagent(){
     actions_taken_this_state = 0;
 
     rewards_log_pathname = "nubot/Config/Darwin/HeadRewards.csv";//Rewards are not recorded unless uncommented in calculateReward() method
-    agent_filename = "Order30_CombinedAgent";
+    agent_filename = "Order30_HeadBehaviourRL";
     give_rew_to_mot = true;
 
 
@@ -85,7 +96,7 @@ HeadBehaviour::HeadBehaviour():Mrlagent(){
         try{
             Mrlagent.initialiseAgent(inputs.size()
                                      //Calculate output size = sum of the number of stationary, mobile and ambiguous objects.
-                                     ,head_logic->relevantObjects[0].size()+head_logic->relevantObjects[1].size()+head_logic->relevantObjects[2].size()
+                                     ,number_of_interesting_objects
                                      /*Order of fourier approx.*/
                                      ,30
                                      //max_percept_values
@@ -224,7 +235,7 @@ void HeadBehaviour::makeVisionChoice(VisionPolicyID fieldVisionPolicy) {
     //If we are still moving to look at something else, don't make a new decision
     if (
         current_time < actionStartTime+maximumSearchTime &&
-        fieldVisionPolicy == lastVisionPolicy and
+        fieldVisionPolicy == lastVisionPolicy &&
         ObjectNotSeen()
        )
     {
@@ -387,21 +398,14 @@ void  HeadBehaviour::doAgentBasedPolicy(vector<int> object_selection_vector){
         vector<float> inputs = getPercept();
         int action = Mrlagent.getActionAndLearn(inputs,object_selection_vector,(give_rew_to_mot ? calculateReward()-0.5:0));
         float temp = (!give_rew_to_mot ? calculateReward():0);//Calculate reward to measure and record performance if not done already.
+        takeAction(action);
+        
 
-        //Send Job:
-        if (action < head_logic->relevantObjects[0].size()){    //i.e. Stationary Object
-            dispatchHeadJob((StationaryObject*)(head_logic->getObject(action)));
-        } else if (action < head_logic->relevantObjects[1].size()+head_logic->relevantObjects[0].size()){ //i.e. Mobile Object
-            dispatchHeadJob((MobileObject*)(head_logic->getObject(action)));
-        } else {
-            dispatchHeadJob((AmbiguousObject*)(head_logic->getObject(action)));
-        }
-
-        actions_taken_this_state++;
-        if (actions_taken_this_state >= ACTIONS_PER_STATE){
-            Mrlagent.saveMRLAgent(agent_filename);
-            actions_taken_this_state = 0;
-        }
+        // actions_taken_this_state++;
+        // if (actions_taken_this_state >= ACTIONS_PER_STATE){
+        //     Mrlagent.saveMRLAgent(agent_filename);
+        //     actions_taken_this_state = 0;
+        // }
 }
 
 
@@ -412,37 +416,8 @@ void HeadBehaviour::doMRLAgentPolicy(){
     vector<float> inputs = getPercept();
     int action = Mrlagent.getActionAndLearn(inputs,head_logic->getValidObjectsToLookAt(),(give_rew_to_mot ? calculateReward()-0.5:0));
     float temp = (!give_rew_to_mot ? calculateReward():0);//Calculate reward to measure and record performance if not done already.
-
-
-    if (action < head_logic->relevantObjects[0].size()){    //i.e. Stationary Object
-        dispatchHeadJob((StationaryObject*)(head_logic->getObject(action)));
-
-        //Debug text for use when training:
-        // std::cout<<" HeadBehaviour::doMRLAgentPolicy() Performing priority policy - Stationary Object: "<< action << "- Percept = [";
-        /*for(int i = 0; i<inputs.size(); i++){
-            std::cout<<" "<<inputs[i]<<",";
-        }*/
-       // std::cout<<"]"<<std::endl;
-    } else if (action < head_logic->relevantObjects[1].size()+head_logic->relevantObjects[0].size()){ //i.e. Mobile Object
-        dispatchHeadJob((MobileObject*)(head_logic->getObject(action)));
-
-        //Debug text for use when training:
-        //std::cout<<" HeadBehaviour::doMRLAgentPolicy() Performing priority policy - Mobile Object: "<< action << "- Percept = [";
-        /*for(int i = 0; i<inputs.size(); i++){
-            std::cout<<" "<<inputs[i]<<",";
-        }*/
-        //std::cout<<"]"<<std::endl;
-    } else {
-        dispatchHeadJob((AmbiguousObject*)(head_logic->getObject(action)));
-
-        //Debug text for use when training:
-        /*std::cout<<" HeadBehaviour::doMRLAgentPolicy() Performing priority policy - Ambiguous Object: "<< action << "- Percept = [";
-        /*for(int i = 0; i<inputs.size(); i++){
-            std::cout<<" "<<inputs[i]<<",";
-        }
-        std::cout<<"]"<<std::endl;*/
-    }
-
+    takeAction(action);
+    
 }
 
 /*! @brief Reinforcement agent online learning policy.
@@ -456,31 +431,7 @@ void HeadBehaviour::doRLAgentPolicy(){
     Mrlagent.giveReward(rew);
     Mrlagent.doLearning();
 
-    if (action < head_logic->relevantObjects[0].size()){    //i.e. Stationary Object
-        dispatchHeadJob((StationaryObject*)(head_logic->getObject(action)));
-        /*std::cout<<" HeadBehaviour::doRLAgentPolicy() Performing priority policy - Stationary Object: "<< action <<std::endl;
-        std::cout<< "- Percept = [";
-        for(int i = 0; i<inputs.size(); i++){
-            std::cout<<" "<<inputs[i]<<",";
-        }
-        std::cout<<"]"<<std::endl;*/
-    } else if (action < head_logic->relevantObjects[1].size()+head_logic->relevantObjects[0].size()){ //i.e. Mobile Object
-        dispatchHeadJob((MobileObject*)(head_logic->getObject(action)));
-        /*std::cout<<" HeadBehaviour::doRLAgentPolicy() Performing priority policy - Mobile Object: "<< action << std::endl;
-        std::cout<< "Percept = [";
-        for(int i = 0; i<inputs.size(); i++){
-            std::cout<<" "<<inputs[i]<<",";
-        }
-        std::cout<<"]"<<std::endl;*/
-    } else {
-        dispatchHeadJob((AmbiguousObject*)(head_logic->getObject(action)));
-        /*std::cout<<" HeadBehaviour::doRLAgentPolicy() Performing priority policy - Ambiguous Object: "<< action <<std::endl;
-        std::cout<<  "- Percept = [";
-        for(int i = 0; i<inputs.size(); i++){
-            std::cout<<" "<<inputs[i]<<",";
-        }
-        std::cout<<"]"<<std::endl;*/
-    }
+    takeAction(action);
 
 }
 
@@ -510,8 +461,8 @@ float HeadBehaviour::calculateReward(){
 
     Vector2<float> berr = Blackboard->Objects->mobileFieldObjects[FieldObjects::FO_BALL].getEstimatedFieldLocationError();
 
-    float ball_reward = -(1-exp(-(berr.x*berr.x+berr.y*berr.y)/30000));
-    float self_reward = -(1-exp(-(errx*errx+erry*erry+errh*errh)/800));
+    float ball_reward = -(1-exp(-(berr.x*berr.x+berr.y*berr.y)/30000.));
+    float self_reward = -(1-exp(-(errx*errx+erry*erry+errh*errh)/800.));
 
     //Weight in terms of distance to ball: ball close to robot means ball more important.
     float weight = 0.25+0.5*(1-exp(-fabs(head_logic->calculateMobilePolarObjectLocation(&(Blackboard->Objects->mobileFieldObjects[FieldObjects::FO_BALL]))[0])/250));
@@ -636,9 +587,50 @@ void HeadBehaviour::lookForFieldObjects(){
 */
 void HeadBehaviour::update(){
     makeVisionChoice(current_policy);
+    //std::cout << "Head Behaviour Action: " << m_current_action << std::endl;
+
+
+    // if(head_logic->objectIsLost(m_current_action) and Blackboard->Sensors->GetTimestamp()-time_last_quick_panned > 2000 ){
+    //     performQuickScan();
+    //     time_last_quick_panned = Blackboard->Sensors->GetTimestamp();
+    //     return;
+    // }
+    
+    if(m_objects_to_view[m_current_action]->isObjectVisible()){
+        Blackboard->Jobs->addMotionJob(  new HeadTrackJob(  *m_objects_to_view[m_current_action]  )  );
+        time_last_tracked=Blackboard->Sensors->GetTimestamp();
+        last_job_was_trackjob = true;
+        // if (m_current_action < head_logic->relevantObjects[0].size()){    
+        //     Blackboard->Jobs->addMotionJob(  new HeadTrackJob(  *m_objects_to_view[m_current_action]  )  );
+        //     time_last_tracked=Blackboard->Sensors->GetTimestamp();
+        //     last_job_was_trackjob = true;
+        // } else if (m_current_action < head_logic->relevantObjects[1].size()+head_logic->relevantObjects[0].size()){
+        //     Blackboard->Jobs->addMotionJob(  new HeadTrackJob(  *m_objects_to_view[m_current_action]  )  );
+        //     time_last_tracked=Blackboard->Sensors->GetTimestamp();
+        //     last_job_was_trackjob = true;
+        // } else {
+        //     Blackboard->Jobs->addMotionJob(  new HeadTrackJob(  *m_objects_to_view[m_current_action]  )  );
+        //     time_last_tracked=Blackboard->Sensors->GetTimestamp();
+        //     last_job_was_trackjob = true;
+        // }
+    } else if(Blackboard->Sensors->GetTimestamp()-time_last_tracked < 100 and last_job_was_trackjob){
+        return;
+    } else {   
+        if(Blackboard->Sensors->GetTimestamp()-time_last_quick_panned > 2000 ){
+            performQuickScan();
+            time_last_quick_panned = Blackboard->Sensors->GetTimestamp();
+            return;
+        }
+        // if (m_current_action < head_logic->relevantObjects[0].size()){    
+        //     Blackboard->Jobs->addMotionJob(  new HeadPanJob(*(StationaryObject*)m_objects_to_view[m_current_action])  );
+        //     last_job_was_trackjob = false;
+        // } else if (m_current_action < head_logic->relevantObjects[1].size()+head_logic->relevantObjects[0].size()){
+        //     Blackboard->Jobs->addMotionJob(  new HeadPanJob(*(MobileObject*)m_objects_to_view[m_current_action])  );
+        //     last_job_was_trackjob = false;
+        // }
+    }   
+    
 }
-
-
 
 void HeadBehaviour::dispatchHeadJob(StationaryObject* ObjectToTrack) {
     //initiate a new pan job using the robots estimated standard deviation of heading as the pan width
@@ -673,7 +665,21 @@ void HeadBehaviour::dispatchHeadJob(AmbiguousObject* ObjectToTrack) {
 
 }
 
+void HeadBehaviour::takeAction(int action){
+    actionObjectID = m_objects_to_view[action]->getID();
+    actionStartTime = Blackboard->Sensors->GetTimestamp();
+    m_current_action = action;
+}
 
+
+void HeadBehaviour::performQuickScan(){
+   // std::cout<<__PRETTY_FUNCTION__<< " Performing quick scan." <<std::endl;
+    if(head_logic->getObjectType(m_current_action) == HeadLogic::MOBILE_OBJECT){
+        Blackboard->Jobs->addMotionJob(new HeadPanJob(HeadPanJob::BallAndLocalisation));
+    } else {
+        Blackboard->Jobs->addMotionJob(new HeadPanJob(HeadPanJob::Localisation));
+    }
+}
 
 
 

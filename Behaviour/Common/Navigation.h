@@ -57,7 +57,7 @@ private:
 //XXX: load all these from central config ----------------------------------------
     //load these values from walk config
     static constexpr float m_turn_speed = 0.4;
-    static constexpr float m_walk_speed = 0.9;
+    static constexpr float m_walk_speed = 0.95;
     static constexpr float m_feet_separation = 14.0;
     
     //load from robot model
@@ -72,9 +72,9 @@ private:
     static constexpr float m_acceleration_fraction = 0.5;
     
     //approach speeds
-    static constexpr float m_close_approach_speed = 0.2;
+    static constexpr float m_close_approach_speed = 0.8;
     static constexpr float m_close_approach_distance = 30.0;
-    static constexpr float m_mid_approach_speed = 0.6;
+    static constexpr float m_mid_approach_speed = 0.85;
     static constexpr float m_mid_approach_distance = 60.0;
     
     //turning values
@@ -88,8 +88,8 @@ private:
     //ball lineup
     std::vector<float> m_ball_approach_angle;
     std::vector<int> m_ball_kick_foot;
-    static constexpr float m_ball_lineup_distance = 15.0;
-    static constexpr int m_ball_lineup_min_distance = 12.0;
+    static constexpr float m_ball_lineup_distance = 10.0;
+    static constexpr int m_ball_lineup_min_distance = 6.0;
     
     //extra config options
     static constexpr bool m_use_localisation_avoidance = false;
@@ -107,7 +107,12 @@ private:
     std::vector<float> current_point;
     int current_command;
     std::vector<float> current_walk_command;
+    std::vector<float> m_raw_move;
     float current_heading;
+
+    bool kick_;
+
+    Navigation() : kick_(false) {}
     
     /*! @brief Given a distance, and relative bearing and heading, returns a new walk command based on the navigation parameters
      */
@@ -156,9 +161,13 @@ public:
      */
     std::vector<float> goToPoint(const std::vector<float> point);
     
-    /*! @brief Approach the ball with a good angle to kick from. Returned std::vector is walk command std::vector.
+    /*! @brief Approach the ball with a good angle to kick from. Returned std::vector is walk command std::vector. Buggy.
      */
     std::vector<float> goToBall(Object* kickTarget = NULL);
+    
+    /*! @brief Approach the ball with a good angle to kick from. Returned std::vector is walk command std::vector. Fixed version.
+     */
+    std::vector<float> goToBall2(Object* kickTarget = NULL);
 
     /*! @brief Stop the walk.
      */

@@ -8,10 +8,11 @@
 #include "Kinematics/Kinematics.h"
 #include "Tools/Math/Matrix.h"
 
-Goal::Goal(VFO_ID id, const Quad &corners)
+Goal::Goal(VFO_ID id, const Quad &corners, bool known)
 {
     m_id = id;
     m_corners = corners;
+    m_known = known;
 
     m_location.screenCartesian = corners.getBottomCentre();
     m_size_on_screen = Vector2<double>(corners.getAverageWidth(), corners.getAverageHeight());
@@ -86,34 +87,38 @@ bool Goal::addToExternalFieldObjects(FieldObjects *fieldobjects, float timestamp
             newAmbObj.addPossibleObjectID(FieldObjects::FO_BLUE_LEFT_GOALPOST);
             newAmbObj.addPossibleObjectID(FieldObjects::FO_BLUE_RIGHT_GOALPOST);
             break;
-//        case GOAL_Y_L:
-//            stat_id = FieldObjects::FO_YELLOW_LEFT_GOALPOST;
-//            stationary = true;
-//            break;
-//        case GOAL_Y_R:
-//            stat_id = FieldObjects::FO_YELLOW_RIGHT_GOALPOST;
-//            stationary = true;
-//            break;
-//        case GOAL_Y_U:
-//            newAmbObj = AmbiguousObject(FieldObjects::FO_YELLOW_GOALPOST_UNKNOWN, "Unknown Yellow Post");
-//            newAmbObj.addPossibleObjectID(FieldObjects::FO_YELLOW_LEFT_GOALPOST);
-//            newAmbObj.addPossibleObjectID(FieldObjects::FO_YELLOW_RIGHT_GOALPOST);
-//            stationary = false;
-//            break;
-//        case GOAL_B_L:
-//            stat_id = FieldObjects::FO_BLUE_LEFT_GOALPOST;
-//            stationary = true;
-//            break;
-//        case GOAL_B_R:
-//            stat_id = FieldObjects::FO_BLUE_RIGHT_GOALPOST;
-//            stationary = true;
-//            break;
-//        case GOAL_B_U:
-//            newAmbObj = AmbiguousObject(FieldObjects::FO_BLUE_GOALPOST_UNKNOWN, "Unknown Blue Post");
-//            newAmbObj.addPossibleObjectID(FieldObjects::FO_BLUE_LEFT_GOALPOST);
-//            newAmbObj.addPossibleObjectID(FieldObjects::FO_BLUE_RIGHT_GOALPOST);
-//            stationary = false;
-//            break;
+        case GOAL_B_L:
+            fieldobjects->stationaryFieldObjects[FieldObjects::FO_BLUE_LEFT_GOALPOST].UpdateVisualObject(Vector3<float>(m_location.neckRelativeRadial.x, m_location.neckRelativeRadial.y, m_location.neckRelativeRadial.z),
+                                                                                                         Vector3<float>(m_spherical_error.x, m_spherical_error.y, m_spherical_error.z),
+                                                                                                         Vector2<float>(m_location.screenAngular.x, m_location.screenAngular.y),
+                                                                                                         Vector2<int>(m_location.screenCartesian.x,m_location.screenCartesian.y),
+                                                                                                         Vector2<int>(m_size_on_screen.x,m_size_on_screen.y),
+                                                                                                         timestamp);
+            return true;
+        case GOAL_B_R:
+            fieldobjects->stationaryFieldObjects[FieldObjects::FO_BLUE_RIGHT_GOALPOST].UpdateVisualObject(Vector3<float>(m_location.neckRelativeRadial.x, m_location.neckRelativeRadial.y, m_location.neckRelativeRadial.z),
+                                                                                                         Vector3<float>(m_spherical_error.x, m_spherical_error.y, m_spherical_error.z),
+                                                                                                         Vector2<float>(m_location.screenAngular.x, m_location.screenAngular.y),
+                                                                                                         Vector2<int>(m_location.screenCartesian.x,m_location.screenCartesian.y),
+                                                                                                         Vector2<int>(m_size_on_screen.x,m_size_on_screen.y),
+                                                                                                          timestamp);
+            return true;
+        case GOAL_Y_L:
+            fieldobjects->stationaryFieldObjects[FieldObjects::FO_YELLOW_LEFT_GOALPOST].UpdateVisualObject(Vector3<float>(m_location.neckRelativeRadial.x, m_location.neckRelativeRadial.y, m_location.neckRelativeRadial.z),
+                                                                                                         Vector3<float>(m_spherical_error.x, m_spherical_error.y, m_spherical_error.z),
+                                                                                                         Vector2<float>(m_location.screenAngular.x, m_location.screenAngular.y),
+                                                                                                         Vector2<int>(m_location.screenCartesian.x,m_location.screenCartesian.y),
+                                                                                                         Vector2<int>(m_size_on_screen.x,m_size_on_screen.y),
+                                                                                                           timestamp);
+            return true;
+        case GOAL_Y_R:
+            fieldobjects->stationaryFieldObjects[FieldObjects::FO_YELLOW_RIGHT_GOALPOST].UpdateVisualObject(Vector3<float>(m_location.neckRelativeRadial.x, m_location.neckRelativeRadial.y, m_location.neckRelativeRadial.z),
+                                                                                                         Vector3<float>(m_spherical_error.x, m_spherical_error.y, m_spherical_error.z),
+                                                                                                         Vector2<float>(m_location.screenAngular.x, m_location.screenAngular.y),
+                                                                                                         Vector2<int>(m_location.screenCartesian.x,m_location.screenCartesian.y),
+                                                                                                         Vector2<int>(m_size_on_screen.x,m_size_on_screen.y),
+                                                                                                         timestamp);
+            return true;
         default:
             //invalid object - do not push to fieldobjects
             errorlog << "Goal::addToExternalFieldObjects - attempt to add invalid Goal object id: " << VFOName(m_id) << std::endl;
@@ -170,23 +175,13 @@ bool Goal::check() const
         #endif
         return false;
     }
-    
-    //Distance discrepency throwout - if width method says goal is a lot closer than d2p (by specified value) then discard
-//    if(VisionConstants::THROWOUT_ON_DISTANCE_METHOD_DISCREPENCY_GOALS and
-//            width_dist + VisionConstants::MAX_DISTANCE_METHOD_DISCREPENCY_GOALS < d2p) {
-//        #if VISION_GOAL_VERBOSITY > 1
-//        debug << "Goal::check - Goal thrown out: width distance too much smaller than d2p" << std::endl;
-//            debug << "\td2p: " << d2p << " width_dist: " << width_dist << " MAX_DISTANCE_METHOD_DISCREPENCY_GOALS: " << VisionConstants::MAX_DISTANCE_METHOD_DISCREPENCY_GOALS << std::endl;
-//        #endif
-//        return false;
-//    }
-    
+
     //throw out if goal is too far away
     if(VisionConstants::THROWOUT_DISTANT_GOALS and 
         m_location.neckRelativeRadial.x > VisionConstants::MAX_GOAL_DISTANCE) {
         #if VISION_GOAL_VERBOSITY > 1
             debug << "Goal::check - Goal thrown out: too far away" << std::endl;
-            debug << "\td2p: " << m_location.relativeRadial.x << " MAX_GOAL_DISTANCE: " << VisionConstants::MAX_GOAL_DISTANCE << std::endl;
+            debug << "\td2p: " << m_location.neckRelativeRadial.x << " MAX_GOAL_DISTANCE: " << VisionConstants::MAX_GOAL_DISTANCE << std::endl;
         #endif
         return false;
     }
@@ -215,51 +210,72 @@ double Goal::findGroundError(VisionFieldObject* other) const
 bool Goal::calculatePositions()
 {
     const Transformer& tran = VisionBlackboard::getInstance()->getTransformer();
+    int img_width = VisionBlackboard::getInstance()->getImageWidth();
+    int img_height = VisionBlackboard::getInstance()->getImageHeight();
+
+    d2p_loc.screenCartesian = m_location.screenCartesian;
+    width_loc.screenCartesian = m_location.screenCartesian;
+    height_loc.screenCartesian = m_location.screenCartesian;
+
+    //get distance from width
+    width_dist = VisionConstants::GOAL_WIDTH*tran.getCameraDistanceInPixels()/m_size_on_screen.x;
+    height_dist = VisionConstants::GOAL_HEIGHT*tran.getCameraDistanceInPixels()/m_size_on_screen.y;
 
     // D2P
-    tran.calculateRepresentationsFromPixelLocation(m_location);
+    tran.calculateRepresentationsFromPixelLocation(d2p_loc);
+    // WIDTH
+    tran.calculateRepresentationsFromPixelLocation(width_loc, true, width_dist);
+    // HEIGHT
+    tran.calculateRepresentationsFromPixelLocation(height_loc, true, height_dist);
 
-//    //get distance from width
-//    width_dist = VisionConstants::GOAL_WIDTH*tran.getCameraDistanceInPixels()/m_size_on_screen.x;
 
-//    #if VISION_GOAL_VERBOSITY > 1
-//        debug << "Goal::distanceToGoal: bearing: " << bearing << " elevation: " << elevation << std::endl;
-//        debug << "Goal::distanceToGoal: d2p: " << d2p << std::endl;
-//        debug << "Goal::distanceToGoal: m_size_on_screen.x: " << m_size_on_screen.x << std::endl;
-//        debug << "Goal::distanceToGoal: width_dist: " << width_dist << std::endl;
-//    #endif
-//    switch(VisionConstants::GOAL_DISTANCE_METHOD) {
-//    case D2P:
-//        #if VISION_GOAL_VERBOSITY > 1
-//            debug << "Goal::distanceToGoal: Method: D2P" << std::endl;
-//        #endif
-//        distance_valid = d2pvalid && d2p > 0;
-//        result = d2p;
-//        break;
-//    case Width:
-//        #if VISION_GOAL_VERBOSITY > 1
-//            debug << "Goal::distanceToGoal: Method: Width" << std::endl;
-//        #endif
-//        distance_valid = true;
-//        result = width_dist;
-//        break;
-//    case Average:
-//        #if VISION_GOAL_VERBOSITY > 1
-//            debug << "Goal::distanceToGoal: Method: Average" << std::endl;
-//        #endif
-//        //average distances
-//        distance_valid = d2pvalid && d2p > 0;
-//        result = (d2p + width_dist) * 0.5;
-//        break;
-//    case Least:
-//        #if VISION_GOAL_VERBOSITY > 1
-//            debug << "Goal::distanceToGoal: Method: Least" << std::endl;
-//        #endif
-//        distance_valid = d2pvalid && d2p > 0;
-//        result = (distance_valid ? std::min(d2p, width_dist) : width_dist);
-//        break;
-//    }
+    // check if we are off the edge of the screen by a certain margin
+    int EDGE_OF_SCREEN_MARGIN = 5;
+    off_top = m_location.screenCartesian.y - m_size_on_screen.y < EDGE_OF_SCREEN_MARGIN;
+    off_bottom = m_location.screenCartesian.y >= img_height - EDGE_OF_SCREEN_MARGIN;
+    off_side = m_location.screenCartesian.x - 0.5 * m_size_on_screen.x <= EDGE_OF_SCREEN_MARGIN ||
+                    m_location.screenCartesian.x + 0.5 * m_size_on_screen.x >= img_width - EDGE_OF_SCREEN_MARGIN;
 
+    if(off_bottom && off_side)
+    {
+        // we can't tell distance to these goals
+        m_location.neckRelativeRadial = Vector3<double>();
+        return false;
+    }
+    else if(off_bottom || off_top)
+    {
+        // we can only use width
+        m_location = width_loc;
+    }
+    else if(off_side)
+    {
+        // we can only use d2p
+        m_location.neckRelativeRadial = Vector3<double>();
+        return false;
+        //m_location = d2p_loc;
+    }
+    else
+    {
+        // use method of choice
+        switch(VisionConstants::GOAL_DISTANCE_METHOD) {
+            case D2P:
+                m_location = d2p_loc;
+                break;
+            case Width:
+                m_location = width_loc;
+                break;
+            case Average:
+                //average distances
+                m_location.screenCartesian = (d2p_loc.screenCartesian + width_loc.screenCartesian) * 0.5;
+                m_location.neckRelativeRadial = (d2p_loc.neckRelativeRadial + width_loc.neckRelativeRadial) * 0.5;
+                m_location.screenAngular = (d2p_loc.screenAngular + width_loc.screenAngular) * 0.5;
+                m_location.groundCartesian = (d2p_loc.groundCartesian + width_loc.groundCartesian) * 0.5;
+                break;
+            case Least:
+                m_location = (d2p_loc.neckRelativeRadial.x < width_loc.neckRelativeRadial.x ? d2p_loc : width_loc);
+                break;
+        }
+    }
 
     #if VISION_GOAL_VERBOSITY > 2
         debug << "Goal::calculatePositions: " << m_location << std::endl;

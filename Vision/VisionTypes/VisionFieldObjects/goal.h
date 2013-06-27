@@ -9,8 +9,9 @@
 class Goal : public VisionFieldObject
 {
 public:
+    friend class GoalDetector;  // Hack, remove after RC2013
        
-    Goal(VFO_ID id=INVALID, const Quad& corners=Quad());
+    Goal(VFO_ID id=INVALID, const Quad& corners=Quad(), bool known=false);
 
     void setBase(Point base);
 
@@ -51,9 +52,15 @@ private:
       @return the distance to the goal in cm.
       */
 //    double distanceToGoal(double bearing, double elevation);
-    
+
+public:
+    bool m_known;
+
 private:
     Quad m_corners;                 //! @variable pixel locations of the corners
+    NUPoint d2p_loc, width_loc, height_loc;
+    double width_dist, height_dist;
+    bool off_top, off_bottom, off_side;
 
 //public:
 //    double width_dist,

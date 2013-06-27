@@ -172,9 +172,9 @@ int VisionControlWrapper::run()
 
             // don't run if prev was cancelled due to beginning of stream
             if(next)
-                error = runFrame(true);
+                error = runFrame(true, frame);
             else if(prev)
-                error = runFrame(false);
+                error = runFrame(false, frame);
 
             next = false;
             prev = false;
@@ -221,9 +221,9 @@ int VisionControlWrapper::run()
     return 0;
 }
 
-int VisionControlWrapper::runFrame(bool forward)
+int VisionControlWrapper::runFrame(bool forward, int frame_no)
 {
-    if(!wrapper->updateFrame(forward))
+    if(!wrapper->updateFrame(forward, frame_no))
     {
         #if VISION_WRAPPER_VERBOSITY > 1
             debug << "VisionControlWrapper::runFrame() - updateFrame() failed" << std::endl;
@@ -261,7 +261,7 @@ void VisionControlWrapper::getOptions(DataWrapper::INPUT_METHOD& method, bool& o
                 ok = false;
                 lname = QFileDialog::getOpenFileName(NULL, "Select Lookup Table", QString(getenv("HOME")) + QString("/nubot/"),  "LUT Files (*.lut)").toStdString();
                 if(!lname.empty()) {
-                    cfg = QFileDialog::getOpenFileName(NULL, "Select Configuration File", QString(getenv("HOME")) + QString("/nubot/Config/Darwin/"), "config Files (*.cfg)").toStdString();
+                    cfg = QFileDialog::getOpenFileName(NULL, "Select Configuration File", QString(getenv("HOME")) + QString("/nubot/"), "config Files (*.cfg)").toStdString();
                     ok = !cfg.empty();
                 }
             }

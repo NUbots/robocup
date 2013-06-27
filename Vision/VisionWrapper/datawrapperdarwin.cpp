@@ -36,6 +36,7 @@ DataWrapper::DataWrapper()
     isSavingImages = false;
     isSavingImagesWithVaryingSettings = false;
 
+    debug << "Loading from: " << std::string(CONFIG_DIR) + std::string("VisionOptions.cfg") << std::endl;
     VisionConstants::loadFromFile(std::string(CONFIG_DIR) + std::string("VisionOptions.cfg"));
 
     std::string sen_calib_name = std::string(CONFIG_DIR) + std::string("SensorCalibration.cfg");
@@ -375,6 +376,7 @@ bool DataWrapper::updateFrame()
         errorlog << "DataWrapperDarwin - updateFrame() - failed to get head yaw from NUSensorsData" << std::endl;
     if(!sensor_data->getOrientation(orientation))
         errorlog << "DataWrapperDarwin - updateFrame() - failed to get orientation from NUSensorsData" << std::endl;
+    m_orientation = Vector3<float>(orientation.at(0), orientation.at(1), orientation.at(2));
 
     vector<float> left, right;
     if(sensor_data->get(NUSensorsData::LLegTransform, left) and sensor_data->get(NUSensorsData::RLegTransform, right))
@@ -409,9 +411,7 @@ void DataWrapper::postProcess()
 */
 bool DataWrapper::loadLUTFromFile(const std::string& fileName)
 {
-    #if VISION_WRAPPER_VERBOSITY > 1
-        debug << "DataWrapper::loadLUTFromFile() - " << fileName << std::endl;
-    #endif
+    debug << "DataWrapper::loadLUTFromFile() - " << fileName << std::endl;
     return m_LUT.loadLUTFromFile(fileName);
 }
 

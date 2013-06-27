@@ -67,8 +67,9 @@ SensorReadManager::SensorReadManager()
         descriptor_list_.push_back(servo_read);
     }
 
+
     // //   - Force-sensitive resistors:
-    SensorReadDescriptor* fsr_l_read = new SensorReadDescriptor();
+    /* SensorReadDescriptor* fsr_l_read = new SensorReadDescriptor();
     fsr_l_read->set_sensor_id(FSR::ID_L_FSR);
     fsr_l_read->set_start_address(FSR::P_FSR1_L);
     fsr_l_read->set_num_bytes(10);
@@ -78,7 +79,7 @@ SensorReadManager::SensorReadManager()
     fsr_r_read->set_sensor_id(Robot::FSR::ID_R_FSR);
     fsr_r_read->set_start_address(FSR::P_FSR1_L);
     fsr_r_read->set_num_bytes(10);
-    descriptor_list_.push_back(fsr_r_read);
+    descriptor_list_.push_back(fsr_r_read); */
 
 
     // Populate the map and the heap with the same descriptors:
@@ -104,7 +105,7 @@ SensorReadManager::~SensorReadManager()
 
 // SensorReadDescriptor& SensorReadManager::operator[](const int sensor_id)
 // {
-//     return *(descriptor_map_[sensor_id]);
+//     return GetDescriptorById(sensor_id);
 // }
 
 SensorReadDescriptor* SensorReadManager::GetDescriptorById(int sensor_id)
@@ -116,6 +117,8 @@ SensorReadDescriptor* SensorReadManager::GetDescriptorById(int sensor_id)
             << __PRETTY_FUNCTION__ 
             << ": Sensor " << sensor_id << " not found."
             << std::endl;
+
+            return nullptr;
     }
 
     return descriptor_map_[sensor_id];
@@ -227,10 +230,6 @@ bool SensorReadManager::CheckSensorsBulkReadErrors(BulkReadData* bulk_read_data)
         // PrintSensorResponseRate(sensor_read->sensor_id());
     }
 
-    // #warning Must return actual error!
-    // std::cout   << __PRETTY_FUNCTION__ << " - " 
-    //             << "DEBUG: return false;"
-    //             << std::endl;
     return significant_error_occured;
 }
 
@@ -305,8 +304,14 @@ void SensorReadManager::PrintSensorResponseRates()
 
 void SensorReadManager::PrintSensorResponseRate(int sensor_id)
 {
-    double response_rate = GetDescriptorById(sensor_id)->response_rate();
-    double consecutive_errors = GetDescriptorById(sensor_id)->consecutive_errors();
+    auto* descriptor = GetDescriptorById(sensor_id);
+
+    if(descriptor == nullptr)
+        return;
+
+    auto response_rate = descriptor->response_rate();
+    auto consecutive_errors = descriptor->consecutive_errors();
+
     std::cout 
         << "  "
         << std::setw(16) << SensorNameForId(sensor_id)
@@ -367,13 +372,15 @@ void SensorReadManager::GetFilteredLikelySensorFailures(
     *failing_sensors = std::vector<int>();
 
     SensorReadDescriptor* cm_read = GetDescriptorById(Robot::CM730::ID_CM);
-    // double cm_response_rate = cm_read->response_rate();
-    double cm_consecutive_errors = cm_read->consecutive_errors();
-    // if(0.5 > cm_response_rate)
-    if(cm_consecutive_errors > 0)
+    if(cm_read != nullptr)
     {
-        failing_sensors->push_back(Robot::CM730::ID_CM);
-        // return;
+        // double cm_response_rate = cm_read->response_rate();
+        double cm_consecutive_errors = cm_read->consecutive_errors();
+        // if(0.5 > cm_response_rate)
+        if(cm_consecutive_errors > 0)
+        {
+            failing_sensors->push_back(Robot::CM730::ID_CM);
+        }
     }
 
     FilterLimbSensorFailures(sensors_right_arm, *failing_sensors);
@@ -416,6 +423,8 @@ void SensorReadManager::FilterLimbSensorFailures(
     {
         int sensor_id = *it;
         SensorReadDescriptor* sensor_read = GetDescriptorById(sensor_id);
+        if(sensor_read == nullptr)
+            continue;
 
         // double response_rate = sensor_read->response_rate();
         int consecutive_errors = sensor_read->consecutive_errors();

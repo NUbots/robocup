@@ -43,6 +43,7 @@
 #include "Infrastructure/Jobs/MotionJobs/HeadNodJob.h"
 #include "Infrastructure/Jobs/MotionJobs/MotionFreezeJob.h"
 #include "Infrastructure/GameInformation/GameInformation.h"
+#include "Infrastructure/Jobs/VisionJobs/SaveImagesJob.h"
 
 #include "debug.h"
 
@@ -52,9 +53,10 @@
 class NUSoccerSubState : public BehaviourState
 {
 public:
-    NUSoccerSubState(NUSoccerProvider* provider){m_provider = provider;}
+    NUSoccerSubState(NUSoccerProvider* provider){m_provider = provider; saving_images = false;}
 protected:
     NUSoccerProvider* m_provider;
+    bool saving_images;
 };
 
 // -----------------------------------------------------------------------------------------------------------------------
@@ -68,19 +70,22 @@ class NUSoccerState : public NUSoccerSubState
 //all private functions are simple soccer behaviours
 private:
     
+    
     void stopMoving(BehaviourStateLogic* logic, Navigation* movement,HeadBehaviour* head) { //this is the freeze for penalised/pickup/initial
         movement->stop();
+        head->prioritiseLocalisation();
     }
     
     void goToStartDefensePositions(BehaviourStateLogic* logic, Navigation* movement,HeadBehaviour* head) { //defensive fielding position
         std::vector<float> position = NavigationLogic::getStartDefensePosition();
-        movement->goToPoint(position[0],position[1],position[2]);
+        
+        movement->goToPoint(position);
         head->prioritiseLocalisation();
     }
     
     void goToStartOffensePositions(BehaviourStateLogic* logic, Navigation* movement,HeadBehaviour* head) { //offensive fielding position
         std::vector<float> position = NavigationLogic::getStartOffensePosition();
-        movement->goToPoint(position[0],position[1],position[2]);
+        movement->goToPoint(position);
         head->prioritiseLocalisation();
     }
     
@@ -99,9 +104,11 @@ private:
     }
     
     void doBallApproachAndKick(BehaviourStateLogic* logic, Navigation* movement,HeadBehaviour* head) {
-        movement->goToBall();
-        movement->kick();
-        head->prioritiseBall();        
+
+        movement->goToBall2();
+        //head->prioritiseBall();
+        head->lookAtBall();
+        movement->kick();        
     }
     
     void goToOffensiveSupportPosition(BehaviourStateLogic* logic, Navigation* movement,HeadBehaviour* head) {
@@ -121,15 +128,18 @@ public:
     BehaviourState* nextState() {return m_provider->m_state;}
     void doState()
     {   
+        //std::cout << "Beginning Behaviour" << std::endl;
         BehaviourStateLogic* logic = BehaviourStateLogic::getInstance();
         Navigation* movement = Navigation::getInstance();
         HeadBehaviour* head = HeadBehaviour::getInstance();
         
         //update our decision information
+        //std::cout << "about to update logic" << std::endl;
         logic->update();
         
         //printout for states
         //XXX: send to NUbugger
+
         /*
         std::cout <<"IS_CLOSEST_TO_BALL" << logic->states[0] << std::endl <<
                     "IS_SECOND_FROM_BALL" << logic->states[1] << std::endl <<
@@ -141,16 +151,17 @@ public:
                     "BALL_IS_SEEN" << logic->states[7] << std::endl <<
                     "TEAM_SEES_BALL" << logic->states[8] << std::endl <<
                     "BALL_IS_LOST" << logic->states[9] << std::endl <<
+                    "GAME_STATE_INITIAL" << logic->states[23] << std::endl <<
                     "GAME_STATE_PENALISED" << logic->states[10] << std::endl <<
                     "GAME_STATE_SET" << logic->states[11] << std::endl <<
                     "GAME_STATE_READY" << logic->states[12] << std::endl <<
                     "GAME_STATE_KICKOFF" << logic->states[13] << std::endl <<
                     "GAME_STATE_END" << logic->states[14] << std::endl <<
+                    "GAME_STATE_PLAYING" << logic->states[19] << std::endl <<
                     "IS_KICKING" << logic->states[15] << std::endl <<
                     "IS_APPROACHING_BALL" << logic->states[16] << std::endl <<
                     "IS_IN_POSITION" << logic->states[17] << std::endl <<
                     "IS_GOAL_KEEPER" << logic->states[18] << std::endl <<
-                    "GAME_STATE_PLAYING" << logic->states[19] << std::endl <<
                     "JUST_PUT_DOWN" << logic->states[20] << std::endl <<
                     "JUST_UNPENALISED" << logic->states[21] << std::endl <<
                     "GAME_STATE_KICKING_OFF" << logic->states[22] << std::endl;
@@ -158,11 +169,15 @@ public:
         
         //do action selection logic:
         if (logic->states[BehaviourStateLogic::GAME_STATE_PENALISED] or
+            logic->states[BehaviourStateLogic::GAME_STATE_INITIAL] or
             logic->states[BehaviourStateLogic::GAME_STATE_SET] or
+            logic->states[BehaviourStateLogic::GAME_STATE_END] or
+            logic->states[BehaviourStateLogic::IS_FALLEN_OVER] or
             logic->states[BehaviourStateLogic::IS_PICKED_UP]) {
             
             //XXX: send to NUbugger
-            std::cout << "Stopping Movement" << std::endl;
+
+            //std::cout << "Stopping Movement" << std::endl;
             
             stopMoving( logic, movement, head);
             
@@ -170,7 +185,8 @@ public:
                    not logic->states[BehaviourStateLogic::GAME_STATE_KICKOFF]) {
             
             //XXX: send to NUbugger
-            std::cout << "Going To Start Position (Non Kickoff)" << std::endl;
+
+            //std::cout << "Going To Start Position (Non Kickoff)" << std::endl;
             
             goToStartDefensePositions( logic, movement, head);
             
@@ -178,7 +194,8 @@ public:
                    logic->states[BehaviourStateLogic::GAME_STATE_KICKOFF]) {
             
             //XXX: send to NUbugger
-            std::cout << "Going To Start Position (Kickoff)" << std::endl;
+
+            //std::cout << "Going To Start Position (Kickoff)" << std::endl;
             
             goToStartOffensePositions(logic, movement, head);
             
@@ -186,35 +203,40 @@ public:
             
             
             //XXX: send to NUbugger
-            std::cout << "Watching The Ball" << std::endl;
+
+            //std::cout << "Watching The Ball" << std::endl;
             
             watchTheBall( logic, movement, head);
             
-        } else if (logic->states[BehaviourStateLogic::IS_FALLEN_OVER] or
-                   logic->states[BehaviourStateLogic::IS_GETTING_UP] or
+        } else if (logic->states[BehaviourStateLogic::IS_GETTING_UP] or
                    logic->states[BehaviourStateLogic::JUST_GOT_UP] or
                    logic->states[BehaviourStateLogic::JUST_PUT_DOWN] or 
                    logic->states[BehaviourStateLogic::JUST_UNPENALISED]) {
             
             //XXX: send to NUbugger
-            std::cout << "Looking For Landmarks" << std::endl;
+
+            //std::cout << "Looking For Landmarks" << std::endl;
             
             doFieldLocalisation( logic, movement, head);
             
-        } else if (logic->states[BehaviourStateLogic::BALL_IS_LOST] and
-                   not logic->states[BehaviourStateLogic::TEAM_SEES_BALL]) {
+        } else if (logic->states[BehaviourStateLogic::BALL_IS_LOST] or not
+                    Blackboard->Objects->mobileFieldObjects[FieldObjects::FO_BALL].isObjectVisible() //and
+                   //not logic->states[BehaviourStateLogic::TEAM_SEES_BALL]
+                   ) {
             
             //XXX: send to NUbugger
-            std::cout << "Looking For Ball" << std::endl;
+
+            //std::cout << "Looking For Ball" << std::endl;
             
             doBallLocalisation( logic, movement, head);
             
         } else if ((logic->states[BehaviourStateLogic::IS_APPROACHING_BALL] and
                    not logic->states[BehaviourStateLogic::IS_FURTHEST_FROM_BALL]) or
-                   logic->states[BehaviourStateLogic::IS_CLOSEST_TO_BALL]) {
+                   logic->states[BehaviourStateLogic::IS_CLOSEST_TO_BALL] or true) {
             
             //XXX: send to NUbugger
-            std::cout << "In Striker Mode" << std::endl;
+
+            //std::cout << "In Striker Mode" << std::endl;
             
             doBallApproachAndKick( logic, movement, head);
             
@@ -223,7 +245,8 @@ public:
             
             
             //XXX: send to NUbugger
-            std::cout << "In Offensive Support Mode" << std::endl;
+
+            //std::cout << "In Offensive Support Mode" << std::endl;
             
             //XXX: we need to know if it's not the closest to the ball but is the closest to the offensive position....
             goToOffensiveSupportPosition(logic,  movement, head);
@@ -233,14 +256,17 @@ public:
             
             
             //XXX: send to NUbugger
-            std::cout << "In Defensive Support Mode" << std::endl;
+
+            //std::cout << "In Defensive Support Mode" << std::endl;
             
             //XXX: see above
             goToDefensiveSupportPosition( logic,  movement, head);
             
+        } else {
+            //XXX: send to NUbugger
+
+            //std::cout << "I Am Doing Nothing" << std::endl;
         } /*else if () {
-            
-        } else if () {
             
         } else if () {
             
@@ -256,12 +282,51 @@ public:
             
         }*/
         
+        /*
+        //XXX: messy
+        if (m_provider->singleChestClick()) {
+            while (m_game_info->getCurrentState() != GameInformation::PenalisedState) {
+                Blackboard->GameInfo->doManualStateChange();
+            }
+        } else if (m_provider->doubleChestClick() or m_provider->tripleChestClick()) {
+            //XXX: save images
+        }*/
+        
+        //XXX: messy
+        if (m_provider->singleChestClick()) {
+            if (logic->states[BehaviourStateLogic::GAME_STATE_PENALISED]) {
+                while (m_game_info->getCurrentState() != GameInformation::PlayingState)
+                    Blackboard->GameInfo->doManualStateChange();
+            } else {
+                while (m_game_info->getCurrentState() != GameInformation::PenalisedState)
+                    Blackboard->GameInfo->doManualStateChange();
+            }
+            
+            if (logic->states[BehaviourStateLogic::GAME_STATE_PENALISED]) {
+                Blackboard->Actions->add(NUActionatorsData::Sound, Blackboard->Sensors->GetTimestamp(), "play_soccer.wav");
+            } else {
+                Blackboard->Actions->add(NUActionatorsData::Sound, Blackboard->Sensors->GetTimestamp(), "penalised.wav");
+            }
+            
+        } else if (m_provider->doubleChestClick() or m_provider->tripleChestClick() or m_provider->longChestClick()) {
+            saving_images = not saving_images;
+            Blackboard->Jobs->addVisionJob(new SaveImagesJob(saving_images, true));
+            
+            if (saving_images) {
+                Blackboard->Actions->add(NUActionatorsData::Sound, Blackboard->Sensors->GetTimestamp(), "start_saving_images.wav");
+            } else {
+                Blackboard->Actions->add(NUActionatorsData::Sound, Blackboard->Sensors->GetTimestamp(), "stop_saving_images.wav");
+            }
+        }
         
         
         
         //update movement and head:
+        //std::cout << "about to update movement" << std::endl;
         movement->update();
+        //std::cout << "about to update head" << std::endl;
         head->update();
+        //std::cout << "Finished Behaviour." << std::endl;
         
         
     };

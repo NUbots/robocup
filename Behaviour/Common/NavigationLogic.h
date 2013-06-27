@@ -64,7 +64,7 @@ public:
         std::vector<float> result(3,0);
         float x,y;
         
-        if (Blackboard->TeamInfo->getTeamNumber() == 0) { //team blue = 0
+        if (Blackboard->GameInfo->getTeamColour() == 0) { //team blue = 0
             x = 0.5f*(Blackboard->Objects->stationaryFieldObjects[FieldObjects::FO_YELLOW_LEFT_GOALPOST].X()+Blackboard->Objects->stationaryFieldObjects[FieldObjects::FO_YELLOW_RIGHT_GOALPOST].X());
             y = 0.5f*(Blackboard->Objects->stationaryFieldObjects[FieldObjects::FO_YELLOW_LEFT_GOALPOST].Y()+Blackboard->Objects->stationaryFieldObjects[FieldObjects::FO_YELLOW_RIGHT_GOALPOST].Y());
         } else {
@@ -72,6 +72,8 @@ public:
             y = 0.5f*(Blackboard->Objects->stationaryFieldObjects[FieldObjects::FO_BLUE_LEFT_GOALPOST].Y()+Blackboard->Objects->stationaryFieldObjects[FieldObjects::FO_BLUE_RIGHT_GOALPOST].Y());
         }
         
+        result[0] = x;
+        result[1] = y;
         return result;
     }
     
@@ -81,7 +83,7 @@ public:
         std::vector<float> result(3,0);
         float x,y;
         
-        if (not Blackboard->TeamInfo->getTeamNumber() == 0) { //team blue = 0
+        if (not Blackboard->GameInfo->getTeamColour() == 0) { //team blue = 0
             x = 0.5f*(Blackboard->Objects->stationaryFieldObjects[FieldObjects::FO_YELLOW_LEFT_GOALPOST].X()+Blackboard->Objects->stationaryFieldObjects[FieldObjects::FO_YELLOW_RIGHT_GOALPOST].X());
             y = 0.5f*(Blackboard->Objects->stationaryFieldObjects[FieldObjects::FO_YELLOW_LEFT_GOALPOST].Y()+Blackboard->Objects->stationaryFieldObjects[FieldObjects::FO_YELLOW_RIGHT_GOALPOST].Y());
         } else {
@@ -89,6 +91,8 @@ public:
             y = 0.5f*(Blackboard->Objects->stationaryFieldObjects[FieldObjects::FO_BLUE_LEFT_GOALPOST].Y()+Blackboard->Objects->stationaryFieldObjects[FieldObjects::FO_BLUE_RIGHT_GOALPOST].Y());
         }
         
+        result[0] = x;
+        result[1] = y;
         return result;
     }
     
@@ -101,9 +105,9 @@ public:
         rel_x = position2[0]-position1[0];
         rel_y = position2[1]-position1[1];
         
-        result[0] = sqrt(rel_x*rel_x+rel_y*rel_y);
-        result[1] = mathGeneral::normaliseAngle(atan2(rel_y,rel_x) - position1[2]);
-        result[2] = mathGeneral::normaliseAngle(position2[2]-position1[2]);
+        result[0] = position2[0]-position1[0];//sqrt(rel_x*rel_x+rel_y*rel_y);
+        result[1] = position2[1]-position1[1];//mathGeneral::normaliseAngle(atan2(rel_y,rel_x) - position1[2]);
+        result[2] = position2[2]-position1[2];//mathGeneral::normaliseAngle(position2[2]-position1[2]);
         
         return result;
     }
@@ -194,12 +198,13 @@ public:
      */
     static vector<float> getStartOffensePosition() {
         //XXX: hardcoded starting positions
-        const float positions[][3] ={{-20,0,0}, //robot 1 - kickoff robot!
-                                   {-20,90,0}, //robot 2
-                                   {-50,-90,0}, //etc
-                                   {20,-90,0},
-                                   {-50,90,0},
-                                   {-150,0,0}};
+
+        const float positions[][3] ={{30,0,3.14159}, //robot 1 - kickoff robot!
+                                   {50,-110,3.14159}, //robot 2
+                                   {50,110,3.14159}, //etc
+                                   {50,-110,3.14159},
+                                   {50,110,3.14159},
+                                   {150,0,3.14159}};
         vector<float> result(3,0);
         int teamPosition = Blackboard->GameInfo->getPlayerNumber();
         
@@ -207,6 +212,10 @@ public:
         result[1] = positions[teamPosition][1];
         result[2] = positions[teamPosition][2];
         
+        if (Blackboard->GameInfo->getTeamColour() == 0) { //team blue = 0
+            result[0] = -result[0];
+            result[2] = 0.;
+        }
         
         return result;
     }
@@ -215,12 +224,13 @@ public:
      */
     static vector<float> getStartDefensePosition() {
         //XXX: hardcoded starting positions
-        const float positions[][3]={{-70,0,0}, //robot 1 - kickoff robot!
-                                   {-20,90,0}, //robot 2
-                                   {-50,-90,0}, //etc
-                                   {20,-90,0},
-                                   {-50,90,0},
-                                   {-150,0,0}};
+
+        const float positions[][3]={{70,0,3.14159}, //robot 1 - kickoff robot!
+                                   {50,-110,3.14159}, //robot 2
+                                   {50,110,3.14159}, //etc
+                                   {50,-110,3.14159},
+                                   {50,60,3.14159},
+                                   {150,0,3.14159}};
         vector<float> result(3,0);
         int teamPosition = Blackboard->GameInfo->getPlayerNumber();
         
@@ -228,6 +238,10 @@ public:
         result[1] = positions[teamPosition][1];
         result[2] = positions[teamPosition][2];
         
+        if (Blackboard->GameInfo->getTeamColour() == 0) { //team blue = 0
+            result[0] = -result[0];
+            result[2] = 0.;
+        }
         
         return result;
     }
