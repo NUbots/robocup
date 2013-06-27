@@ -2072,7 +2072,7 @@ bool SelfLocalisation::MergeTwoModelsPreserveBestMean(IWeightedKalmanFilter* mod
         }
 #endif // LOC_SUMMARY_LEVEL > 0
 #if DEBUG_LOCALISATION_VERBOSITY > 2
-        cout << "Merge failed." <<std::endl;
+        std::cout << "Merge failed." <<std::endl;
         debug_out  <<"[" << m_timestamp << "]: Merge Between model[" << model_a->id() << "] and model[" << model_b->id() << "] FAILED." << std::endl;
 #endif // DEBUG_LOCALISATION_VERBOSITY > 0
         return success;
