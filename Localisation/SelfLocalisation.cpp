@@ -285,14 +285,14 @@ void SelfLocalisation::process(NUSensorsData* sensor_data, FieldObjects* fobs, c
         return;
     }
 
-    // retrieve gps data
-    if (sensor_data->getGps(m_gps) and sensor_data->getCompass(m_compass))
-    {
-        m_hasGps = true;
-        fobs->self.updateLocationOfSelf(m_gps[0], m_gps[1], m_compass, 0.1, 0.1, 0.01, false);
-//        std::cout << "Position: " << m_gps[0] << ", " << m_gps[1] << ", " << m_compass << std::endl;
-        return;
-    }
+//    // retrieve gps data
+//    if (sensor_data->getGps(m_gps) and sensor_data->getCompass(m_compass))
+//    {
+//        m_hasGps = true;
+//        fobs->self.updateLocationOfSelf(m_gps[0], m_gps[1], m_compass, 0.1, 0.1, 0.01, false);
+////        std::cout << "Position: " << m_gps[0] << ", " << m_gps[1] << ", " << m_compass << std::endl;
+//        return;
+//    }
 
 #ifndef USE_VISION
     // If vision is disabled, gps coordinates are used in its place to trach location.
@@ -322,7 +322,6 @@ void SelfLocalisation::process(NUSensorsData* sensor_data, FieldObjects* fobs, c
         // Hack... Sometimes we get really big odometry turn values that are not real.
         // TODO: See if this can be removed.
         if(fabs(turn) > 1.0f) turn = 0;
-
         doTimeUpdate(fwd, side, turn, time_increment);
 
         #if LOC_SUMMARY_LEVEL > 0
@@ -355,18 +354,17 @@ void SelfLocalisation::process(NUSensorsData* sensor_data, FieldObjects* fobs, c
         m_frame_log << "Mobile Objects: " << objseen << std::endl;
         m_frame_log << "Ambiguous Objects: " << fobs->ambiguousFieldObjects.size() << std::endl;
         #endif
-
         ProcessObjects(fobs, time_increment);
         prof.split("Object Update");
     }
 
 // Shared ball stuff
-    MobileObject& ball = fobs->mobileFieldObjects[FieldObjects::FO_BALL];
-    if(ball.lost() and ball.TimeLastSeen() > 3000)
-    {
-        std::vector<TeamPacket::SharedBall> shared_balls = FindNewSharedBalls(teamInfo->getSharedBalls());
-        sharedBallUpdate(shared_balls);
-    }
+//    MobileObject& ball = fobs->mobileFieldObjects[FieldObjects::FO_BALL];
+//    if(ball.lost() and ball.TimeLastSeen() > 3000)
+//    {
+//        std::vector<TeamPacket::SharedBall> shared_balls = FindNewSharedBalls(teamInfo->getSharedBalls());
+//        sharedBallUpdate(shared_balls);
+//    }
 
     // clip models back on to field.
     clipActiveModelsToField();
@@ -776,7 +774,8 @@ ProcessingRequiredState SelfLocalisation::CheckGameState(bool currently_incapaci
     result.measurement = true;
 
     GameInformation::TeamColour team_colour = game_info->getTeamColour();
-    m_team_colour = team_colour;
+    //m_team_colour = team_colour;
+    m_team_colour = GameInformation::RedTeam;
     GameInformation::RobotState current_state = game_info->getCurrentState();
     /*
     if (currently_incapacitated)
@@ -967,7 +966,7 @@ void SelfLocalisation::doInitialReset(GameInformation::TeamColour team_colour)
     temp.setMean(mean_matrix(back_x, left_y, left_heading));
     positions.push_back(temp);
 
-    /*// Postition 5
+    // Postition 5
     temp.setMean(mean_matrix(2*centre_x, 95.0f, centre_heading));
     positions.push_back(temp);
 
@@ -982,7 +981,7 @@ void SelfLocalisation::doInitialReset(GameInformation::TeamColour team_colour)
 
     // Postition 8
     temp.setMean(mean_matrix(2*centre_x, 0.0f, centre_heading));
-    positions.push_back(temp);*/
+    positions.push_back(temp);
 
     InitialiseModels(positions);
     initBallModel(m_ball_filter);
@@ -1091,7 +1090,8 @@ void SelfLocalisation::doPenaltyReset()
     MultivariateGaussian temp(3);
     temp.setCovariance(covariance_matrix(50.0f*50.0f, 20.0f*20.0f, 0.35f*0.35f));
 
-    float x_coord = 50.f;                           // Red is positive half of field. 50cm
+    //float x_coord = 50.f;                           // Red is positive half of field. 50cm
+    float x_coord = 0.f;                           // Red is positive half of field. 50cm
     if (m_team_colour == GameInformation::BlueTeam)
         x_coord = -x_coord;                         // Blue is negative half of field. -50cm
 
