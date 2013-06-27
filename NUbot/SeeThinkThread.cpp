@@ -136,7 +136,6 @@ void SeeThinkThread::run()
             // // #endif
             Blackboard->Config->UpdateConfiguration();
             // -----------------------------------------
-
             #ifdef THREAD_SEETHINK_PROFILE
                 prof.start();
             #endif
@@ -187,23 +186,22 @@ void SeeThinkThread::run()
             #endif
 
             #ifdef USE_VISION
-
                 m_nubot->m_vision->process(Blackboard->Jobs) ; //<! Networking for Vision
                 m_nubot->m_platform->process(Blackboard->Jobs, m_nubot->m_io); //<! Networking for Platform
                 #ifdef THREAD_SEETHINK_PROFILE
                     prof.split("vision_jobs");
                 #endif
             #endif
+
             #ifdef USE_MOTION
                 m_nubot->m_motion->process(Blackboard->Jobs);
                 #ifdef THREAD_SEETHINK_PROFILE
                     prof.split("motion_jobs");
                 #endif
             #endif
-
 					
             //std::cout << m_nubot->m_platform->getRealTime() << std::endl << Blackboard->Image->GetTimestamp() << std::endl << std::endl;
-            m_nubot->m_api->sendAll();
+            //m_nubot->m_api->sendAll();
 			
 #ifdef LOGGING_ENABLED
             locfile << *m_nubot->m_localisation;
