@@ -18,8 +18,8 @@
 #include <iomanip>
 #include <ctime>
 
-ofstream debug;
-ofstream errorlog;
+std::ofstream debug;
+std::ofstream errorlog;
 
 int getLogNumber(int argc, const char *argv[])
 {
@@ -38,7 +38,7 @@ int main(int argc, const char *argv[])
     char buffer[80];
     strftime(buffer, 80, "%Y%m%d %H%M%S ", timeinfo);
     
-    filename_prefix << buffer << " " << setfill('0') << setw(2) << getLogNumber(argc, argv);
+    filename_prefix << buffer << " " << std::setfill('0') << std::setw(2) << getLogNumber(argc, argv);
     filename_postfix << ".log";
     
     debug.open((DATA_DIR + filename_prefix.str() + "debug" + filename_postfix.str()).c_str());

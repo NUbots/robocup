@@ -68,11 +68,11 @@ private:
     std::vector<webots::Servo*> m_servos;                           //!< a vector containing pointers to each of the servos in the Webot Darwin.
     webots::Accelerometer* m_accelerometer;                     //!< a pointer to the robot's accelerometer
     webots::Gyro* m_gyro;                                       //!< a pointer to the robot's gyrometer
-    static vector<std::string> m_distance_names;                     //!< a vector of the names of each of the distance sensors in Webot Darwin
+    static std::vector<std::string> m_distance_names;                     //!< a vector of the names of each of the distance sensors in Webot Darwin
     std::vector<webots::DistanceSensor*> m_distance_sensors;         //!< a vector containing pointers to each of the distance sensors in the Webot Darwin
-    static vector<std::string> m_foot_sole_names;                    //!< a vector of the names of each of the foot touch sensors in Webot Darwin
+    static std::vector<std::string> m_foot_sole_names;                    //!< a vector of the names of each of the foot touch sensors in Webot Darwin
     std::vector<webots::TouchSensor*> m_foot_sole_sensors;           //!< a vector of pointers to each of the foot force sensors in the Webot Darwin
-    static vector<std::string> m_foot_bumper_names;                  //!< a vector of the foot bumper names
+    static std::vector<std::string> m_foot_bumper_names;                  //!< a vector of the foot bumper names
     std::vector<webots::TouchSensor*> m_foot_bumper_sensors;         //!< a vector of pointers to buttons
     webots::GPS* m_gps;                                         //!< a pointer to the gps module of the robot available for testing!
     webots::Compass* m_compass;                                 //!< a pointer to the compass module of the robot available for testing (only in PRO)

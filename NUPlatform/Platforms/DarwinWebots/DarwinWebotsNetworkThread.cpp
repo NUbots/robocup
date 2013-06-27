@@ -34,7 +34,7 @@
 /*! @brief Constructs the team packet transmission thread
  */
 
-DarwinWebotsNetworkThread::DarwinWebotsNetworkThread(GameInformation* gameinfo, TeamInformation* teaminfo, DarwinWebotsPlatform* webots, int period) : PeriodicThread(string("DarwinWebotsNetworkThread"), period, 0)
+DarwinWebotsNetworkThread::DarwinWebotsNetworkThread(GameInformation* gameinfo, TeamInformation* teaminfo, DarwinWebotsPlatform* webots, int period) : PeriodicThread(std::string("DarwinWebotsNetworkThread"), period, 0)
 {
     m_game_info = gameinfo;
     m_game_packet = new RoboCupGameControlData();
