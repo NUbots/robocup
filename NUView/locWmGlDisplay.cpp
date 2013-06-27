@@ -948,7 +948,14 @@ FieldPose locWmGlDisplay::CalculateErrorElipse(float xx, float xy, float yy)
     }
 
     const float aspectratio = 1.0;
-    result.angle = 0.5 * atan((1/aspectratio) * (2*xy) / (xx-yy));
+    if(xx == yy) // stop divide by zero. is a circle here anyway so angle does not matter.
+    {
+        result.angle = 0.f;
+    }
+    else
+    {
+        result.angle = 0.5 * atan((1/aspectratio) * (2*xy) / (xx-yy));
+    }
     return result;
 }
 
