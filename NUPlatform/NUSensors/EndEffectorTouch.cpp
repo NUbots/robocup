@@ -38,7 +38,7 @@
 EndEffectorTouch::EndEffectorTouch()
 {
     #if DEBUG_NUSENSORS_VERBOSITY > 0
-        debug << "EndEffectorTouch::EndEffectorTouch()" << std::std::endl;
+        debug << "EndEffectorTouch::EndEffectorTouch()" << std::endl;
     #endif
     
     // Init the min and max force tracking

@@ -222,7 +222,7 @@ class SelfLocalisation: public TimestampedData
         IWeightedKalmanFilter* m_ball_filter;
 
 	#if DEBUG_LOCALISATION_VERBOSITY > 0
-        ofstream debug_file; // Logging file
+        std::ofstream debug_file; // Logging file
         #endif // LOCWM_VERBOSITY > 0
 
         double m_timestamp;
