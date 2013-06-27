@@ -36,6 +36,7 @@
 #include "ConfigStorageManager.h"
 #include "ConfigParameter.h"
 #include "ConfigRange.h"
+#include "Autoconfig/nubotdataconfig.h"
 
 using boost::property_tree::ptree;
 
@@ -55,7 +56,8 @@ namespace ConfigSystem
         CONFIGSYS_DEBUG_CALLS;
 
         // get the path to load from
-        std::string loadPath = "~/nubot/Config/Darwin/" + configName + ".json";
+        //std::string loadPath = "ConfigurationFiles/" + configName + ".json";
+        std::string loadPath = CONFIG_DIR + configName + ".json";
         // load tree from file(s) as ptree<string>
         ptree rawTree;
         
@@ -87,7 +89,8 @@ namespace ConfigSystem
     {
         CONFIGSYS_DEBUG_CALLS;
 
-        std::string savePath = "nubot/Config/Darwin/" + configName + ".json";
+        //std::string savePath = "ConfigurationFiles/" + configName + ".json";
+        std::string savePath = CONFIG_DIR + configName + ".json";
 
         // save tree to file(s) as ptree<string>
         try
