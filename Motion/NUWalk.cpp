@@ -333,9 +333,9 @@ void NUWalk::setTargetSpeed(float trans_speed, float trans_direction, float rot_
     #endif
     std::vector<float>& maxspeeds = m_walk_parameters.getMaxSpeeds();
     
-    if (isnan(trans_speed))
+    if (std::isnan(trans_speed))
         trans_speed = 1.0;
-    if (isnan(trans_direction) or isnan(rot_speed))
+    if (std::isnan(trans_direction) or std::isnan(rot_speed))
         return;
     
     // clip translational speed to be a fraction

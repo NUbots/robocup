@@ -713,7 +713,7 @@ bool NUSensorsData::getJointData(const id_t& id, const JointSensorIndices& in, f
             else
                 data = std::numeric_limits<float>::quiet_NaN();
             
-            if (isnan(data))
+            if (std::isnan(data))
                 return false;
             else
                 return true;
@@ -827,7 +827,7 @@ bool NUSensorsData::getButtonData(const id_t& id, const ButtonSensorIndices& in,
             	data = vectorBuffer[in];
             else
                 data = std::numeric_limits<float>::quiet_NaN();
-            if (isnan(data))
+            if (std::isnan(data))
                 return false;
             else
                 return true;

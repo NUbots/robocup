@@ -8,7 +8,7 @@ QMAKE_CXXFLAGS += -std=c++0x
 macx { 
     # Mac Specific Includes
     QMAKE_LFLAGS += -F/System/Library/Frameworks/CoreFoundation.framework/
-    LIBS += -framework CoreFoundation -lz
+    LIBS += -framework CoreFoundation -lz -lzmq -lboost_system-mt
     DESTDIR = "../Build/NUView"
     OBJECTS_DIR = "../Build/NUView/.obj"
     MOC_DIR = "../Build/NUView/.moc"
@@ -16,6 +16,17 @@ macx {
     UI_DIR = "../Build/NUView/.ui"con
     #Macports include directory
     INCLUDEPATH += '/opt/local/include'
+    LIBS += -L"/opt/local/lib"
+    INCLUDEPATH += '/usr/local/include'
+
+    QMAKE_CFLAGS_PPC_64     -= -arch ppc64 -Xarch_ppc64 -mmacosx-version-min=10.8
+    QMAKE_OBJECTIVE_CFLAGS_PPC_64  -= -arch ppc64 -Xarch_ppc64 -mmacosx-version-min=10.8
+    QMAKE_CFLAGS_X86_64     -= -arch x86_64 -Xarch_x86_64 -mmacosx-version-min=10.8
+    QMAKE_OBJECTIVE_CFLAGS_X86_64  -= -arch x86_64 -Xarch_x86_64 -mmacosx-version-min=10.8
+    QMAKE_CXXFLAGS_PPC_64   -= -arch ppc64 -Xarch_ppc64 -mmacosx-version-min=10.8
+    QMAKE_CXXFLAGS_X86_64   -= -arch x86_64 -Xarch_x86_64 -mmacosx-version-min=10.8
+    QMAKE_LFLAGS_PPC_64     -= -arch ppc64 -Xarch_ppc64 -mmacosx-version-min=10.8
+    QMAKE_LFLAGS_X86_64     -= -arch x86_64 -Xarch_x86_64 -mmacosx-version-min=10.8
 }
 win32 { 
     INCLUDEPATH += 'C:/Program Files (x86)/boost/'

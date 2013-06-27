@@ -40,6 +40,7 @@ static std::string temp_servo_names[] = {std::string("HeadPitch"), std::string("
                                     std::string("RHipRoll"),  std::string("RHipPitch"), std::string("RHipYaw"), \
                                     std::string("RKneePitch"), std::string("RAnkleRoll"), std::string("RAnklePitch")};
 
+
 std::vector<std::string> DarwinWebotsActionators::m_servo_names(temp_servo_names, temp_servo_names + sizeof(temp_servo_names)/sizeof(*temp_servo_names));
 
 // init m_led_names:
@@ -47,7 +48,8 @@ static std::string temp_led_names[] = {std::string("HeadLed"), std::string("LEye
 std::vector<std::string> DarwinWebotsActionators::m_led_names(temp_led_names, temp_led_names + sizeof(temp_led_names)/sizeof(*temp_led_names));
 
 // init m_other_names:
-static std::string temp_other_names[] = {/*string("Teleporter"),*/ std::string("Sound")};
+static std::string temp_other_names[] = {/*std::string("Teleporter"),*/ std::string("Sound")};
+
 std::vector<std::string> DarwinWebotsActionators::m_other_names(temp_other_names, temp_other_names + sizeof(temp_other_names)/sizeof(*temp_other_names));
 
 /*! @brief Constructs a nubot actionator class with a Webots backend
