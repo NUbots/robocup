@@ -265,19 +265,19 @@ void OfflineLocalisation::run()
         }
         */
 
-        for(std::vector<AmbiguousObject>::iterator object = tempObjects->ambiguousFieldObjects.begin(); object != tempObjects->ambiguousFieldObjects.end(); ++object)
-        {
-            // Add if seen
-            if(object->isObjectVisible())
-            {
-                if(object->getID() == FieldObjects::FO_CORNER_UNKNOWN_T or object->getID() == FieldObjects::FO_CORNER_UNKNOWN_INSIDE_L
-                        or object->getID() == FieldObjects::FO_CORNER_UNKNOWN_OUTSIDE_L)
-                {
-                    object->addPossibleObjectID(FieldObjects::FO_CORNER_CENTRE_CIRCLE_INTERSECT_LEFT);
-                    object->addPossibleObjectID(FieldObjects::FO_CORNER_CENTRE_CIRCLE_INTERSECT_RIGHT);
-                }
-            }
-        }
+//        for(std::vector<AmbiguousObject>::iterator object = tempObjects->ambiguousFieldObjects.begin(); object != tempObjects->ambiguousFieldObjects.end(); ++object)
+//        {
+//            // Add if seen
+//            if(object->isObjectVisible())
+//            {
+//                if(object->getID() == FieldObjects::FO_CORNER_UNKNOWN_T or object->getID() == FieldObjects::FO_CORNER_UNKNOWN_INSIDE_L
+//                        or object->getID() == FieldObjects::FO_CORNER_UNKNOWN_OUTSIDE_L)
+//                {
+//                    object->addPossibleObjectID(FieldObjects::FO_CORNER_CENTRE_CIRCLE_INTERSECT_LEFT);
+//                    object->addPossibleObjectID(FieldObjects::FO_CORNER_CENTRE_CIRCLE_INTERSECT_RIGHT);
+//                }
+//            }
+//        }
 
 
         AddFrame(tempSensor, tempObjects, tempTeamInfo, tempGameInfo);
