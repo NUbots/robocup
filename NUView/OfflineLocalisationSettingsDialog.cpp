@@ -75,6 +75,7 @@ void OfflineLocalisationSettingsDialog::initialiseSettings(const LocalisationSet
 {
     QComboBox* prune_combo_box = qFindChild<QComboBox*>(this, "PruneMethodComboBox");
     QComboBox* branch_combo_box = qFindChild<QComboBox*>(this, "BranchMethodComboBox");
+    QComboBox* filter_combo_box = qFindChild<QComboBox*>(this, "FilterTypeComboBox");
     switch(settings.branchMethod())
     {
     case LocalisationSettings::branch_exhaustive:
@@ -110,6 +111,19 @@ void OfflineLocalisationSettingsDialog::initialiseSettings(const LocalisationSet
         break;
     default:
         prune_combo_box->setCurrentIndex(prune_combo_box->findText("Merge"));
+        break;
+    }
+
+    switch(settings.selfLocFilter())
+    {
+    case KFBuilder::kbasic_ukf_filter:
+        filter_combo_box->setCurrentIndex(filter_combo_box->findText("Basic UKF"));
+        break;
+    case KFBuilder::kseq_ukf_filter:
+        filter_combo_box->setCurrentIndex(filter_combo_box->findText("Sequential UKF"));
+        break;
+    default:
+        filter_combo_box->setCurrentIndex(filter_combo_box->findText("Sequential UKF"));
         break;
     }
 }
