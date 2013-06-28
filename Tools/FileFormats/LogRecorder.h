@@ -8,6 +8,7 @@
 #include "nubotdataconfig.h"
 #include "targetconfig.h"
 #include "Infrastructure/NUBlackboard.h"
+#include <boost/filesystem.hpp>
 
 enum LogFileStatus
 {
@@ -74,9 +75,24 @@ public:
 #else
         const std::string data_dir = std::string(DATA_DIR);
 #endif
-        std::stringstream filename;
-        filename << data_dir << robot_number << "_" << data_name << seperator << extension;
-        return filename.str();
+        std::stringstream filepath;
+        filepath << data_dir << robot_number;
+        boost::filesystem::path dir(filepath.str());
+        boost::filesystem::create_directories(dir);
+        if(boost::filesystem::is_directory(dir))
+        {
+            filepath << '/';
+            std::stringstream filename;
+            filename << filepath.str() << data_name << seperator << extension;
+            return filename.str();
+        }
+        else
+        {
+            std::stringstream filename;
+            filename << data_dir << robot_number << "_" << data_name << seperator << extension;
+            return filename.str();
+        }
+
     };
 
 private:
