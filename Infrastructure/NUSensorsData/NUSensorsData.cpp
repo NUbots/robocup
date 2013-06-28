@@ -1204,7 +1204,7 @@ std::ostream& operator<< (std::ostream& output, const NUSensorsData& p_data)
     output << p_data.m_available_ids << std::endl;
     output << p_data.size() << " ";
     for (int i=0; i<p_data.size(); i++)
-        output << p_data.m_sensors[i];// << std::endl;
+        output << p_data.m_sensors[i] << std::endl;
     return output;
 }
 
