@@ -427,7 +427,7 @@ void HeadBehaviour::doRLAgentPolicy(){
     vector<float> inputs = getPercept();
     int action = Mrlagent.getAction(inputs,head_logic->getValidObjectsToLookAt());
     float rew = calculateReward();
-    std::cout << "Reward = " << rew << std::endl;
+    //std::cout << "Reward = " << rew << std::endl;
     Mrlagent.giveReward(rew);
     Mrlagent.doLearning();
 
