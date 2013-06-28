@@ -36,7 +36,7 @@ Matrix RobotModel::processEquation(const Matrix& state, double deltaT, const Mat
     double sin_theta = sin(interp_heading);
 
     result[kstates_x][0] += measurement[kstates_x][0]*cos_theta - measurement[kstates_y][0]*sin_theta;
-    result[kstates_y][0] +=  measurement[kstates_x][0]*sin_theta + measurement[kstates_y][0]*cos_theta;
+    result[kstates_y][0] += measurement[kstates_x][0]*sin_theta + measurement[kstates_y][0]*cos_theta;
     result[kstates_heading][0] += measurement[kstates_heading][0];
 
     return result;
