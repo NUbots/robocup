@@ -793,7 +793,6 @@ void locWmGlDisplay::DrawLocalisationObjects(const SelfLocalisation& localisatio
     {
         const IWeightedKalmanFilter* model = localisation.getBestModel();
         DrawModelObjects(model->estimate(), ball_model->estimate(), modelColor);
-        std::cout << model->getFilterWeight() << std::endl;
     }
     else
     {
