@@ -1184,7 +1184,6 @@ void WalkingEngine::generateNextStepSize(SupportLeg nextSupportLeg, StepType las
           // get requested walk target and speed
           Pose2D walkTarget = requestedWalkTarget;
           //Pose2D requestedSpeed = theMotionRequest.walkRequest.speed;
-          //Pose2D requestedSpeed = Pose2D(m_speed_yaw, 10*m_speed_x, 10*m_speed_y);
           Pose2D requestedSpeed = Pose2D(m_speed_yaw, 10*m_speed_x, 10*m_speed_y);
 //          if(theMotionRequest.walkRequest.mode == WalkRequest::targetMode) // remove upcoming odometry offset
 //          {
