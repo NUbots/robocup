@@ -5,11 +5,13 @@
 
 CornerPoint::CornerPoint(TYPE type, NUPoint location)
 {
+    VisionBlackboard* vbb = VisionBlackboard::getInstance();
+    const Transformer& transformer = vbb->getTransformer();
+    transformer.calculateRepresentationsFromPixelLocation(location);
     m_size_on_screen = Vector2<double>(3,3);
     m_type = type;
     m_location = location;
-
-    valid = m_location.neckRelativeRadial.x > 0;
+    valid = m_location.neckRelativeRadial.x > 0 and m_location.neckRelativeRadial.x < 400;
 }
 
 bool CornerPoint::addToExternalFieldObjects(FieldObjects* fieldobjects, float timestamp) const
@@ -37,6 +39,16 @@ bool CornerPoint::addToExternalFieldObjects(FieldObjects* fieldobjects, float ti
             newAmbObj.addPossibleObjectID(FieldObjects::FO_CORNER_BLUE_PEN_RIGHT);
             newAmbObj.addPossibleObjectID(FieldObjects::FO_CORNER_BLUE_FIELD_LEFT);
             newAmbObj.addPossibleObjectID(FieldObjects::FO_CORNER_BLUE_FIELD_RIGHT);
+            newAmbObj.addPossibleObjectID(FieldObjects::FO_CORNER_YELLOW_T_LEFT);
+            newAmbObj.addPossibleObjectID(FieldObjects::FO_CORNER_YELLOW_T_RIGHT);
+            newAmbObj.addPossibleObjectID(FieldObjects::FO_CORNER_CENTRE_T_LEFT);
+            newAmbObj.addPossibleObjectID(FieldObjects::FO_CORNER_CENTRE_T_RIGHT);
+            newAmbObj.addPossibleObjectID(FieldObjects::FO_CORNER_BLUE_T_LEFT);
+            newAmbObj.addPossibleObjectID(FieldObjects::FO_CORNER_BLUE_T_RIGHT);
+            newAmbObj.addPossibleObjectID(FieldObjects::FO_CORNER_PROJECTED_T_YELLOW_LEFT);
+            newAmbObj.addPossibleObjectID(FieldObjects::FO_CORNER_PROJECTED_T_YELLOW_RIGHT);
+            newAmbObj.addPossibleObjectID(FieldObjects::FO_CORNER_PROJECTED_T_BLUE_LEFT);
+            newAmbObj.addPossibleObjectID(FieldObjects::FO_CORNER_PROJECTED_T_BLUE_RIGHT);
 
             break;
         case T:
@@ -51,6 +63,8 @@ bool CornerPoint::addToExternalFieldObjects(FieldObjects* fieldobjects, float ti
             newAmbObj.addPossibleObjectID(FieldObjects::FO_CORNER_PROJECTED_T_YELLOW_RIGHT);
             newAmbObj.addPossibleObjectID(FieldObjects::FO_CORNER_PROJECTED_T_BLUE_LEFT);
             newAmbObj.addPossibleObjectID(FieldObjects::FO_CORNER_PROJECTED_T_BLUE_RIGHT);
+            newAmbObj.addPossibleObjectID(FieldObjects::FO_CORNER_CENTRE_CIRCLE_INTERSECT_LEFT);
+            newAmbObj.addPossibleObjectID(FieldObjects::FO_CORNER_CENTRE_CIRCLE_INTERSECT_RIGHT);
             break;
         case X:
             // At present a cross is ignored as none exist on the field and this indicates poor detection

@@ -144,16 +144,16 @@ int VisionController::runFrame(bool lookForBall, bool lookForGoals, bool lookFor
     #endif
 
     // REMOVED FOR RC2013
-//    if(lookForFieldPoints) {
-//        // Edit here to change whether centre circles, lines or corners are found
-//        //      (note lines cannot be published yet)
-//        m_field_point_detector->run(true, true, true);
-//    }
-//    else {
-//        #if VISION_CONTROLLER_VERBOSITY > 2
-//            debug << "\tnot looking for lines, corners or the centre circle" << std::endl;
-//        #endif
-//    }
+    if(lookForFieldPoints) {
+        // Edit here to change whether centre circles, lines or corners are found
+        //      (note lines cannot be published yet)
+        m_field_point_detector->run(false, true, true);
+    }
+    else {
+        #if VISION_CONTROLLER_VERBOSITY > 2
+            debug << "\tnot looking for lines, corners or the centre circle" << std::endl;
+        #endif
+    }
 
     #ifdef VISION_PROFILER_ON
     prof.split("Field Points");

@@ -48,7 +48,7 @@ NUBlackboard::NUBlackboard()
     Config = NULL;
     lookForBall = true;
     lookForGoals = true;
-    lookForFieldPoints = false; // disabled until working
+    lookForFieldPoints = true; // disabled until working
     lookForObstacles = true;
 	horizontalScans = NULL;
 	verticalScans = NULL;
