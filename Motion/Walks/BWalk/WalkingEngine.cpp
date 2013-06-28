@@ -80,7 +80,7 @@ WalkingEngine::WalkingEngine(NUSensorsData* data, NUActionatorsData* actions, NU
   p.standStandbyRefX = 3.f;
   //p.standComPosition = Vector3<>(/*20.5f*/ 3.5f /*0.f*/, 50.f, /*259.f*/ /*261.5f*/ 258.0f);
   //p.standComPosition = Vector3<>(3.5f, 50.f,258.0f);
-  p.standComPosition = Vector3<>(3.5f, 50.f, 160.0f);
+  p.standComPosition = Vector3<>(3.5f, 35.f, 180.0f);
   p.standBodyTilt = 0.03f; //01f;
   p.standArmJointAngles = Vector2<>(0.2f, 0.f);
 
@@ -584,7 +584,7 @@ void WalkingEngine::updateObservedPendulumPlayer()
 
 void WalkingEngine::computeMeasuredStance()
 {
-    float heightLeg5Joint = 45.19;//old value for NAO heightLeg5Joint = 45.19; Should be 33.5! But when set that way walking ceases.
+    float heightLeg5Joint = 35.19;//old value for NAO heightLeg5Joint = 45.19; Should be 33.5! But when set that way walking ceases.
     std::vector<float> orientation_sensors;
     m_data->getOrientation(orientation_sensors);
     const Vector3<> axis(orientation_sensors[0], orientation_sensors[1], 0);
@@ -855,7 +855,7 @@ void WalkingEngine::generateJointRequest()
   }
 
 
-  const float heightLeg5Joint = 45.19;
+  const float heightLeg5Joint = 35.19;
 
   std::vector<float> joint_positions;
   m_data->getPosition(NUSensorsData::All, joint_positions);
@@ -1184,6 +1184,7 @@ void WalkingEngine::generateNextStepSize(SupportLeg nextSupportLeg, StepType las
           // get requested walk target and speed
           Pose2D walkTarget = requestedWalkTarget;
           //Pose2D requestedSpeed = theMotionRequest.walkRequest.speed;
+          //Pose2D requestedSpeed = Pose2D(m_speed_yaw, 10*m_speed_x, 10*m_speed_y);
           Pose2D requestedSpeed = Pose2D(m_speed_yaw, 10*m_speed_x, 10*m_speed_y);
 //          if(theMotionRequest.walkRequest.mode == WalkRequest::targetMode) // remove upcoming odometry offset
 //          {
