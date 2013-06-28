@@ -75,6 +75,7 @@ public:
 #else
         const std::string data_dir = std::string(DATA_DIR);
 #endif
+        if(data_name == "image") data_name = "_" + data_name; // Hack to stop image files getting opened automatically.
         std::stringstream filepath;
         filepath << data_dir << robot_number;
         boost::filesystem::path dir(filepath.str());
