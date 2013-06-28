@@ -58,6 +58,10 @@ DarwinWebotsSensors::DarwinWebotsSensors(DarwinWebotsPlatform* platform) : m_sim
     m_joint_ids = m_data->mapIdToIds(NUSensorsData::All);
     m_previous_positions = std::vector<float>(m_servo_names.size(), 0);
     m_previous_velocities = std::vector<float>(m_servo_names.size(), 0);
+
+    std::vector<float> invalid(NUSensorsData::NumEndEffectorIndices, std::numeric_limits<float>::quiet_NaN());
+    m_data->set(NUSensorsData::RLegEndEffector, m_data->CurrentTime, invalid);
+    m_data->set(NUSensorsData::LLegEndEffector, m_data->CurrentTime, invalid);
 }
 
 /*! @brief Gets pointers to each of the sensors in the simulated Darwin
