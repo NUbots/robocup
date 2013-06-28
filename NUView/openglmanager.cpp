@@ -919,7 +919,6 @@ void OpenglManager::writeFieldObjectsToDisplay(FieldObjects* AllObjects, GLDispl
             Vision::getColourAsRGB(Vision::shadow_blue,r,g,b);
             glColor3ub(r,g,b);
         }
-
         else if(object_id == FieldObjects::FO_PINK_ROBOT_UNKNOWN)
         {
             Vision::getColourAsRGB(Vision::pink,r,g,b);
@@ -935,11 +934,16 @@ void OpenglManager::writeFieldObjectsToDisplay(FieldObjects* AllObjects, GLDispl
             Vision::getColourAsRGB(Vision::yellow,r,g,b);
             glColor3ub(r,g,b);
         }
+        else if(object_id >= FieldObjects::FO_CORNER_UNKNOWN_INSIDE_L and object_id <= FieldObjects::FO_CORNER_UNKNOWN_T)
+        {
+            glColor3ub(255,0,0);
+            drawSolidCircle(ambiguous_obj.ScreenX(), ambiguous_obj.ScreenY(), 3.f, 50);
+            continue;
+        }
         else
         {
             Vision::getColourAsRGB(Vision::white,r,g,b);
             glColor3ub(r,g,b);
-
         }
 
         int X = ambiguous_obj.ScreenX();
