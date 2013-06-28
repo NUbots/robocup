@@ -29,7 +29,7 @@
 
 #include "ConfigStorageManager.h"
 #include "ConfigTree.h"
-
+#include "Autoconfig/debug.h"
 using std::string;
 // using ConfigSystem::ConfigStorageManager;
 
@@ -114,7 +114,7 @@ namespace ConfigSystem
         }
         catch (boost::property_tree::ptree_error e)
         {
-            std::cout   << "ConfigTree::getParam(...): ACCESS ERROR:" 
+            errorlog    << "ConfigTree::getParam(...): ACCESS ERROR:"
                         << e.what() 
                         << std::endl;
             return false;
@@ -156,7 +156,7 @@ namespace ConfigSystem
         }
         catch (boost::property_tree::ptree_error e)
         {
-            std::cout   << "ConfigTree::getParam(...): ACCESS ERROR:" 
+            errorlog    << "ConfigTree::getParam(...): ACCESS ERROR:"
                         << e.what() 
                         << std::endl;
             return false;
@@ -187,7 +187,7 @@ namespace ConfigSystem
             int del_n = paramParent.erase(paramName);
             if(del_n == 0)
             {
-                std::cout   << "ConfigTree::DeleteParam(...): Nothing to erase"
+                errorlog    << "ConfigTree::DeleteParam(...): Nothing to erase"
                             << " (there's no '" << paramName << "' at the given path)."
                             << std::endl;
                 return false; // return failure if nothing was erased
@@ -198,7 +198,7 @@ namespace ConfigSystem
         }
         catch (boost::property_tree::ptree_error e)
         {
-            std::cout   << "ConfigTree::DeleteParam(...): ACCESS ERROR:" 
+            errorlog    << "ConfigTree::DeleteParam(...): ACCESS ERROR:"
                         << e.what() 
                         << std::endl;
             return false;
