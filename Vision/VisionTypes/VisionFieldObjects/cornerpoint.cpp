@@ -11,13 +11,13 @@ CornerPoint::CornerPoint(TYPE type, NUPoint location)
     m_size_on_screen = Vector2<double>(3,3);
     m_type = type;
     m_location = location;
-    valid = m_location.neckRelativeRadial.x > 0 and m_location.neckRelativeRadial.x < 400;
+    valid = m_location.neckRelativeRadial.x > 0 and m_location.neckRelativeRadial.x < 500;
 }
 
 bool CornerPoint::addToExternalFieldObjects(FieldObjects* fieldobjects, float timestamp) const
 {
 #if VISION_FIELDPOINT_VERBOSITY > 1
-    debug << "CornerPoint::addToExternalFieldObjects - m_id: " << VFOName(m_id) << std::endl;
+    debug << "CornerPoint::addToExternalFieldObjects - m_type: " << m_type << std::endl;
     debug << "    " << *this << std::endl;
 #endif
     if(valid) {
@@ -49,6 +49,12 @@ bool CornerPoint::addToExternalFieldObjects(FieldObjects* fieldobjects, float ti
             newAmbObj.addPossibleObjectID(FieldObjects::FO_CORNER_PROJECTED_T_YELLOW_RIGHT);
             newAmbObj.addPossibleObjectID(FieldObjects::FO_CORNER_PROJECTED_T_BLUE_LEFT);
             newAmbObj.addPossibleObjectID(FieldObjects::FO_CORNER_PROJECTED_T_BLUE_RIGHT);
+            newAmbObj.addPossibleObjectID(FieldObjects::FO_PENALTY_CENTER_PROJECTED_BLUE);
+            newAmbObj.addPossibleObjectID(FieldObjects::FO_PENALTY_CENTER_PROJECTED_BLUE);
+            newAmbObj.addPossibleObjectID(FieldObjects::FO_CORNER_CENTRE_CIRCLE_INTERSECT_LEFT);
+            newAmbObj.addPossibleObjectID(FieldObjects::FO_CORNER_CENTRE_CIRCLE_INTERSECT_RIGHT);
+            newAmbObj.addPossibleObjectID(FieldObjects::FO_BASELINE_CENTER_PROJECTED_BLUE);
+            newAmbObj.addPossibleObjectID(FieldObjects::FO_BASELINE_CENTER_PROJECTED_BLUE);
 
             break;
         case T:
@@ -65,15 +71,17 @@ bool CornerPoint::addToExternalFieldObjects(FieldObjects* fieldobjects, float ti
             newAmbObj.addPossibleObjectID(FieldObjects::FO_CORNER_PROJECTED_T_BLUE_RIGHT);
             newAmbObj.addPossibleObjectID(FieldObjects::FO_CORNER_CENTRE_CIRCLE_INTERSECT_LEFT);
             newAmbObj.addPossibleObjectID(FieldObjects::FO_CORNER_CENTRE_CIRCLE_INTERSECT_RIGHT);
+            newAmbObj.addPossibleObjectID(FieldObjects::FO_PENALTY_CENTER_PROJECTED_BLUE);
+            newAmbObj.addPossibleObjectID(FieldObjects::FO_PENALTY_CENTER_PROJECTED_BLUE);
             break;
         case X:
             // At present a cross is ignored as none exist on the field and this indicates poor detection
             return false;
         default:
             //invalid object - do not push to fieldobjects
-            errorlog << "CornerPoint::addToExternalFieldObjects - attempt to add invalid CornerPoint object id: " << VFOName(m_id) << std::endl;
+            errorlog << "CornerPoint::addToExternalFieldObjects - attempt to add invalid CornerPoint object type: " << m_type << std::endl;
             #if VISION_FIELDPOINT_VERBOSITY > 1
-                debug << "CornerPoint::addToExternalFieldObjects - attempt to add invalid CornerPoint object id: " << VFOName(m_id) << std::endl;
+                debug << "CornerPoint::addToExternalFieldObjects - attempt to add invalid CornerPoint object type: " << m_type << std::endl;
             #endif
             return false;
         }
