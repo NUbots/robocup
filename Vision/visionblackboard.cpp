@@ -177,7 +177,34 @@ void VisionBlackboard::addCentreCircles(const std::vector<CentreCircle> &newcirc
 void VisionBlackboard::addCornerPoints(const std::vector<CornerPoint> &newcorners)
 {
     if(!newcorners.empty())
-        m_corner_points.insert(m_corner_points.end(), newcorners.begin(), newcorners.end());
+    {
+        BOOST_FOREACH(const CornerPoint& point, newcorners)
+        {
+            const Vector2<double> location = point.getLocation().screenCartesian;
+            unsigned int x =location.x;
+            unsigned int y =location.y;
+
+            const NUImage& img = getOriginalImage();
+            const LookUpTable& lut = getLUT();
+
+//            std::cout << "New point @ (" << x << ", " << y << ")" << std::endl;
+            if(x >= getImageWidth() || y >= getImageHeight() || x < 0.f || y < 0.f)
+            {
+//                std::cout << "Outside of image." << std::endl;
+                continue;
+            }
+
+
+//            std::cout << "Class Colour = " << lut.classifyPixel(img(x,y)) << std::endl;
+            if(lut.classifyPixel(img(x,y)) == 1)
+            {
+//                std::cout << "Adding corner" << std::endl;
+                m_corner_points.push_back(point);
+            }
+        }
+//        std::cout << "Corners: " << m_corner_points.size() << std::endl;
+        //m_corner_points.insert(m_corner_points.end(), newcorners.begin(), newcorners.end());
+    }
 }
 
 /**
