@@ -31,7 +31,7 @@
 #include "SeeThinkThread.h"
 #include "nubotdataconfig.h"
 
-//#define LOGGING_ENABLED 1
+#define LOGGING_ENABLED 1
 
 #ifdef USE_VISION
     #include "Infrastructure/FieldObjects/FieldObjects.h"
@@ -113,9 +113,9 @@ void SeeThinkThread::run()
     #ifdef THREAD_SEETHINK_PROFILE
         Profiler prof = Profiler("SeeThinkThread");
     #endif
-#ifdef LOGGING_ENABLED
-    ofstream locfile((std::string(DATA_DIR) + std::string("selflocwm.strm")).c_str(), ios_base::trunc);
-#endif
+//#ifdef LOGGING_ENABLED
+//    std::ofstream locfile((std::string(DATA_DIR) + std::string("selflocwm.strm")).c_str(), ios_base::trunc);
+//#endif
     int err = 0;
     while (err == 0 && errno != EINTR)
     {
@@ -203,9 +203,9 @@ void SeeThinkThread::run()
             //std::cout << m_nubot->m_platform->getRealTime() << std::endl << Blackboard->Image->GetTimestamp() << std::endl << std::endl;
             //m_nubot->m_api->sendAll();
 			
-#ifdef LOGGING_ENABLED
-            locfile << *m_nubot->m_localisation;
-#endif
+//#ifdef LOGGING_ENABLED
+//            locfile << *m_nubot->m_localisation;
+//#endif
             // -----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
             #ifdef THREAD_SEETHINK_PROFILE
