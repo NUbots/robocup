@@ -8,7 +8,7 @@ QMAKE_CXXFLAGS += -std=c++0x
 macx { 
     # Mac Specific Includes
     QMAKE_LFLAGS += -F/System/Library/Frameworks/CoreFoundation.framework/
-    LIBS += -framework CoreFoundation -lz -lzmq -lboost_system-mt
+    LIBS += -framework CoreFoundation -lz -lzmq -lboost_system-mt -lboost_filesystem-mt
     DESTDIR = "../Build/NUView"
     OBJECTS_DIR = "../Build/NUView/.obj"
     MOC_DIR = "../Build/NUView/.moc"
