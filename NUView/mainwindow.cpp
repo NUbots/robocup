@@ -793,8 +793,6 @@ void MainWindow::imageFrameChanged(int currFrame, int totalFrames)
 
 void MainWindow::selectFrame()
 {
-
-
     bool ok;
     int selectedFrameNumber = QInputDialog::getInteger(this, tr("Select Frame"), tr("Enter frame to jump to:"), LogReader->currentFrame(), 1, LogReader->numFrames(), 1, &ok);
     if(ok)
