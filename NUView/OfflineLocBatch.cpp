@@ -105,9 +105,9 @@ std::vector<LocalisationSettings*> OfflineLocBatch::GenerateBranchMergeBatchSett
     }
 
     // add no ambiguous models.
-    loc.setBranchMethod(LocalisationSettings::branch_none);
-    loc.setPruneMethod(LocalisationSettings::prune_none);
-    simulation_settings.push_back(new LocalisationSettings(loc));
+//    loc.setBranchMethod(LocalisationSettings::branch_none);
+//    loc.setPruneMethod(LocalisationSettings::prune_none);
+//    simulation_settings.push_back(new LocalisationSettings(loc));
     return simulation_settings;
 }
 
