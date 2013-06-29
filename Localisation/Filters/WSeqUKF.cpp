@@ -224,7 +224,7 @@ bool WSeqUKF::evaluateMeasurement(const Matrix& innovation, const Matrix& estima
 std::string WSeqUKF::summary(bool detailed) const
 {
     std::stringstream str_strm;
-    str_strm << "ID: " << m_id <<  " Weight: " << m_filter_weight << std::endl;
+    str_strm << "ID: " << m_id <<  " Weight: " << m_filter_weight << " Active: " << m_active << std::endl;
     str_strm << m_estimate.string() << std::endl;
     return str_strm.str();
 }
