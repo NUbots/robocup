@@ -100,7 +100,7 @@ void OfflineLocalisationSettingsDialog::initialiseSettings(const LocalisationSet
     case LocalisationSettings::prune_merge:
         prune_combo_box->setCurrentIndex(prune_combo_box->findText("Merge"));
         break;
-    case LocalisationSettings::prune_max_likelyhood:
+    case LocalisationSettings::prune_max_likelihood:
         prune_combo_box->setCurrentIndex(prune_combo_box->findText("Max Likelyhood"));
         break;
     case LocalisationSettings::prune_viterbi:
@@ -145,7 +145,7 @@ LocalisationSettings OfflineLocalisationSettingsDialog::settings()
     }
     else if (prune_text.compare("max likelyhood", Qt::CaseInsensitive) == 0)
     {
-        result.setPruneMethod((LocalisationSettings::prune_max_likelyhood));
+        result.setPruneMethod((LocalisationSettings::prune_max_likelihood));
     }
     else if (prune_text.compare("viterbi", Qt::CaseInsensitive) == 0)
     {

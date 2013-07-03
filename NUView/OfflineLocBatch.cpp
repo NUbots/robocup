@@ -86,7 +86,7 @@ std::vector<LocalisationSettings*> OfflineLocBatch::GenerateBranchMergeBatchSett
 
     // make vector of pruning methods.
     std::vector<LocalisationSettings::PruneMethod> prune_methods;
-    prune_methods.push_back(LocalisationSettings::prune_max_likelyhood);
+    prune_methods.push_back(LocalisationSettings::prune_max_likelihood);
     prune_methods.push_back(LocalisationSettings::prune_merge);
     prune_methods.push_back(LocalisationSettings::prune_nscan);
     prune_methods.push_back(LocalisationSettings::prune_viterbi);
