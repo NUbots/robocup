@@ -16,7 +16,7 @@ public:
         prune_unknown,
         prune_none,
         prune_merge,
-        prune_max_likelyhood,
+        prune_max_likelihood,
         prune_viterbi,
         prune_nscan
     };

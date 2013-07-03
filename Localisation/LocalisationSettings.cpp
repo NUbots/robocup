@@ -58,11 +58,11 @@ std::string LocalisationSettings::pruneMethodString(PruneMethod method) const
     case prune_merge:
         result = "merge";
         break;
-    case prune_max_likelyhood:
-        result = "maximum likelyhood";
+    case prune_max_likelihood:
+        result = "maximum likelihood";
         break;
     case prune_viterbi:
-        result = "viterbi";
+        result = "N-best";
         break;
     case prune_nscan:
         result = "N-scan";
