@@ -473,8 +473,8 @@ void locWmGlDisplay::drawFieldObjects()
     glPushMatrix();
     drawGoal(Qt::blue,-300,0.0,0.0);
     drawGoal(Qt::yellow,300,0.0,180.0);
-    drawTriColourBeacon(Qt::yellow, Qt::blue, Qt::yellow, 0.f, 240.f);
-    drawTriColourBeacon(Qt::blue, Qt::yellow, Qt::blue, 0.f, -240.f);
+    //drawTriColourBeacon(Qt::yellow, Qt::blue, Qt::yellow, 0.f, 240.f);
+    //drawTriColourBeacon(Qt::blue, Qt::yellow, Qt::blue, 0.f, -240.f);
     glPopMatrix();
 }
 
