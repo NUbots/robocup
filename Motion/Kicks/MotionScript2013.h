@@ -1,6 +1,5 @@
 #ifndef MOTIONSCRIPT2013_H
 #define MOTIONSCRIPT2013_H
-
 #include <unordered_map>
 #include <iostream>
 #include "Infrastructure/NUData.h"

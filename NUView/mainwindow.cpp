@@ -10,7 +10,7 @@
 #include "MotionWidgets/WalkParameterWidget.h"
 #include "MotionWidgets/KickWidget.h"
 #include "SensorCalibrationWidget.h"
-#include <QtGui>
+#include <QtWidgets>
 #include <QMdiArea>
 #include <QStatusBar>
 #include <stdio.h>
@@ -197,7 +197,7 @@ void MainWindow::addAsDockable(QWidget* widget, const QString& name)
     QDockWidget* dockable = new QDockWidget(name);
     dockable->setObjectName(name);
     dockable->setWidget(widget);
-    dockable->setShown(false);
+    dockable->setVisible(false);
     addDockWidget(Qt::RightDockWidgetArea,dockable);
     m_dockable_windows.push_back(dockable);
 }
@@ -633,7 +633,7 @@ void MainWindow::PrintConnectionInfo(const QHostInfo &hostInfo, int port)
     const QList<QHostAddress> &addresses = hostInfo.addresses();
 
     if (hostInfo.error() != QHostInfo::NoError) {
-        qWarning("Lookup failed: %s", hostInfo.errorString().toAscii().constData());
+        qWarning("Lookup failed: %s", hostInfo.errorString().toStdString().c_str());
         return;
     }
 
@@ -794,7 +794,7 @@ void MainWindow::imageFrameChanged(int currFrame, int totalFrames)
 void MainWindow::selectFrame()
 {
     bool ok;
-    int selectedFrameNumber = QInputDialog::getInteger(this, tr("Select Frame"), tr("Enter frame to jump to:"), LogReader->currentFrame(), 1, LogReader->numFrames(), 1, &ok);
+    int selectedFrameNumber = QInputDialog::getInt(this, tr("Select Frame"), tr("Enter frame to jump to:"), LogReader->currentFrame(), 1, LogReader->numFrames(), 1, &ok);
     if(ok)
     {
         LogReader->setFrame(selectedFrameNumber);

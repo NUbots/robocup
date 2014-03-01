@@ -24,7 +24,7 @@
 #include "BonjourProvider.h"
 #include "NUHostInfo.h"
 
-#include <QtGui>
+#include <QtWidgets>
 
 #include "debug.h"
 #include "Tools/Math/StlVector.h"

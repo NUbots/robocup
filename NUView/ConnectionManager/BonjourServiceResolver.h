@@ -27,7 +27,7 @@
 #define BonjourServiceResolver_H
 
 #include "NUHostInfo.h"
-#include <QtGui>
+#include <QtWidgets>
 #include <QtNetwork/QHostInfo>
 
 #include <dns_sd.h>

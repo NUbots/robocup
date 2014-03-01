@@ -29,7 +29,7 @@
 #include "../ConnectionManager/NUHostInfo.h"
 class MotionFileEditor;
 
-#include <QtGui>
+#include <QtWidgets>
 #include <string>
 
 

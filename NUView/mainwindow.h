@@ -2,7 +2,7 @@
 #define MAINWINDOW_H
 
 
-#include <QtGui/QMainWindow>
+#include <QtWidgets/QMainWindow>
 #include "classificationwidget.h"
 #include "connectionwidget.h"
 #include "Infrastructure/NUImage/NUImage.h"

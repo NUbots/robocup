@@ -28,7 +28,7 @@
 class BonjourProvider;
 #include "NUHostInfo.h"
 
-#include <QtGui>
+#include <QtWidgets>
 #include <vector>
 
 

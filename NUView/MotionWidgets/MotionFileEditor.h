@@ -28,7 +28,7 @@
 
 class MotionFileSyntaxHighlighter;
 
-#include <QtGui>
+#include <QtWidgets>
 #include <string>
 
 

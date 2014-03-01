@@ -5,7 +5,7 @@
  * NuViewer used for Debuggin purposes on the Aldebaran Nao Robots
  */
 
-#include <QtGui/QApplication>
+#include <QtWidgets/QApplication>
 #include "mainwindow.h"
 #define NUVIEW
 

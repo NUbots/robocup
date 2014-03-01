@@ -29,7 +29,7 @@
 class BonjourServiceResolver;
 class NUHostInfo;
 
-#include <QtGui>
+#include <QtWidgets>
 #include <dns_sd.h>
 #include <pthread.h>
 #include <string>

@@ -96,12 +96,12 @@ void virtualNUbot::setSensorData(NUSensorsData* newsensorsData)
 
 void virtualNUbot::saveLookupTableFile(QString fileName)
 {
-    LUTTools::SaveLUT(classificationTable,LUTTools::LUT_SIZE,fileName.toAscii());
+    LUTTools::SaveLUT(classificationTable,LUTTools::LUT_SIZE,fileName.toLatin1());
 }
 
 void virtualNUbot::loadLookupTableFile(QString fileName)
 {
-    LUTTools::LoadLUT(classificationTable,LUTTools::LUT_SIZE,fileName.toAscii());
+    LUTTools::LoadLUT(classificationTable,LUTTools::LUT_SIZE,fileName.toLatin1());
     processVisionFrame();
     emit LUTChanged(classificationTable);
 }

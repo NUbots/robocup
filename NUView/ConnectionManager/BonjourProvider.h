@@ -30,7 +30,7 @@
 class BonjourServiceBrowser;
 class NUHostInfo;
 
-#include <QtGui>
+#include <QtWidgets>
 
 #include <dns_sd.h>
 #include <vector>

@@ -26,7 +26,7 @@
 #ifndef MotionFileSyntaxHighlighter_H
 #define MotionFileSyntaxHighlighter_H
 
-#include <QtGui>
+#include <QtWidgets>
 #include <string>
 #include <vector>
 
