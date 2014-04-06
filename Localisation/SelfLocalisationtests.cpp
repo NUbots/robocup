@@ -262,7 +262,7 @@ bool MaxLikelyhoodTest()
     // Configure localisation
     LocalisationSettings settings;
     settings.setBranchMethod(LocalisationSettings::branch_exhaustive);
-    settings.setPruneMethod(LocalisationSettings::prune_max_likelyhood);
+    settings.setPruneMethod(LocalisationSettings::prune_max_likelihood);
     SelfLocalisation loc(2,settings);
 
     std::list<IWeightedKalmanFilter*> models;

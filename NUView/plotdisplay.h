@@ -3,10 +3,10 @@
 
 #include <vector>
 #include <map>
-#include <qwt/qwt_plot.h>
-#include <qwt/qwt_symbol.h>
-#include <qwt/qwt_plot_curve.h>
-#include <qwt/qwt_plot_zoomer.h>
+#include <qwt_plot.h>
+#include <qwt_symbol.h>
+#include <qwt_plot_curve.h>
+#include <qwt_plot_zoomer.h>
 
 using std::map;
 using std::vector;
@@ -21,7 +21,7 @@ public:
 
     static vector<QString> names();
     static bool nameExists(QString name);
-    static QwtSymbol getSymbol(QString name);
+    static QwtSymbol* getSymbol(QString name);
     static QwtPlotCurve::CurveStyle getLineStyle(QString name);
     static QColor getLineColour(QString name);
 
@@ -44,7 +44,7 @@ signals:
 
 private:
     static map<QString, QVector<QPointF> > dataMap;
-    static map<QString, QwtSymbol> symbolMap;
+    static map<QString, QwtSymbol*> symbolMap;
     static map<QString, QwtPlotCurve::CurveStyle> styleMap;
     static map<QString, QColor> colourMap;
 

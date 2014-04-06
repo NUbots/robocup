@@ -112,8 +112,8 @@ void JServo::setGain(double gain)
     else if (gain > 100)
         gain = 100;
     m_target_gain = gain;
-    Servo::setControlP(gain*0.1);
-    setMaxForce((gain/100.0)*m_max_force);
+    //Servo::setControlP(gain*0.1);
+    //setMaxForce((gain/100.0)*m_max_force);
 }
 
 /*! @brief Sets the maximum motor force in Nm

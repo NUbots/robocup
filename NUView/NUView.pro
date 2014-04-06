@@ -1,13 +1,15 @@
-QT += network \
-      opengl
+QT +=   network \
+        opengl \
+        widgets
 
-CONFIG += qwt
+#CONFIG += qwt
+include(/usr/local/qwt-6.1.0/features/qwt.prf)
 
-QMAKE_CXXFLAGS += -std=c++0x
+CONFIG += c++11
 
 macx { 
     # Mac Specific Includes
-    QMAKE_LFLAGS += -F/System/Library/Frameworks/CoreFoundation.framework/
+    QMAKE_LFLAGS += -F/System/Library/Frameworks/CoreFoundation.framework/ -std=c++11 -stdlib=libc++
     LIBS += -framework CoreFoundation -lz -lzmq -lboost_system-mt -lboost_filesystem-mt
     DESTDIR = "../Build/NUView"
     OBJECTS_DIR = "../Build/NUView/.obj"
@@ -18,15 +20,6 @@ macx {
     INCLUDEPATH += '/opt/local/include'
     LIBS += -L"/opt/local/lib"
     INCLUDEPATH += '/usr/local/include'
-
-    QMAKE_CFLAGS_PPC_64     -= -arch ppc64 -Xarch_ppc64 -mmacosx-version-min=10.8
-    QMAKE_OBJECTIVE_CFLAGS_PPC_64  -= -arch ppc64 -Xarch_ppc64 -mmacosx-version-min=10.8
-    QMAKE_CFLAGS_X86_64     -= -arch x86_64 -Xarch_x86_64 -mmacosx-version-min=10.8
-    QMAKE_OBJECTIVE_CFLAGS_X86_64  -= -arch x86_64 -Xarch_x86_64 -mmacosx-version-min=10.8
-    QMAKE_CXXFLAGS_PPC_64   -= -arch ppc64 -Xarch_ppc64 -mmacosx-version-min=10.8
-    QMAKE_CXXFLAGS_X86_64   -= -arch x86_64 -Xarch_x86_64 -mmacosx-version-min=10.8
-    QMAKE_LFLAGS_PPC_64     -= -arch ppc64 -Xarch_ppc64 -mmacosx-version-min=10.8
-    QMAKE_LFLAGS_X86_64     -= -arch x86_64 -Xarch_x86_64 -mmacosx-version-min=10.8
 }
 win32 { 
     INCLUDEPATH += 'C:/Program Files (x86)/boost/'
@@ -211,9 +204,6 @@ HEADERS += ui_mainwindow.h \
     ../Tools/Math/depUKF.h \
     ../Localisation/iotests.h \
     NUViewConfig/*.h \
-    plotdisplay.h \
-    plotselectionwidget.h \
-    createqwtsymboldialog.h \
     ../ConfigSystem/ConfigManager.h \
     ../ConfigSystem/ConfigParameter.h \
     ../ConfigSystem/ConfigRange.h \
@@ -366,9 +356,6 @@ SOURCES += mainwindow.cpp \
     ../Localisation/Filters/UKF.cpp \
     ../Localisation/Filters/MobileObjectUKF.cpp \
     ../Localisation/iotests.cpp \
-    plotdisplay.cpp \
-    plotselectionwidget.cpp \
-    createqwtsymboldialog.cpp \
     ../ConfigSystem/ConfigManager.cpp \
     ../ConfigSystem/ConfigParameter.cpp \
     ../ConfigSystem/ConfigStorageManager.cpp \

@@ -7,7 +7,7 @@
 #include <QPair>
 #include <QList>
 #include <QDoubleSpinBox>
-#include <qwt/qwt_symbol.h>
+#include <qwt_symbol.h>
 
 #include "plotdisplay.h"
 #include "createqwtsymboldialog.h"

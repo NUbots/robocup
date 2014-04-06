@@ -84,7 +84,17 @@ void DarwinWebotsActionators::getActionatorsFromWebots(DarwinWebotsPlatform* pla
 {
     // Get the servos
     for (int i=0; i<m_servo_names.size(); i++)
-        m_servos.push_back(platform->getServo(m_servo_names[i]));
+    {
+        webots::Servo* servo = platform->getServo(m_servo_names[i]);
+        if(servo)
+        {
+            m_servos.push_back(servo);
+        }
+        else
+        {
+            errorlog << "Servo (" << i << ") " << m_servo_names[i] << " not returned." << std::endl;
+        }
+    }
     // Get the leds
     for (int i=0; i<m_led_names.size(); i++)
         m_leds.push_back(platform->getLED(m_led_names[i]));
@@ -115,7 +125,7 @@ void DarwinWebotsActionators::copyToHardwareCommunications()
 	#if DEBUG_NUACTIONATORS_VERBOSITY > 0
     	debug << "DarwinWebotsActionators::copyToHardwareCommunications():Copying to servos." << std::endl;
 	#endif    
-	copyToServos();
+    copyToServos();
 	#if DEBUG_NUACTIONATORS_VERBOSITY > 0
     	debug << "DarwinWebotsActionators::copyToHardwareCommunications():Copying to LEDs." << std::endl;
 	#endif
@@ -136,13 +146,17 @@ void DarwinWebotsActionators::copyToServos()
 {
     static std::vector<float> positions;
     static std::vector<float> gains;
-    m_data->getNextServos(positions, gains);   
-	for (size_t i=0; i<m_servos.size(); i++)
+    m_data->getNextServos(positions, gains);
+    for (size_t i=0; i<m_servos.size(); i++)
     {
+        debug << "Servo ID : " << i << std::endl;
         JServo* jservo = (JServo*) m_servos[i];
-        jservo->setGain(gains[i]);
-        jservo->setVelocity(jservo->getMaxVelocity());
-        jservo->setPosition(DarwinJointMapping::Instance().joint2rad(i, positions[i]));
+        debug << "Setting gain: " << gains[i] << std::endl;
+        //jservo->setGain(gains[i]);
+        //debug << "Setting velocity: " << jservo->getMaxVelocity() << std::endl;
+        //jservo->setVelocity(jservo->getMaxVelocity());
+        //debug << "Setting position: " << DarwinJointMapping::Instance().joint2rad(i, positions[i]) << std::endl;
+        //jservo->setPosition(DarwinJointMapping::Instance().joint2rad(i, positions[i]));
     }
 }
 

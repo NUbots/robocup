@@ -37,7 +37,7 @@ int nifVersion1FormatReader::openFile(const QString& filename)
     QMessageBox::warning(NULL, "Unsupported type", "nif files are no longer supported");
     m_fileInformation.setFile(filename);
     closeFile();
-    m_totalFrames = nifFileReader.openFile(filename.toAscii().data(), false);
+    m_totalFrames = nifFileReader.openFile(filename.toLatin1().data(), false);
     return m_totalFrames;
 }
 

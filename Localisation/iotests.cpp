@@ -7,7 +7,7 @@ void runTests()
 {
     const std::string filename = "temp.bin";
     SelfLocalisation* testLoc = new SelfLocalisation(2);
-    testLoc->doInitialReset(GameInformation::RedTeam);
+    testLoc->doInitialReset(GameInformation::RedTeam, 2);
 
     std::ofstream outFile(filename.c_str(), std::ios_base::out | std::ios_base::trunc);
     testLoc->writeStreamBinary(outFile);

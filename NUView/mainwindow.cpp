@@ -23,8 +23,8 @@
 #include <QFileInfo>
 
 //for plotting
-#include "plotdisplay.h"
-#include <qwt/qwt_plot_curve.h>
+//#include "plotdisplay.h"
+//#include <qwt_plot_curve.h>
 
 #include "NUPlatform/NUPlatform.h"
 #include "Infrastructure/NUBlackboard.h"
@@ -125,8 +125,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     addAsDockable(visionTabs, "Vision tools");
 
     // Add Plots Widget then Dock it on Screen
-    plotSelection = new PlotSelectionWidget(mdiArea,this);
-    addAsDockable(plotSelection, "Plot tools");
+//    plotSelection = new PlotSelectionWidget(mdiArea,this);
+//    addAsDockable(plotSelection, "Plot tools");
 
     // Add Sensor Calibration Widget then Dock it on Screen
     sensorCalibrationTool = new SensorCalibrationWidget(this);
@@ -299,10 +299,10 @@ void MainWindow::createActions()
     newVisionDisplayAction->setStatusTip(tr("Create a new vision display window."));
     connect(newVisionDisplayAction, SIGNAL(triggered()), this, SLOT(createGLDisplay()));
 
-    // New plot display window
-    newPlotDisplayAction = new QAction(tr("&New display"), this);
-    newPlotDisplayAction->setStatusTip(tr("Create a new plot display window."));
-    connect(newPlotDisplayAction, SIGNAL(triggered()), this, SLOT(createPlotDisplay()));
+//    // New plot display window
+//    newPlotDisplayAction = new QAction(tr("&New display"), this);
+//    newPlotDisplayAction->setStatusTip(tr("Create a new plot display window."));
+//    connect(newPlotDisplayAction, SIGNAL(triggered()), this, SLOT(createPlotDisplay()));
 
     // New LocWM display window
     newLocWMDisplayAction = new QAction(tr("&New display"), this);
@@ -362,8 +362,8 @@ void MainWindow::createMenus()
     QMenu* visionWindowMenu = windowMenu->addMenu(tr("&Vision"));
     visionWindowMenu->addAction(newVisionDisplayAction);
 
-    QMenu* plotWindowMenu = windowMenu->addMenu(tr("&Plot"));
-    plotWindowMenu->addAction(newPlotDisplayAction);
+//    QMenu* plotWindowMenu = windowMenu->addMenu(tr("&Plot"));
+//    plotWindowMenu->addAction(newPlotDisplayAction);
 
     QMenu* localisationWindowMenu = windowMenu->addMenu(tr("&Localisation"));
     localisationWindowMenu->addAction(newLocWMDisplayAction);
@@ -502,7 +502,7 @@ void MainWindow::createConnections()
     connect(offlinelocDialog,SIGNAL(SelfLocalisationInfoChanged(QString)),selflocInfoDisplay, SLOT(setText(QString)));
     connect(LocWmStreamer, SIGNAL(fieldObjectDataChanged(const FieldObjects*)),objectDisplayLog, SLOT(setObjectData(const FieldObjects*)));
 
-    connect(virtualRobot, SIGNAL(clearPlots()), this, SLOT(clearPlots()));
+//    connect(virtualRobot, SIGNAL(clearPlots()), this, SLOT(clearPlots()));
 
     // Connect sensor calibration tool
     connect(sensorCalibrationTool,SIGNAL(CalibrationChanged(SensorCalibrationSettings*)), this, SLOT(SetSensorCalibration(SensorCalibrationSettings*)));
@@ -843,19 +843,19 @@ QMdiSubWindow* MainWindow::createGLDisplay()
     return window;
 }
 
-QMdiSubWindow* MainWindow::createPlotDisplay()
-{
-    PlotDisplay* temp = new PlotDisplay(this);
-    //connect signals
-    connect(virtualRobot, SIGNAL(curveChanged(QString, QVector<QPointF>)), temp, SLOT(updateCurveData(QString, QVector<QPointF>)));
-    connect(virtualRobot, SIGNAL(clearPlots()), temp, SLOT(clearCurves()));
-    connect(temp, SIGNAL(namesUpdated(vector<QString>)), plotSelection, SLOT(curveNamesUpdated(vector<QString>)));
-    QMdiSubWindow* window = mdiArea->addSubWindow(temp);
-    temp->resize(320, 240);
-    temp->show();
-    plotSelection->curveNamesUpdated(temp->names());
-    return window;
-}
+//QMdiSubWindow* MainWindow::createPlotDisplay()
+//{
+//    PlotDisplay* temp = new PlotDisplay(this);
+//    //connect signals
+//    connect(virtualRobot, SIGNAL(curveChanged(QString, QVector<QPointF>)), temp, SLOT(updateCurveData(QString, QVector<QPointF>)));
+//    connect(virtualRobot, SIGNAL(clearPlots()), temp, SLOT(clearCurves()));
+//    connect(temp, SIGNAL(namesUpdated(vector<QString>)), plotSelection, SLOT(curveNamesUpdated(vector<QString>)));
+//    QMdiSubWindow* window = mdiArea->addSubWindow(temp);
+//    temp->resize(320, 240);
+//    temp->show();
+//    plotSelection->curveNamesUpdated(temp->names());
+//    return window;
+//}
 
 QMdiSubWindow* MainWindow::createLocWmGlDisplay()
 {

@@ -292,6 +292,10 @@ void Actionator::summaryTo(std::ostream& output)
             output << m_points[i] << " ";
         output << std::endl;
     }
+    else
+    {
+        output << Name << std::endl;
+    }
 }
 
 void Actionator::csvTo(std::ostream& output)

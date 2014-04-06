@@ -18,8 +18,8 @@
 #include <QPainter>
 #include <QToolButton>
 #include <QColorDialog>
-#include <qwt/qwt_symbol.h>
-#include <qwt/qwt_plot_curve.h>
+#include <qwt_symbol.h>
+#include <qwt_plot_curve.h>
 
 #include <boost/foreach.hpp>
 

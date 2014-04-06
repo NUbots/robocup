@@ -459,7 +459,7 @@ bool OfflineLocalisation::WriteXML(const std::string& xmlPath)
         // whole process a lot neater.
         unsigned int total_frames  = m_self_loc_frame_buffer.size();
         temp = m_log_reader->path().toStdString();
-        std::string path = temp.erase(temp.rfind(QDir::separator().toAscii())+1);
+        std::string path = temp.erase(temp.rfind(QDir::separator().toLatin1())+1);
 
         unsigned int num_frames = NumberOfFrames();
 

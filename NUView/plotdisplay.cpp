@@ -1,9 +1,9 @@
 #include "plotdisplay.h"
-#include "qwt/qwt_symbol.h"
-#include "qwt/qwt_legend.h"
+#include <qwt_symbol.h>
+#include <qwt_legend.h>
 
 map<QString, QVector<QPointF> > PlotDisplay::dataMap;
-map<QString, QwtSymbol> PlotDisplay::symbolMap;
+map<QString, QwtSymbol*> PlotDisplay::symbolMap;
 map<QString, QwtPlotCurve::CurveStyle> PlotDisplay::styleMap;
 map<QString, QColor> PlotDisplay::colourMap;
 
@@ -38,7 +38,7 @@ bool PlotDisplay::nameExists(QString name)
     return it != dataMap.end();
 }
 
-QwtSymbol PlotDisplay::getSymbol(QString name)
+QwtSymbol* PlotDisplay::getSymbol(QString name)
 {
     return symbolMap[name];
 }
@@ -96,7 +96,7 @@ void PlotDisplay::updateCurveData(QString name, QVector<QPointF> points)
 void PlotDisplay::updateCurveProperties(QString name, QwtSymbol symbol, QwtPlotCurve::CurveStyle lineStyle, QColor lineColour)
 {
     if(nameExists(name)) {
-        symbolMap[name] = symbol;
+        symbolMap[name] = &symbol;
         styleMap[name] = lineStyle;
         colourMap[name] = lineColour;
 
@@ -115,7 +115,7 @@ void PlotDisplay::updateCurve(QString name)
 
     curve->setSamples(dataMap[name]);
     curve->setStyle(styleMap[name]);
-    curve->setSymbol(new QwtSymbol(symbolMap[name]));
+    curve->setSymbol(symbolMap[name]);
     curve->setPen(QPen(colourMap[name]));
 
     replot();

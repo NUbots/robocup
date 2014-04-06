@@ -7,7 +7,7 @@ OfflineLocalisationSettingsDialog::OfflineLocalisationSettingsDialog(QWidget *pa
     ui(new Ui::OfflineLocalisationSettingsDialog)
 {
     ui->setupUi(this);
-    QComboBox* combo_box = qFindChild<QComboBox*>(this, "PruneMethodComboBox");\
+    QComboBox* combo_box = this->findChild<QComboBox*>("PruneMethodComboBox");\
     combo_box->setCurrentIndex(-1);
     combo_box->setCurrentIndex(0);
 }
@@ -19,8 +19,8 @@ OfflineLocalisationSettingsDialog::~OfflineLocalisationSettingsDialog()
 
 void OfflineLocalisationSettingsDialog::on_PruneMethodComboBox_currentIndexChanged(const QString &arg1)
 {
-    QLabel* label = qFindChild<QLabel*>(this, "PruneMethodParamLabel");
-    QSpinBox* spin_box = qFindChild<QSpinBox*>(this, "PruneMethodParamSpinBox");
+    QLabel* label = this->findChild<QLabel*>("PruneMethodParamLabel");
+    QSpinBox* spin_box = this->findChild<QSpinBox*>("PruneMethodParamSpinBox");
 
     // Display and additional parameters that may be required.
     if (arg1.toLower() == "viterbi")
@@ -46,7 +46,7 @@ void OfflineLocalisationSettingsDialog::on_PruneMethodComboBox_currentIndexChang
 void OfflineLocalisationSettingsDialog::on_BranchMethodComboBox_currentIndexChanged(const QString &arg1)
 {
     const QString c_none_label = "None";
-    QComboBox* prune_combo_box = qFindChild<QComboBox*>(this, "PruneMethodComboBox");
+    QComboBox* prune_combo_box = this->findChild<QComboBox*>("PruneMethodComboBox");
 
     if(arg1.compare("probabalistic", Qt::CaseInsensitive) == 0)
     {
@@ -73,9 +73,9 @@ void OfflineLocalisationSettingsDialog::on_BranchMethodComboBox_currentIndexChan
 
 void OfflineLocalisationSettingsDialog::initialiseSettings(const LocalisationSettings& settings)
 {
-    QComboBox* prune_combo_box = qFindChild<QComboBox*>(this, "PruneMethodComboBox");
-    QComboBox* branch_combo_box = qFindChild<QComboBox*>(this, "BranchMethodComboBox");
-    QComboBox* filter_combo_box = qFindChild<QComboBox*>(this, "FilterTypeComboBox");
+    QComboBox* prune_combo_box = this->findChild<QComboBox*>("PruneMethodComboBox");
+    QComboBox* branch_combo_box = this->findChild<QComboBox*>("BranchMethodComboBox");
+    QComboBox* filter_combo_box = this->findChild<QComboBox*>("FilterTypeComboBox");
     switch(settings.branchMethod())
     {
     case LocalisationSettings::branch_exhaustive:
@@ -131,9 +131,9 @@ void OfflineLocalisationSettingsDialog::initialiseSettings(const LocalisationSet
 LocalisationSettings OfflineLocalisationSettingsDialog::settings()
 {
     LocalisationSettings result;
-    QComboBox* prune_combo_box = qFindChild<QComboBox*>(this, "PruneMethodComboBox");
-    QComboBox* branch_combo_box = qFindChild<QComboBox*>(this, "BranchMethodComboBox");
-    QComboBox* filter_combo_box = qFindChild<QComboBox*>(this, "FilterTypeComboBox");
+    QComboBox* prune_combo_box = this->findChild<QComboBox*>("PruneMethodComboBox");
+    QComboBox* branch_combo_box = this->findChild<QComboBox*>("BranchMethodComboBox");
+    QComboBox* filter_combo_box = this->findChild<QComboBox*>("FilterTypeComboBox");
 
     QString prune_text = prune_combo_box->currentText().toLower();
     QString branch_text = branch_combo_box->currentText().toLower();

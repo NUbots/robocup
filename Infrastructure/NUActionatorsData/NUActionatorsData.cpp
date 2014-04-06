@@ -1247,6 +1247,8 @@ void NUActionatorsData::add(const id_t& actionatorid, const std::vector<std::vec
 
 void NUActionatorsData::summaryTo(std::ostream& output)
 {
+    output << "Total actionators: " << m_actionators.size() << std::endl;
+    output << "Total Available: " << m_available_ids.size() << std::endl;
     for (unsigned int i=0; i<m_available_ids.size(); i++)
         m_actionators[m_available_ids[i]].summaryTo(output);
 }

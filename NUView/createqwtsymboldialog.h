@@ -3,7 +3,7 @@
 
 #include <QDialog>
 #include <QToolButton>
-#include <qwt/qwt_symbol.h>
+#include <qwt_symbol.h>
 
 namespace Ui {
 class CreateQwtSymbolDialog;

@@ -52,14 +52,14 @@ public:
     
     std::string& getHostName() {return m_hostname;};
     std::string& getAddress() {return m_address;};
-    bool empty() {return m_hostname.empty() and m_address.empty();};
+    bool empty() const {return m_hostname.empty() and m_address.empty();};
     
-    bool operator==(const NUHostInfo& other)
+    bool operator==(const NUHostInfo& other) const
     {
         return (m_hostname.compare(other.m_hostname) == 0) and (m_address.compare(other.m_address) == 0);
     }
     
-    bool operator==(const std::string& name)
+    bool operator==(const std::string& name) const
     {
         if (not name.empty())
         {
