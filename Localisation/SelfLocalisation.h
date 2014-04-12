@@ -25,12 +25,17 @@ class NUSensorsData;
 // 3 - All messages
 // #define  DEBUG_LOCALISATION_VERBOSITY 3
 
-#define LOC_SUMMARY_LEVEL 3
+//#define LOC_SUMMARY_LEVEL 3
+#define LOC_SUMMARY_LEVEL 0
 
-//typedef SelfSRUKF Model;
-//typedef SelfUKF Model;
-//typedef std::list<SelfModel*> ModelContainer;
-typedef std::pair<unsigned int, float> ParentSum;
+class ParentSum
+{
+public:
+    ParentSum(unsigned int newParent, float newSum): parent(newParent), sum(newSum){}
+   unsigned int parent;
+   float sum;
+};
+
 #include "LocalisationSettings.h"
 
 class IWeightedKalmanFilter;
@@ -62,9 +67,6 @@ class SelfLocalisation: public TimestampedData
         bool clipActiveModelsToField();
 
         void IndividualStationaryObjectUpdate(FieldObjects* fobs, float time_increment);
-//        void ParallellStationaryObjectUpdate(FieldObjects* fobs, float time_increment);
-
-//        int multipleLandmarkUpdate(std::vector<StationaryObject*>& landmarks);
         int landmarkUpdate(StationaryObject &landmark);
         bool ballUpdate(const MobileObject& ball);
         bool sharedBallUpdate(const std::vector<TeamPacket::SharedBall>& sharedBalls);
@@ -132,7 +134,7 @@ class SelfLocalisation: public TimestampedData
         void initSingleModel(float x, float y, float heading);
         void initBallModel(IWeightedKalmanFilter* ball_model);
         ProcessingRequiredState CheckGameState(bool currently_incapacitated, const GameInformation *game_info);
-        void doInitialReset(GameInformation::TeamColour team_colour);
+        void doInitialReset(GameInformation::TeamColour team_colour, int player_number);
         void doSingleInitialReset(GameInformation::TeamColour team_colour);
         void doSingleReset();
         void doSetReset(GameInformation::TeamColour team_colour, int player_number, bool have_kickoff);
@@ -156,6 +158,7 @@ class SelfLocalisation: public TimestampedData
 
         void addToBallVariance(float x_pos_var, float y_pos_var, float x_vel_var, float y_vel_var);
         void setBallVariance(float x_pos_var, float y_pos_var, float x_vel_var, float y_vel_var);
+        void addVarianceToModel(IWeightedKalmanFilter* model, const Matrix& variance);
 
         void clearModels();
         void removeSimilarModels();
@@ -213,9 +216,8 @@ class SelfLocalisation: public TimestampedData
         void init();
 
         // Multiple Models Stuff
-        static const int c_MAX_MODELS_AFTER_MERGE = 6; // Max models at the end of the frame
-        static const int c_MAX_MODELS = (c_MAX_MODELS_AFTER_MERGE*6+2); // Total models
-//        ModelContainer m_models;
+        static const int c_MAX_MODELS_AFTER_MERGE = 10; // Max models at the end of the frame
+        static const int c_MAX_MODELS = (c_MAX_MODELS_AFTER_MERGE*12+2); // Total models
 
         std::list<IWeightedKalmanFilter*> m_robot_filters;
 
@@ -245,7 +247,8 @@ class SelfLocalisation: public TimestampedData
 
         std::vector<AmbiguousObject> m_pastAmbiguous;
         std::vector<TeamPacket::SharedBall> m_prevSharedBalls;
-        unsigned int total_bad_known_objects;
+        unsigned int m_total_bad_known_objects;
+        unsigned int m_total_bad_ambiguous_objects;
 
         // Outlier tuning Constants -- Values assigned in SelfLocalisation.cpp
         static const float c_LargeAngleSD;

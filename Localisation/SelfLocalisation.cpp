@@ -58,7 +58,7 @@ const float SelfLocalisation::c_LargeAngleSD = PI/2;   //For variance check
 // Object distance measurement error weightings (Constant)
 const float SelfLocalisation::c_obj_theta_variance = 0.02f*0.02f;        // (0.02 rad)^2
 const float SelfLocalisation::c_obj_range_offset_variance = 20.0f*20.0f;     // (20cm)^2
-const float SelfLocalisation::c_obj_range_relative_variance = 0.20f*0.20f;   // 20% of range added
+const float SelfLocalisation::c_obj_range_relative_variance = 0.10f*0.10f;   // 20% of range added
 const float SelfLocalisation::c_centre_circle_heading_variance = (float)(deg2rad(20)*deg2rad(20)); // (10 degrees)^2
 const float SelfLocalisation::c_twoObjectAngleVariance = 0.05f*0.05f; //Small! error in angle difference is normally very small
 
@@ -113,6 +113,18 @@ SelfLocalisation& SelfLocalisation::operator=(const SelfLocalisation& source)
         m_hasGps = source.m_hasGps;
         m_settings = source.m_settings;
 
+        m_amILost = source.m_amILost;
+        m_lostCount = source.m_lostCount;
+        m_timeSinceFieldObjectSeen = source.m_timeSinceFieldObjectSeen;
+
+        m_prev_ball_update_time = source.m_prev_ball_update_time;
+        m_team_colour = source.m_team_colour;
+
+        m_pastAmbiguous = source.m_pastAmbiguous;
+        m_prevSharedBalls = source.m_prevSharedBalls;
+        m_total_bad_known_objects = source.m_total_bad_known_objects;
+        m_total_bad_ambiguous_objects = source.m_total_bad_ambiguous_objects;
+
         clearModels();
 
         // New robot models
@@ -141,7 +153,8 @@ void SelfLocalisation::init()
     m_previously_incapacitated = true;
     m_previous_game_state = GameInformation::InitialState;
     m_currentFrameNumber = 0;
-    total_bad_known_objects = 0;
+    m_total_bad_known_objects = 0;
+    m_total_bad_ambiguous_objects = 0;
 
     m_amILost = true;
     m_lostCount = 100;
@@ -164,7 +177,9 @@ void SelfLocalisation::init()
         debug_file.clear();
         debug_file << "Localisation" << std::endl;
     #endif // DEBUG_LOCALISATION_VERBOSITY > 0
+    doPenaltyReset();
 }
+
 
 /*! @brief Destructor
  */
@@ -271,6 +286,7 @@ void SelfLocalisation::process(NUSensorsData* sensor_data, FieldObjects* fobs, c
 
     // Check if processing is required.
     ProcessingRequiredState processing_required = CheckGameState(sensor_data->isIncapacitated(), gameInfo);
+    //if(m_timestamp < 7000) processing_required.time = false;
 
     // Retrieve odometry data
     std::vector<float> odo;
@@ -284,14 +300,23 @@ void SelfLocalisation::process(NUSensorsData* sensor_data, FieldObjects* fobs, c
         return;
     }
 
-//    // retrieve gps data
-//    if (sensor_data->getGps(m_gps) and sensor_data->getCompass(m_compass))
+//    BOOST_FOREACH(AmbiguousObject& ambiguous_object, fobs->ambiguousFieldObjects)
 //    {
-//        m_hasGps = true;
-//        fobs->self.updateLocationOfSelf(m_gps[0], m_gps[1], m_compass, 0.1, 0.1, 0.01, false);
-////        std::cout << "Position: " << m_gps[0] << ", " << m_gps[1] << ", " << m_compass << std::endl;
-//        return;
+//        if(ambiguous_object.isObjectVisible())
+//        {
+//            std::cout << ambiguous_object.getName() << ": " << ambiguous_object.getMeasuredRelativeLocation() << std::endl;
+//        }
 //    }
+
+    // retrieve gps data
+    if (sensor_data->getGps(m_gps) and sensor_data->getCompass(m_compass))
+    {
+        m_hasGps = true;
+        fobs->self.updateLocationOfSelf(m_gps[0], m_gps[1], m_compass, 0.1, 0.1, 0.01, false);
+//        std::cout << "Position: " << m_gps[0] << ", " << m_gps[1] << ", " << m_compass << std::endl;
+
+//        return;
+    }
 
 #ifndef USE_VISION
     // If vision is disabled, gps coordinates are used in its place to trach location.
@@ -309,7 +334,7 @@ void SelfLocalisation::process(NUSensorsData* sensor_data, FieldObjects* fobs, c
     prof.split("Initial Processing");
     if (odom_ok and processing_required.time)
     {
-        float fwd = odo[0];
+        float fwd = 0.7*odo[0];
         float side = odo[1];
         float turn = odo[2];
         // perform odometry update and change the variance of the model
@@ -320,7 +345,7 @@ void SelfLocalisation::process(NUSensorsData* sensor_data, FieldObjects* fobs, c
         #endif
         // Hack... Sometimes we get really big odometry turn values that are not real.
         // TODO: See if this can be removed.
-        if(fabs(turn) > 1.0f) turn = 0;
+        //if(fabs(turn) > 0.75f) turn = 0;
         doTimeUpdate(fwd, side, turn, time_increment);
 
         #if LOC_SUMMARY_LEVEL > 0
@@ -375,12 +400,15 @@ void SelfLocalisation::process(NUSensorsData* sensor_data, FieldObjects* fobs, c
     WriteModelToObjects(getBestModel(), fobs);
     prof.split("Writing Models");
 
-#if LOC_SUMMARY_LEVEL > 0
+    #if LOC_SUMMARY_LEVEL > 0
     m_frame_log << std::endl <<  "Final Result: " << ModelStatusSummary();
     #endif
 
 #endif
     prof.stop();
+    #if LOC_SUMMARY_LEVEL > 0
+    m_frame_log << std::endl <<  "Profiling:\n" << prof;
+    #endif
     return;
 }
 
@@ -416,14 +444,14 @@ void SelfLocalisation::IndividualStationaryObjectUpdate(FieldObjects* fobs, floa
 
     if(objectsAdded > 0 and totalSuccessfulUpdates < 1)
     {
-        total_bad_known_objects += objectsAdded;
+        m_total_bad_known_objects += objectsAdded;
     }
     else
     {
-        total_bad_known_objects = 0;
+        m_total_bad_known_objects = 0;
     }
 
-    if(total_bad_known_objects > 3)
+    if(m_total_bad_known_objects > 3)
     {
         // reset
         if(m_settings.pruneMethod() != LocalisationSettings::prune_none and m_settings.pruneMethod() != LocalisationSettings::prune_unknown)
@@ -521,8 +549,32 @@ void SelfLocalisation::ProcessObjects(FieldObjects* fobs, float time_increment)
 //        removeAmbiguousGoalPairs(fobs->ambiguousFieldObjects, yellowGoalSeen, blueGoalSeen);
         // Do Ambiguous objects.
 
+        unsigned int total_corners = 0;
+        bool skip_corners = false;
         BOOST_FOREACH(AmbiguousObject& ambigous_obj, fobs->ambiguousFieldObjects)
         {
+            if(ambigous_obj.getID() == FieldObjects::FO_CORNER_UNKNOWN_INSIDE_L
+                    || ambigous_obj.getID() == FieldObjects::FO_CORNER_UNKNOWN_OUTSIDE_L
+                    || ambigous_obj.getID() == FieldObjects::FO_CORNER_UNKNOWN_T)
+            {
+                total_corners++;
+            }
+        }
+        if(total_corners > 2) skip_corners = true;
+
+        BOOST_FOREACH(AmbiguousObject& ambigous_obj, fobs->ambiguousFieldObjects)
+        {
+
+            if (skip_corners)
+            {
+                if(ambigous_obj.getID() == FieldObjects::FO_CORNER_UNKNOWN_INSIDE_L
+                        || ambigous_obj.getID() == FieldObjects::FO_CORNER_UNKNOWN_OUTSIDE_L
+                        || ambigous_obj.getID() == FieldObjects::FO_CORNER_UNKNOWN_T)
+                {
+                   continue;
+                }
+            }
+            if(ambigous_obj.getID() == FieldObjects::FO_OBSTACLE) continue;
             if(ambigous_obj.isObjectVisible() == false) continue; // Skip objects that were not seen.
             std::vector<int> possible_ids = ambigous_obj.getPossibleObjectIDs();
             std::vector<StationaryObject*> poss_obj;
@@ -532,7 +584,6 @@ void SelfLocalisation::ProcessObjects(FieldObjects* fobs, float time_increment)
             {
                 poss_obj.push_back(&(fobs->stationaryFieldObjects[possible_object_id]));
             }
-
             updateResult = ambiguousLandmarkUpdate(ambigous_obj, poss_obj);
             NormaliseAlphas();
             PruneModels();
@@ -546,8 +597,8 @@ void SelfLocalisation::ProcessObjects(FieldObjects* fobs, float time_increment)
     //#endif
 
         NormaliseAlphas();
-        PruneModels();
-        prof.split("Pruning");
+//        PruneModels();
+//        prof.split("Pruning");
 
         ballUpdate(fobs->mobileFieldObjects[FieldObjects::FO_BALL]);
         prof.split("Ball Update");
@@ -660,9 +711,12 @@ void SelfLocalisation::WriteModelToObjects(const IWeightedKalmanFilter* model, F
 
     MultivariateGaussian est = model->estimate();
 
+    if(!m_hasGps)
+    {
     // Update the robots location.
-    fieldObjects->self.updateLocationOfSelf(est.mean(0), est.mean(1), est.mean(2), est.sd(0), est.sd(1), est.sd(2), false);
-    fieldObjects->self.covariance = est.covariance();
+        fieldObjects->self.updateLocationOfSelf(est.mean(0), est.mean(1), est.mean(2), est.sd(0), est.sd(1), est.sd(2), false);
+        fieldObjects->self.covariance = est.covariance();
+    }
     Self& self = fieldObjects->self;
 
     // Now update the ball
@@ -773,6 +827,7 @@ ProcessingRequiredState SelfLocalisation::CheckGameState(bool currently_incapaci
     result.measurement = true;
 
     GameInformation::TeamColour team_colour = game_info->getTeamColour();
+    int player_number = game_info->getPlayerNumber();
     //m_team_colour = team_colour;
     m_team_colour = GameInformation::RedTeam;
     GameInformation::RobotState current_state = game_info->getCurrentState();
@@ -800,7 +855,7 @@ ProcessingRequiredState SelfLocalisation::CheckGameState(bool currently_incapaci
     {   // if are in ready. If previously in initial or penalised do a reset. Also reset if fallen over.
         if (m_previous_game_state == GameInformation::InitialState)
         {
-            doInitialReset(team_colour);
+            doInitialReset(team_colour, player_number);
             result.time = false;
         }
         else if (m_previous_game_state == GameInformation::PenalisedState)
@@ -818,7 +873,7 @@ ProcessingRequiredState SelfLocalisation::CheckGameState(bool currently_incapaci
     {   // if we are in set look for manual placement, if detected then do a reset.
         if (m_previously_incapacitated and not currently_incapacitated)
         {
-            doSetReset(team_colour, game_info->getPlayerNumber(), game_info->haveKickoff());
+            doSetReset(team_colour, player_number, game_info->haveKickoff());
             result.time = false;
         }
     }
@@ -851,7 +906,7 @@ void SelfLocalisation::initSingleModel(float x, float y, float heading)
     positions.reserve(1);
     MultivariateGaussian temp(3);
     temp.setMean(mean_matrix(x,y,heading));
-    temp.setCovariance(covariance_matrix(150.0f*150.0f, 100.0f*100.0f, 2*PI));
+    temp.setCovariance(covariance_matrix(75.0f*75.0f, 100.0f*100.0f, 2*PI));
     positions.push_back(temp);
     InitialiseModels(positions);
     initBallModel(m_ball_filter);
@@ -884,7 +939,8 @@ void SelfLocalisation::initBallModel(IWeightedKalmanFilter* ball_model)
 void SelfLocalisation::doSingleInitialReset(GameInformation::TeamColour team_colour)
 {
     float initial_heading = 0 + (team_colour==GameInformation::RedTeam?mathGeneral::PI:0);
-    initSingleModel(0,0,initial_heading);
+    float x = 150.f * (team_colour==GameInformation::RedTeam?1.f:-1.f);
+    initSingleModel(x,0,initial_heading);
     initBallModel(m_ball_filter);
 }
 
@@ -895,7 +951,7 @@ void SelfLocalisation::doSingleReset()
     initBallModel(m_ball_filter);
 }
 
-void SelfLocalisation::doInitialReset(GameInformation::TeamColour team_colour)
+void SelfLocalisation::doInitialReset(GameInformation::TeamColour team_colour, int player_number)
 {
     #if LOC_SUMMARY_LEVEL > 0
     m_frame_log << "Reset leaving initial." << std::endl;
@@ -904,13 +960,13 @@ void SelfLocalisation::doInitialReset(GameInformation::TeamColour team_colour)
     debug_out  << "Performing initial->ready reset." << std::endl;
 #endif // DEBUG_LOCALISATION_VERBOSITY > 0
 
+    clearModels();
+
     // For the probabalistic data association technique we only want a single model present.
-    if(m_settings.pruneMethod() == LocalisationSettings::prune_unknown || m_settings.pruneMethod() == LocalisationSettings::prune_none || m_settings.pruneMethod() == LocalisationSettings::prune_max_likelyhood)
+    if(m_settings.pruneMethod() == LocalisationSettings::prune_unknown || m_settings.pruneMethod() == LocalisationSettings::prune_none/* || m_settings.pruneMethod() == LocalisationSettings::prune_max_likelihood*/)
     {
         return doSingleInitialReset(team_colour);
     }
-
-    clearModels();
 
     // The models are always in the team's own half
     // Model 0: On left sideline facing in, 1/3 from half way
@@ -925,10 +981,12 @@ void SelfLocalisation::doInitialReset(GameInformation::TeamColour team_colour)
     float right_y = -200.0;
     float right_heading = PI/2;
 
-    float front_x = -300.0/6.0f;
+    //float front_x = -300.0/6.0f;
+    float front_x = -100.f;
     float centre_x = -300.0/3.0f;
     float centre_heading = 0;
-    float back_x = -300*(2.0f/6.0f);
+    //float back_x = -300*(4.0f/6.0f);
+    float back_x = -200.f;
     float goal_line_x = -300;
     if (team_colour == GameInformation::RedTeam)
     {   // flip the invert the x for the red team and set the heading to PI
@@ -939,48 +997,65 @@ void SelfLocalisation::doInitialReset(GameInformation::TeamColour team_colour)
         goal_line_x = -goal_line_x;
     }
 
-    float cov_x = pow(50.f,2);
+    float cov_x = pow(30.f,2);
     float cov_y = pow(20.f,2);
     //float cov_head = pow(6.f,2);
-    float cov_head = pow(0.75,2);
+    float cov_head = pow(0.5,2);
     Matrix cov_matrix = covariance_matrix(cov_x, cov_y, cov_head);
     MultivariateGaussian temp(3);
     temp.setCovariance(cov_matrix);
     std::vector<MultivariateGaussian> positions;
     positions.reserve(5);
 
+    const bool goal_keeper_starts_in_goals = false;
+
+    if(goal_keeper_starts_in_goals and player_number == 1) // Goalkeeper
+    {
+        // Postition Keeper
+        //temp.setCovariance(0.5*covariance_matrix(cov_y,cov_x,cov_head));
+        temp.setCovariance(0.5*covariance_matrix(pow(15.f,2),pow(40.f,2), pow(0.2,2)));
+        temp.setMean(mean_matrix(goal_line_x, 0.0f, centre_heading));
+        positions.push_back(temp);
+
+        temp.setMean(mean_matrix(goal_line_x, 100.0f, centre_heading));
+        positions.push_back(temp);
+
+        temp.setMean(mean_matrix(goal_line_x, -100.0f, centre_heading));
+        positions.push_back(temp);
+
+        InitialiseModels(positions);
+        initBallModel(m_ball_filter);
+        return;
+    }
+
     // Position 1
-    temp.setMean(mean_matrix(front_x, right_y, right_heading));
-    positions.push_back(temp);
-
-    // Position 2
-    temp.setMean(mean_matrix(back_x, right_y, right_heading));
-    positions.push_back(temp);
-
-    // Position 3
     temp.setMean(mean_matrix(front_x, left_y, left_heading));
     positions.push_back(temp);
 
-    // Position 4
+    // Position 2
     temp.setMean(mean_matrix(back_x, left_y, left_heading));
     positions.push_back(temp);
 
-    // Postition 5
-    temp.setMean(mean_matrix(2*centre_x, 95.0f, centre_heading));
+    // Position 3
+    temp.setMean(mean_matrix(front_x, right_y, right_heading));
     positions.push_back(temp);
 
-    // Postition 6
-    temp.setMean(mean_matrix(2*centre_x, -95.0f, centre_heading));
+    // Position 4
+    temp.setMean(mean_matrix(back_x, right_y, right_heading));
     positions.push_back(temp);
 
-    // Postition 7
-    temp.setCovariance(covariance_matrix(pow(150.0f,2), pow(100.0f,2), pow(1.f,2)));
-    temp.setMean(mean_matrix(centre_x, 0.0f, centre_heading));
-    positions.push_back(temp);
+//    // Postition 5
+//    temp.setMean(mean_matrix(2*centre_x, 95.0f, centre_heading));
+//    positions.push_back(temp);
 
-    // Postition 8
-    temp.setMean(mean_matrix(2*centre_x, 0.0f, centre_heading));
-    positions.push_back(temp);
+//    // Postition 6
+//    temp.setMean(mean_matrix(2*centre_x, -95.0f, centre_heading));
+//    positions.push_back(temp);
+
+//    // Postition 7
+//    temp.setCovariance(covariance_matrix(pow(150.0f,2), pow(100.0f,2), pow(1.f,2)));
+//    temp.setMean(mean_matrix(centre_x, 0.0f, centre_heading));
+//    positions.push_back(temp);
 
     InitialiseModels(positions);
     initBallModel(m_ball_filter);
@@ -1089,8 +1164,7 @@ void SelfLocalisation::doPenaltyReset()
     MultivariateGaussian temp(3);
     temp.setCovariance(covariance_matrix(50.0f*50.0f, 20.0f*20.0f, 0.35f*0.35f));
 
-    //float x_coord = 50.f;                           // Red is positive half of field. 50cm
-    float x_coord = 0.f;                           // Red is positive half of field. 50cm
+    float x_coord = 50.f;                           // Red is positive half of field. 50cm
     if (m_team_colour == GameInformation::BlueTeam)
         x_coord = -x_coord;                         // Blue is negative half of field. -50cm
 
@@ -1109,6 +1183,7 @@ void SelfLocalisation::doPenaltyReset()
 
 void SelfLocalisation::doFallenReset()
 {
+    return;
     Matrix temp;
     #if LOC_SUMMARY_LEVEL > 0
     m_frame_log << "Reset due to fall." << std::endl;
@@ -1122,7 +1197,9 @@ void SelfLocalisation::doFallenReset()
     {
         MultivariateGaussian est = filter->estimate();
         temp = est.covariance();
-        temp[2][2] += 0.707*0.707;     // Robot heading
+        temp[0][0] += 10*10;     // Robot heading
+        temp[1][1] += 10*10;     // Robot heading
+        temp[2][2] += 0.1*0.1;     // Robot heading
         est.setCovariance(temp);
         filter->initialiseEstimate(est);
     }
@@ -1321,15 +1398,24 @@ bool SelfLocalisation::doTimeUpdate(float odomForward, float odomLeft, float odo
 
     bool result = false;
     processNoise = Matrix(3,3,false);
-    processNoise[0][0] = pow(0.5f,2);
-    processNoise[1][1] = pow(0.5f,2);
-    processNoise[2][2] = pow(0.015f, 2);
+//    processNoise[0][0] = pow(1.76f,2);
+//    processNoise[1][1] = pow(1.76f,2);
+//    processNoise[2][2] = pow(0.05f, 2);
+//    processNoise = deltaTimeSeconds * processNoise;
+
+//    processNoise[0][0] = pow(0.5f,2);
+//    processNoise[1][1] = pow(0.5f,2);
+//    processNoise[2][2] = pow(0.015f, 2);
+
+    processNoise[0][0] = pow(1.f,2);
+    processNoise[1][1] = pow(1.f,2);
+    processNoise[2][2] = pow(0.03f, 2);
 
     for (std::list<IWeightedKalmanFilter*>::iterator model_it = m_robot_filters.begin(); model_it != m_robot_filters.end(); ++model_it)
     {
         if(not (*model_it)->active()) continue; // Skip Inactive models.
         result = true;
-        // proportianl odometry nosie
+        // proportional odometry noise
         Matrix prop_odom_noise(3,3,false);
         float theta = (*model_it)->estimate().mean(2);
         float ctheta  = cos(theta);
@@ -1579,6 +1665,8 @@ int SelfLocalisation::ambiguousLandmarkUpdate(AmbiguousObject &ambiguousObject, 
     {
         return ambiguousLandmarkUpdateProbDataAssoc(ambiguousObject, possibleObjects);
     }
+    if(m_settings.pruneMethod() == LocalisationSettings::prune_merge)
+        MergeModels(255);
     return 0;
 }
 
@@ -1624,7 +1712,7 @@ int SelfLocalisation::PruneModels()
     {
         MergeModels(c_MAX_MODELS_AFTER_MERGE);
     }
-    else if (m_settings.pruneMethod() == LocalisationSettings::prune_max_likelyhood)
+    else if (m_settings.pruneMethod() == LocalisationSettings::prune_max_likelihood)
     {
         removeSimilarModels();
         PruneMaxLikelyhood();
@@ -1632,7 +1720,7 @@ int SelfLocalisation::PruneModels()
     else if (m_settings.pruneMethod() == LocalisationSettings::prune_viterbi)
     {
         removeSimilarModels();
-        PruneViterbi(c_MAX_MODELS_AFTER_MERGE);
+        PruneViterbi(8);
     }
     else if (m_settings.pruneMethod() == LocalisationSettings::prune_nscan)
     {
@@ -1664,6 +1752,9 @@ struct model_ptr_cmp
 */
 int SelfLocalisation::PruneViterbi(unsigned int order)
 {
+
+    m_frame_log << ModelStatusSummary() << std::endl;
+
     removeInactiveModels();
     if(m_robot_filters.size() <= order) return 0;                      // No pruning required if not above maximum.
     m_robot_filters.sort(model_ptr_cmp());                             // Sort, results in order smallest to largest.
@@ -1682,7 +1773,7 @@ int SelfLocalisation::PruneViterbi(unsigned int order)
 
 bool AlphaSumPredicate( const ParentSum& a, const ParentSum& b )
 {
-        return a.second <  b.second;
+        return a.sum <  b.sum;
 }
 
 /*! @brief Prunes the models using an N-Scan Pruning method.
@@ -1692,21 +1783,23 @@ bool AlphaSumPredicate( const ParentSum& a, const ParentSum& b )
 int SelfLocalisation::PruneNScan(unsigned int N)
 {
     std::vector<ParentSum> results;
+    float all_alphas = 0.f;
     // Sum the alphas of sibling branches from a common parent at branch K-N
     BOOST_FOREACH(IWeightedKalmanFilter* filter, m_robot_filters)
     {
         if(filter->active() == false) continue;
         unsigned int parent_id = filter->m_parent_history_buffer.at(N);
         float alpha = filter->getFilterWeight();
+        all_alphas += alpha;
         bool added = false;
         if(parent_id == 0) continue;
         // Sort all of the models
-        BOOST_FOREACH(ParentSum result, results)
+        BOOST_FOREACH(ParentSum& result, results)
         {
             // Assign to existing sum.
-            if(result.first == parent_id)
+            if(result.parent == parent_id)
             {
-                result.second += alpha;
+                result.sum += alpha;
                 added = true;
                 break;
             }
@@ -1714,7 +1807,7 @@ int SelfLocalisation::PruneNScan(unsigned int N)
         // If not able to assign to an existing sum create a new one.
         if(!added)
         {
-            ParentSum temp = std::make_pair(parent_id, alpha);
+            ParentSum temp(parent_id, alpha);
             results.push_back(temp);
         }
     }
@@ -1722,7 +1815,15 @@ int SelfLocalisation::PruneNScan(unsigned int N)
     if(results.size() > 0)
     {
         std::sort(results.begin(), results.end(), AlphaSumPredicate); // Sort by alpha sum, smallest to largest
-        unsigned int bestParentId = results.back().first;       // Get the parent Id of the best branch.
+        unsigned int bestParentId = results.back().parent;       // Get the parent Id of the best branch.
+
+#if LOC_SUMMARY_LEVEL > 0
+        m_frame_log << "N-Scan Prune Totals\n";
+        BOOST_FOREACH(ParentSum sum, results)
+        {
+            m_frame_log << "Model: " << sum.parent << " sum: " << sum.sum << std::endl;
+        }
+#endif
 
         // Remove all siblings not created from the best branch.
         BOOST_FOREACH(IWeightedKalmanFilter* filter, m_robot_filters)
@@ -1796,14 +1897,31 @@ int SelfLocalisation::ambiguousLandmarkUpdateExhaustive(AmbiguousObject &ambiguo
         }
         else
         {
+            addVarianceToModel(filter, covariance_matrix(pow(0.1,2), pow(0.1,2), pow(0.01,2)));
             filter->setFilterWeight(outlier_factor * filter->getFilterWeight());
         }
     }
     if(new_models.size() > 0)
     {
+        m_total_bad_ambiguous_objects = 0;
         m_robot_filters.insert(m_robot_filters.end(), new_models.begin(), new_models.end());
         new_models.clear();
     }
+//    else
+//    {
+//        m_total_bad_ambiguous_objects++;
+//        // mini reset.
+//        if(m_total_bad_ambiguous_objects > 3 || ambiguousObject.getID() == FieldObjects::FO_YELLOW_GOALPOST_UNKNOWN)
+//        {
+//    #if LOC_SUMMARY_LEVEL > 0
+//            m_frame_log << "Boosting Variance of all models." << std::endl;
+//    #endif
+//            BOOST_FOREACH(IWeightedKalmanFilter* filter, m_robot_filters)
+//            {
+//                addVarianceToModel(filter, covariance_matrix(pow(30,2), pow(30,2), pow(0.4,2)));
+//            }
+//        }
+//    }
     removeInactiveModels();
     return 0;
 }
@@ -1836,7 +1954,7 @@ int SelfLocalisation::ambiguousLandmarkUpdateConstraint(AmbiguousObject &ambiguo
         float headYaw;
         Blackboard->Sensors->getPosition(NUSensorsData::HeadYaw, headYaw);
         //! TODO: The FOV of the camera should NOT be hard-coded!
-        poss_objects = filterToVisible(position, possibleObjects, headYaw, 0.81f);
+        poss_objects = filterToVisible(position, possibleObjects, headYaw, 1.1f);
 
         BOOST_FOREACH(StationaryObject* object, poss_objects)
         {
@@ -1898,12 +2016,11 @@ int SelfLocalisation::ambiguousLandmarkUpdateSelective(AmbiguousObject &ambiguou
         float flatDistanceCurr = ambiguousObject.measuredDistance() * cos(ambiguousObject.measuredElevation());
         float dist_delta = fabs(flatDistanceCurr - flatDistancePrev);
         float heading_delta = fabs(ambiguousObject.measuredBearing() - m_pastAmbiguous[ambiguousObject.getID()].measuredBearing());
-
         // Calculate the allowable deviation
         MeasurementError error = calculateError(ambiguousObject);
-        float max_distance_deviation = error.distance();
+        float max_distance_deviation = sqrt(error.distance());
         float max_heading_deviation = error.heading();
-
+        max_heading_deviation = 0.01;
         similar_meas_found = (dist_delta < max_distance_deviation) && (heading_delta < max_heading_deviation);
         if(similar_meas_found)
         {
@@ -2319,25 +2436,23 @@ void SelfLocalisation::NormaliseAlphas()
     // Normalise all of the models alpha values such that all active models sum to 1.0
     double sumAlpha=0.0;
     double weight;
-    for (std::list<IWeightedKalmanFilter*>::iterator model_it = m_robot_filters.begin(); model_it != m_robot_filters.end(); ++model_it)
+    BOOST_FOREACH(IWeightedKalmanFilter* model, m_robot_filters)
     {
-        if ((*model_it)->active())
+        if (model->active())
         {
-            sumAlpha += (*model_it)->getFilterWeight();
+            sumAlpha += model->getFilterWeight();
         }
     }
     if(sumAlpha == 1) return;
     if (sumAlpha == 0) sumAlpha = 1e-12;
-    for (std::list<IWeightedKalmanFilter*>::iterator model_it = m_robot_filters.begin(); model_it != m_robot_filters.end(); ++model_it)
+    BOOST_FOREACH(IWeightedKalmanFilter* model, m_robot_filters)
     {
-        if ((*model_it)->active())
+        if (model->active())
         {
-            weight = (*model_it)->getFilterWeight()/sumAlpha;
-            (*model_it)->setFilterWeight(weight);
+            weight = model->getFilterWeight()/sumAlpha;
+            model->setFilterWeight(weight);
         }
     }
-
-
 }
 
 //**************************************************************************
@@ -2347,12 +2462,12 @@ void SelfLocalisation::NormaliseAlphas()
 */
 void SelfLocalisation::MergeModels(int maxAfterMerge)
 {
-    MergeModelsBelowThreshold(0.001);
+    MergeModelsBelowThreshold(0.005);
     double threshold=0.01;
     while (getNumActiveModels()>maxAfterMerge)
     {
         MergeModelsBelowThreshold(threshold);
-        threshold*=5.0;
+        threshold*=2.0;
     }
     removeInactiveModels();
     return;
@@ -2415,7 +2530,7 @@ void SelfLocalisation::MergeModelsBelowThreshold(double MergeMetricThreshold)
             if (mergeM <= MergeMetricThreshold)
             { //0.5
 #if LOC_SUMMARY_LEVEL > 0
-            m_frame_log << "Model " << (*j)->id() << " merged into " << (*i)->id() << std::endl;
+            m_frame_log << "Model " << (*j)->id() << "(" <<  (*j)->getFilterWeight() << ") merged into " << (*i)->id() << "(" <<  (*i)->getFilterWeight() << ")" << std::endl;
 #endif
 #if DEBUG_LOCALISATION_VERBOSITY > 2
                 debug_out  <<"[" << m_currentFrameNumber << "]: Merging Model[" << modelB->id() << "][alpha=" << modelB->getFilterWeight() << "]";
@@ -2584,7 +2699,7 @@ float heading_distance(const MultivariateGaussian& a, const MultivariateGaussian
 
 void SelfLocalisation::removeSimilarModels()
 {
-    const float min_trans_dist = 5;
+    const float min_trans_dist = 1;
     const float min_head_dist = 0.01;
 
     BOOST_FOREACH(IWeightedKalmanFilter* filterA, m_robot_filters)
@@ -2698,6 +2813,14 @@ void SelfLocalisation::setBallVariance(float x_pos_var, float y_pos_var, float x
     return;
 }
 
+void SelfLocalisation::addVarianceToModel(IWeightedKalmanFilter* model, const Matrix &variance)
+{
+    MultivariateGaussian est = model->estimate();
+    est.setCovariance(est.covariance() + variance);
+    model->initialiseEstimate(est);
+    return;
+}
+
 /*! @brief Create a 3x1 mean matrix with value as defiend by the parameters.
 
 Creates a 3x1 matrix with the mean of each attribute set as specified.
@@ -2762,7 +2885,6 @@ Iterates through the container and removes any inactive models found.
 unsigned int SelfLocalisation::removeInactiveModels(std::list<IWeightedKalmanFilter*>& container)
 {
     const unsigned int num_before = container.size();   // Save original size
-
     for (std::list<IWeightedKalmanFilter*>::iterator model_it = container.begin(); model_it != container.end(); ++model_it)
     {
         if((*model_it)->active()==false)
@@ -2909,15 +3031,20 @@ std::vector<TeamPacket::SharedBall> SelfLocalisation::FindNewSharedBalls(const s
 
 vector<StationaryObject*> SelfLocalisation::filterToVisible(const Self& location, const vector<StationaryObject*>& possibleObjects, float headPan, float fovX)
 {
-    const float c_view_direction = location.Heading() + headPan;
+    const float c_view_direction = headPan;
     const float c_view_range = fovX + 2 * location.sdHeading();
-
+    #if LOC_SUMMARY_LEVEL > 0
+    m_frame_log << "View Direction: " << c_view_direction << " pan: " << headPan << std::endl;
+#endif
     vector<StationaryObject*> result;
     result.reserve(possibleObjects.size());
 
     BOOST_FOREACH(StationaryObject* possible_object, possibleObjects)
     {
         float obj_heading = location.CalculateBearingToStationaryObject(*possible_object);
+        #if LOC_SUMMARY_LEVEL > 0
+        m_frame_log << possible_object->getName() << " Bearing: " << obj_heading << std::endl;
+        #endif
         // Calculate the distance from the viewing direction to the object.
         float delta_angle = mathGeneral::normaliseAngle(obj_heading - c_view_direction);
 
